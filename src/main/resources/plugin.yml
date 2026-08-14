@@ -1,0 +1,8 @@
+name: RustportEnhancement
+version: '1.0'
+main: com.rustport.enhancement.EnhancementPlugin
+api-version: '1.21'
+
+commands:
+  강화:
+    description: 강화 GUI를 엽니다.
