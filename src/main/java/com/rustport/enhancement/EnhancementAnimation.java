@@ -156,19 +156,32 @@ public final class EnhancementAnimation {
     }
 
     private void revealResult(Player player, EnhancementService.EnhancementResult result) {
-        if (result.success()) {
-            player.getWorld().spawnParticle(
-                    Particle.TOTEM_OF_UNDYING,
-                    player.getLocation().add(0, 1.0, 0),
-                    80,
-                    0.7, 1.0, 0.7,
-                    0.25
-            );
-            player.playSound(player.getLocation(), Sound.ITEM_TOTEM_USE, 1.0f, 1.1f);
-            player.sendMessage(Component.text("강화 성공! 현재 단계: +" + result.level(), NamedTextColor.GREEN));
-            return;
+        switch (result.outcome()) {
+            case SUCCESS -> {
+                player.getWorld().spawnParticle(
+                        Particle.TOTEM_OF_UNDYING,
+                        player.getLocation().add(0, 1.0, 0),
+                        80,
+                        0.7, 1.0, 0.7,
+                        0.25
+                );
+                player.playSound(player.getLocation(), Sound.ITEM_TOTEM_USE, 1.0f, 1.1f);
+                player.sendMessage(Component.text("강화 성공! 현재 단계: +" + result.level(), NamedTextColor.GREEN));
+            }
+            case DOWNGRADE -> {
+                playFailureParticles(player);
+                player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_BREAK, 1.0f, 0.8f);
+                player.sendMessage(Component.text("강화 실패! 강화 단계가 +" + result.level() + "(으)로 하락했습니다.", NamedTextColor.RED));
+            }
+            case MAINTAIN -> {
+                playFailureParticles(player);
+                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.8f, 1.0f);
+                player.sendMessage(Component.text("강화 실패! +" + result.level() + " 단계가 유지됩니다.", NamedTextColor.YELLOW));
+            }
         }
+    }
 
+    private void playFailureParticles(Player player) {
         player.getWorld().spawnParticle(
                 Particle.LARGE_SMOKE,
                 player.getLocation().add(0, 1.0, 0),
@@ -176,8 +189,6 @@ public final class EnhancementAnimation {
                 0.6, 0.8, 0.6,
                 0.08
         );
-        player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_BREAK, 1.0f, 0.8f);
-        player.sendMessage(Component.text("강화 실패... 현재 단계: +" + result.level(), NamedTextColor.RED));
     }
 
     private void animateResult(ItemDisplay display, int elapsedTicks) {

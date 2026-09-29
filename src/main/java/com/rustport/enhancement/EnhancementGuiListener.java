@@ -7,6 +7,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
@@ -34,7 +36,26 @@ public final class EnhancementGuiListener implements Listener {
         }
 
         event.setCancelled(true);
-        if (event.getRawSlot() != EnhancementGui.ENHANCE_BUTTON_SLOT
+        int rawSlot = event.getRawSlot();
+
+        if (rawSlot == EnhancementGui.TARGET_SLOT) {
+            event.setCancelled(false);
+            scheduleInfoRefresh(gui);
+            return;
+        }
+
+        if (rawSlot == EnhancementGui.ENHANCEMENT_STONE_SLOT) {
+            event.setCancelled(false);
+            return;
+        }
+
+        if (event.getClickedInventory() != null
+                && event.getClickedInventory().getType() == InventoryType.PLAYER) {
+            event.setCancelled(event.isShiftClick());
+            return;
+        }
+
+        if (rawSlot != EnhancementGui.ENHANCE_BUTTON_SLOT
                 || !(event.getWhoClicked() instanceof Player player)
                 || animation.isPlaying(player)) {
             return;
@@ -42,6 +63,11 @@ public final class EnhancementGuiListener implements Listener {
 
         ItemStack targetItem = gui.getTargetItem();
         if (targetItem == null || targetItem.getType().isAir()) {
+            player.sendMessage(Component.text("강화할 아이템을 넣어주세요.", NamedTextColor.RED));
+            return;
+        }
+        if (!EnhancementItem.isEnhanceable(targetItem)) {
+            player.sendMessage(Component.text("강화할 수 없는 아이템입니다.", NamedTextColor.RED));
             return;
         }
 
@@ -63,6 +89,26 @@ public final class EnhancementGuiListener implements Listener {
     }
 
     @EventHandler
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if (!(event.getInventory().getHolder() instanceof EnhancementGui gui)) {
+            return;
+        }
+
+        boolean touchesProtectedSlot = event.getRawSlots().stream()
+                .filter(slot -> slot < event.getView().getTopInventory().getSize())
+                .anyMatch(slot -> slot != EnhancementGui.TARGET_SLOT
+                        && slot != EnhancementGui.ENHANCEMENT_STONE_SLOT);
+        if (touchesProtectedSlot) {
+            event.setCancelled(true);
+            return;
+        }
+
+        if (event.getRawSlots().contains(EnhancementGui.TARGET_SLOT)) {
+            scheduleInfoRefresh(gui);
+        }
+    }
+
+    @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
         if (!(event.getInventory().getHolder() instanceof EnhancementGui gui)
                 || !(event.getPlayer() instanceof Player player)) {
@@ -72,6 +118,11 @@ public final class EnhancementGuiListener implements Listener {
         ItemStack targetItem = gui.takeTargetItem();
         if (targetItem != null && !targetItem.getType().isAir()) {
             ItemDelivery.giveOrDrop(player, targetItem);
+        }
+
+        ItemStack enhancementStone = gui.takeEnhancementStone();
+        if (enhancementStone != null && !enhancementStone.getType().isAir()) {
+            ItemDelivery.giveOrDrop(player, enhancementStone);
         }
     }
 
@@ -83,5 +134,9 @@ public final class EnhancementGuiListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         animation.hideActiveDisplaysFrom(event.getPlayer());
+    }
+
+    private void scheduleInfoRefresh(EnhancementGui gui) {
+        plugin.getServer().getScheduler().runTask(plugin, gui::refreshInfo);
     }
 }

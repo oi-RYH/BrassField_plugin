@@ -2,6 +2,7 @@ name: RustportEnhancement
 version: '1.0'
 main: com.rustport.enhancement.EnhancementPlugin
 api-version: '1.21'
+depend: [ItemsAdder]
 
 commands:
   강화:
