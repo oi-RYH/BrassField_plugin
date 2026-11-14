@@ -1,9 +1,16 @@
 name: RustportEnhancement
 version: '1.0'
 main: com.rustport.enhancement.EnhancementPlugin
-api-version: '1.21'
+api-version: '26.1'
 depend: [ItemsAdder]
 
 commands:
   강화:
     description: 강화 GUI를 엽니다.
+  강화석:
+    description: 강화석 보유량을 확인합니다. (관리자는 지급·차감·설정·상자 지급)
+
+permissions:
+  rustport.stone.admin:
+    description: 강화석 지급·차감·설정과 강화석 상자 지급
+    default: op

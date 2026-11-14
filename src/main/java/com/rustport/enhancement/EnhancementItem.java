@@ -30,23 +30,23 @@ public final class EnhancementItem {
             tier(6, Material.WOODEN_SWORD, "목검", "customitem:wooden_sword", 72, 0, 28, StoneGrade.LOW, 4.5, NamedTextColor.WHITE),
             tier(7, Material.WOODEN_SWORD, "목검", "customitem:wooden_sword", 67, 0, 33, StoneGrade.LOW, 5.0, NamedTextColor.WHITE),
             tier(8, Material.WOODEN_SWORD, "목검", "customitem:wooden_sword", 63, 0, 37, StoneGrade.LOW, 5.5, NamedTextColor.WHITE),
-            tier(9, Material.STONE_SWORD, "돌검", null, 60, 0, 40, StoneGrade.MIDDLE, 6.0, NamedTextColor.WHITE),
-            tier(10, Material.STONE_SWORD, "돌검", null, 40, 1.0, 59, StoneGrade.MIDDLE, 6.5, NamedTextColor.WHITE),
-            tier(11, Material.STONE_SWORD, "돌검", null, 30, 0.4, 69.6, StoneGrade.MIDDLE, 7.0, NamedTextColor.WHITE),
-            tier(12, Material.STONE_SWORD, "돌검", null, 20, 0.2, 79.8, StoneGrade.MIDDLE, 7.5, NamedTextColor.WHITE),
-            tier(13, Material.IRON_SWORD, "철검", null, 15, 0, 85, StoneGrade.MIDDLE, 8.0, NamedTextColor.WHITE),
-            tier(14, Material.IRON_SWORD, "철검", null, 13, 1.0, 86, StoneGrade.MIDDLE, 8.5, NamedTextColor.WHITE),
-            tier(15, Material.IRON_SWORD, "철검", null, 12, 0.4, 87.6, StoneGrade.MIDDLE, 9.0, NamedTextColor.WHITE),
-            tier(16, Material.IRON_SWORD, "철검", null, 11, 0.2, 88.8, StoneGrade.MIDDLE, 10.0, NamedTextColor.WHITE),
-            tier(17, Material.DIAMOND_SWORD, "기사의 검", null, 10, 0, 90, StoneGrade.HIGH, 12.0, NamedTextColor.AQUA),
-            tier(18, Material.DIAMOND_SWORD, "기사의 검", null, 8, 2.0, 90, StoneGrade.HIGH, 14.0, NamedTextColor.AQUA),
-            tier(19, Material.DIAMOND_SWORD, "기사의 검", null, 7, 0.9, 92.1, StoneGrade.HIGH, 16.0, NamedTextColor.AQUA),
-            tier(20, Material.DIAMOND_SWORD, "기사의 검", null, 6, 0.4, 93.6, StoneGrade.HIGH, 18.0, NamedTextColor.AQUA),
-            tier(21, Material.NETHERITE_SWORD, "영웅의 검", null, 5, 0, 95, StoneGrade.HIGH, 28.0, NamedTextColor.GOLD),
-            tier(22, Material.NETHERITE_SWORD, "영웅의 검", null, 4, 3.0, 93, StoneGrade.HIGH, 32.0, NamedTextColor.GOLD),
-            tier(23, Material.NETHERITE_SWORD, "영웅의 검", null, 3, 1.2, 95.8, StoneGrade.HIGH, 40.0, NamedTextColor.GOLD),
-            tier(24, Material.NETHERITE_SWORD, "영웅의 검", null, 1, 0.2, 98.8, StoneGrade.HIGH, 50.0, NamedTextColor.GOLD),
-            tier(25, Material.NETHERITE_SWORD, "마스터소드", null, 0, 0, 0, StoneGrade.END, 65.0, NamedTextColor.LIGHT_PURPLE)
+            tier(9, Material.STONE_SWORD, "돌검", "customitem:stone_sword", 60, 0, 40, StoneGrade.MIDDLE, 6.0, NamedTextColor.WHITE),
+            tier(10, Material.STONE_SWORD, "돌검", "customitem:stone_sword", 40, 1.0, 59, StoneGrade.MIDDLE, 6.5, NamedTextColor.WHITE),
+            tier(11, Material.STONE_SWORD, "돌검", "customitem:stone_sword", 30, 0.4, 69.6, StoneGrade.MIDDLE, 7.0, NamedTextColor.WHITE),
+            tier(12, Material.STONE_SWORD, "돌검", "customitem:stone_sword", 20, 0.2, 79.8, StoneGrade.MIDDLE, 7.5, NamedTextColor.WHITE),
+            tier(13, Material.IRON_SWORD, "철검", "customitem:iron_sword", 15, 0, 85, StoneGrade.MIDDLE, 8.0, NamedTextColor.WHITE),
+            tier(14, Material.IRON_SWORD, "철검", "customitem:iron_sword", 13, 1.0, 86, StoneGrade.MIDDLE, 8.5, NamedTextColor.WHITE),
+            tier(15, Material.IRON_SWORD, "철검", "customitem:iron_sword", 12, 0.4, 87.6, StoneGrade.MIDDLE, 9.0, NamedTextColor.WHITE),
+            tier(16, Material.IRON_SWORD, "철검", "customitem:iron_sword", 11, 0.2, 88.8, StoneGrade.MIDDLE, 10.0, NamedTextColor.WHITE),
+            tier(17, Material.DIAMOND_SWORD, "기사의 검", "customitem:knight_sword", 10, 0, 90, StoneGrade.HIGH, 12.0, NamedTextColor.AQUA),
+            tier(18, Material.DIAMOND_SWORD, "기사의 검", "customitem:knight_sword", 8, 2.0, 90, StoneGrade.HIGH, 14.0, NamedTextColor.AQUA),
+            tier(19, Material.DIAMOND_SWORD, "기사의 검", "customitem:knight_sword", 7, 0.9, 92.1, StoneGrade.HIGH, 16.0, NamedTextColor.AQUA),
+            tier(20, Material.DIAMOND_SWORD, "기사의 검", "customitem:knight_sword", 6, 0.4, 93.6, StoneGrade.HIGH, 18.0, NamedTextColor.AQUA),
+            tier(21, Material.NETHERITE_SWORD, "영웅의 검", "customitem:hero_sword", 5, 0, 95, StoneGrade.HIGH, 28.0, NamedTextColor.GOLD),
+            tier(22, Material.NETHERITE_SWORD, "영웅의 검", "customitem:hero_sword", 4, 3.0, 93, StoneGrade.HIGH, 32.0, NamedTextColor.GOLD),
+            tier(23, Material.NETHERITE_SWORD, "영웅의 검", "customitem:hero_sword", 3, 1.2, 95.8, StoneGrade.HIGH, 40.0, NamedTextColor.GOLD),
+            tier(24, Material.NETHERITE_SWORD, "영웅의 검", "customitem:hero_sword", 1, 0.2, 98.8, StoneGrade.HIGH, 50.0, NamedTextColor.GOLD),
+            tier(25, Material.NETHERITE_SWORD, "마스터소드", "customitem:master_sword", 0, 0, 0, StoneGrade.END, 65.0, NamedTextColor.LIGHT_PURPLE)
     };
 
     private static NamespacedKey enhanceLevelKey;
@@ -93,6 +93,14 @@ public final class EnhancementItem {
         return item.getItemMeta().getPersistentDataContainer().has(enhanceLevelKey, PersistentDataType.INTEGER);
     }
 
+    public static ItemStack createCustomOrFallback(String namespacedId, Material fallback) {
+        try {
+            return itemsAdderItemProvider.create(namespacedId);
+        } catch (IllegalStateException exception) {
+            return ItemStack.of(fallback);
+        }
+    }
+
     public static ItemStack buildItem(int level) {
         EnhancementTier tier = getTier(level);
         ItemStack item = tier.customItemId() == null
@@ -127,7 +135,7 @@ public final class EnhancementItem {
         return List.of(
                 loreLine("강화 단계: ", "+" + tier.level(), NamedTextColor.GREEN),
                 loreLine("공격 데미지: ", format(tier.damage()), NamedTextColor.RED),
-                loreLine("필요 강화석: ", tier.stoneGrade().displayName(), tier.stoneGrade().color()),
+                loreLine("필요 강화석: ", tier.stoneGrade().displayName() + " " + tier.stoneCost() + "개", tier.stoneGrade().color()),
                 Component.empty(),
                 loreLine("성공: ", format(tier.successChance()) + "%", NamedTextColor.GREEN),
                 loreLine("하락: ", format(tier.downgradeChance()) + "%", NamedTextColor.RED),
@@ -213,6 +221,10 @@ public final class EnhancementItem {
             if (tier.level() != index) {
                 throw new IllegalStateException("강화 단계 인덱스가 일치하지 않습니다: " + index);
             }
+            boolean gradeStarts = index == 0 || TIERS[index - 1].stoneGrade() != tier.stoneGrade();
+            if (gradeStarts && tier.stoneGrade().firstLevel() != index) {
+                throw new IllegalStateException("강화석 등급 시작 단계가 일치하지 않습니다: +" + index);
+            }
             if (index < getMaxLevel()) {
                 double totalChance = tier.successChance() + tier.downgradeChance() + tier.maintainChance();
                 if (Math.abs(totalChance - 100.0) > 0.0001) {
@@ -234,20 +246,35 @@ public final class EnhancementItem {
             double damage,
             NamedTextColor nameColor
     ) {
+        public int stoneCost() {
+            return stoneGrade.costAt(level);
+        }
     }
 
+    /**
+     * 강화석 등급. 필요 개수 = 기본 + 추가 초기값 + 공차 × (등급 안에서의 순번, 0부터).
+     * END는 최고 단계 표시용이라 강화석 재화가 아니다.
+     */
     public enum StoneGrade {
-        LOW("하급", NamedTextColor.GRAY),
-        MIDDLE("중급", NamedTextColor.AQUA),
-        HIGH("상급", NamedTextColor.GOLD),
-        END("엔드", NamedTextColor.LIGHT_PURPLE);
+        LOW("하급", NamedTextColor.GRAY, 0, 10, 0, 1),
+        MIDDLE("중급", NamedTextColor.AQUA, 9, 30, 5, 3),
+        HIGH("상급", NamedTextColor.GOLD, 17, 70, 10, 5),
+        END("엔드", NamedTextColor.LIGHT_PURPLE, 25, 0, 0, 0);
 
         private final String displayName;
         private final NamedTextColor color;
+        private final int firstLevel;
+        private final int baseCost;
+        private final int extraStart;
+        private final int extraStep;
 
-        StoneGrade(String displayName, NamedTextColor color) {
+        StoneGrade(String displayName, NamedTextColor color, int firstLevel, int baseCost, int extraStart, int extraStep) {
             this.displayName = displayName;
             this.color = color;
+            this.firstLevel = firstLevel;
+            this.baseCost = baseCost;
+            this.extraStart = extraStart;
+            this.extraStep = extraStep;
         }
 
         public String displayName() {
@@ -256,6 +283,30 @@ public final class EnhancementItem {
 
         public NamedTextColor color() {
             return color;
+        }
+
+        public int firstLevel() {
+            return firstLevel;
+        }
+
+        public boolean isCurrency() {
+            return this != END;
+        }
+
+        public int costAt(int level) {
+            if (!isCurrency()) {
+                return 0;
+            }
+            return baseCost + extraStart + extraStep * (level - firstLevel);
+        }
+
+        public static StoneGrade fromDisplayName(String name) {
+            for (StoneGrade grade : values()) {
+                if (grade.isCurrency() && grade.displayName.equals(name)) {
+                    return grade;
+                }
+            }
+            return null;
         }
     }
 }

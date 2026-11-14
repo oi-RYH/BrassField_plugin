@@ -27,6 +27,7 @@ public final class ItemsAdderGuiBackground {
     private Constructor<?> texturedInventoryConstructor;
     private Method showInventoryMethod;
     private Method getInternalMethod;
+    private Method getStringMethod;
 
     public ItemsAdderGuiBackground(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -45,6 +46,7 @@ public final class ItemsAdderGuiBackground {
             );
             showInventoryMethod = texturedInventoryWrapperClass.getMethod("showInventory", Player.class);
             getInternalMethod = texturedInventoryWrapperClass.getMethod("getInternal");
+            getStringMethod = fontImageWrapperClass.getMethod("getString");
             return true;
         } catch (ReflectiveOperationException exception) {
             plugin.getLogger().warning(
@@ -101,6 +103,19 @@ public final class ItemsAdderGuiBackground {
         } catch (ReflectiveOperationException exception) {
             plugin.getLogger().warning("ItemsAdder 배경 GUI를 여는 중 오류가 발생했습니다: " + exception);
             player.openInventory(texturedGui.inventory());
+        }
+    }
+
+    /**
+     * font_image에 해당하는 글자(문자열)를 돌려준다. 제목을 직접 조립할 때 사용한다.
+     */
+    public String glyph(String fontImageNamespacedId) {
+        try {
+            Object fontImage = fontImageInstanceMethod.invoke(null, fontImageNamespacedId);
+            return fontImage == null ? "" : (String) getStringMethod.invoke(fontImage);
+        } catch (ReflectiveOperationException exception) {
+            plugin.getLogger().warning("ItemsAdder 폰트 이미지 글자를 가져오지 못했습니다: " + exception);
+            return "";
         }
     }
 

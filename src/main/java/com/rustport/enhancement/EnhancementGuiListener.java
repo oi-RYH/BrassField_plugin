@@ -18,15 +18,18 @@ public final class EnhancementGuiListener implements Listener {
     private final EnhancementPlugin plugin;
     private final EnhancementService enhancementService;
     private final EnhancementAnimation animation;
+    private final StoneWallet wallet;
 
     public EnhancementGuiListener(
             EnhancementPlugin plugin,
             EnhancementService enhancementService,
-            EnhancementAnimation animation
+            EnhancementAnimation animation,
+            StoneWallet wallet
     ) {
         this.plugin = plugin;
         this.enhancementService = enhancementService;
         this.animation = animation;
+        this.wallet = wallet;
     }
 
     @EventHandler
@@ -41,11 +44,6 @@ public final class EnhancementGuiListener implements Listener {
         if (rawSlot == EnhancementGui.TARGET_SLOT) {
             event.setCancelled(false);
             scheduleInfoRefresh(gui);
-            return;
-        }
-
-        if (rawSlot == EnhancementGui.ENHANCEMENT_STONE_SLOT) {
-            event.setCancelled(false);
             return;
         }
 
@@ -77,6 +75,14 @@ public final class EnhancementGuiListener implements Listener {
             return;
         }
 
+        EnhancementItem.EnhancementTier tier = EnhancementItem.getTier(currentLevel);
+        EnhancementItem.StoneGrade grade = tier.stoneGrade();
+        if (!wallet.withdraw(player.getUniqueId(), grade, tier.stoneCost())) {
+            player.sendMessage(Component.text(grade.displayName() + " 강화석이 부족합니다. (필요: " + tier.stoneCost()
+                    + "개, 보유: " + wallet.get(player.getUniqueId(), grade) + "개)", NamedTextColor.RED));
+            return;
+        }
+
         EnhancementService.EnhancementResult result = enhancementService.enhance(targetItem);
         ItemStack originalItem = gui.takeTargetItem();
         player.closeInventory();
@@ -96,8 +102,7 @@ public final class EnhancementGuiListener implements Listener {
 
         boolean touchesProtectedSlot = event.getRawSlots().stream()
                 .filter(slot -> slot < event.getView().getTopInventory().getSize())
-                .anyMatch(slot -> slot != EnhancementGui.TARGET_SLOT
-                        && slot != EnhancementGui.ENHANCEMENT_STONE_SLOT);
+                .anyMatch(slot -> slot != EnhancementGui.TARGET_SLOT);
         if (touchesProtectedSlot) {
             event.setCancelled(true);
             return;
@@ -115,15 +120,7 @@ public final class EnhancementGuiListener implements Listener {
             return;
         }
 
-        ItemStack targetItem = gui.takeTargetItem();
-        if (targetItem != null && !targetItem.getType().isAir()) {
-            ItemDelivery.giveOrDrop(player, targetItem);
-        }
-
-        ItemStack enhancementStone = gui.takeEnhancementStone();
-        if (enhancementStone != null && !enhancementStone.getType().isAir()) {
-            ItemDelivery.giveOrDrop(player, enhancementStone);
-        }
+        gui.returnItemsTo(player);
     }
 
     @EventHandler

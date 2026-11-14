@@ -40,11 +40,15 @@ public final class ItemsAdderItemProvider {
     }
 
     public boolean matches(ItemStack item, String namespacedId) {
+        return namespacedId.equals(idOf(item));
+    }
+
+    /**
+     * ItemsAdder 아이템이면 "namespace:id"를, 아니면 null을 돌려준다.
+     */
+    public String idOf(ItemStack item) {
         Object customStack = invoke(byItemStackMethod, null, item);
-        if (customStack == null) {
-            return false;
-        }
-        return namespacedId.equals(invoke(getNamespacedIdMethod, customStack));
+        return customStack == null ? null : (String) invoke(getNamespacedIdMethod, customStack);
     }
 
     private Object invoke(Method method, Object target, Object... arguments) {
