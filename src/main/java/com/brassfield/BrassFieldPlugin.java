@@ -13,6 +13,7 @@ import com.brassfield.enhancement.EnhancementGuiListener;
 import com.brassfield.enhancement.EnhancementItem;
 import com.brassfield.enhancement.EnhancementService;
 import com.brassfield.enhancement.StarterKitListener;
+import com.brassfield.hud.CurrencySidebar;
 import com.brassfield.shop.StoneShop;
 import com.brassfield.shop.StoneShopCommand;
 import com.brassfield.shop.StoneShopListener;
@@ -32,7 +33,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 /**
- * BrassField 서버 플러그인. 각 모듈(common·enhancement·stone·economy·shop)을 만들고 연결만 한다.
+ * BrassField 서버 플러그인. 각 모듈(common·enhancement·stone·economy·shop·hud)을 만들고 연결만 한다.
  */
 public class BrassFieldPlugin extends JavaPlugin {
 
@@ -42,6 +43,7 @@ public class BrassFieldPlugin extends JavaPlugin {
     private BalanceBook stoneBook;
     private BalanceBook goldBook;
     private boolean citizensHooked;
+    private CurrencySidebar currencySidebar;
 
     @Override
     public void onEnable() {
@@ -90,6 +92,10 @@ public class BrassFieldPlugin extends JavaPlugin {
         pluginManager.registerEvents(new StarterKitListener(), this);
         pluginManager.registerEvents(new StoneShopListener(stoneShop), this);
 
+        // 재화 사이드바
+        currencySidebar = new CurrencySidebar(this, goldWallet, stoneWallet, guiBackground);
+        currencySidebar.start();
+
         if (pluginManager.isPluginEnabled("Citizens")) {
             CitizensShopHook.register(this, stoneShop);
             citizensHooked = true;
@@ -112,6 +118,9 @@ public class BrassFieldPlugin extends JavaPlugin {
         }
         if (animation != null) {
             animation.shutdown();
+        }
+        if (currencySidebar != null) {
+            currencySidebar.stop();
         }
         if (citizensHooked) {
             CitizensShopHook.unregister();

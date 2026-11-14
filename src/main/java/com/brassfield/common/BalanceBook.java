@@ -1,5 +1,7 @@
 package com.brassfield.common;
 
+import org.bukkit.Bukkit;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -10,7 +12,8 @@ import java.util.logging.Logger;
 
 /**
  * 플레이어별 재화 장부. 강화석·골드처럼 아이템이 아니라 숫자로만 관리하는 재화가 공통으로 쓴다.
- * 보유량은 메인 스레드에서만 읽고 바꾸며, 바뀔 때마다 전용 스레드 하나에서 순서대로 파일에 저장한다.
+ * 보유량은 메인 스레드에서만 읽고 바꾸며, 바뀔 때마다 전용 스레드 하나에서 순서대로 파일에 저장하고
+ * BalanceChangedEvent를 발행한다.
  */
 public final class BalanceBook {
 
@@ -18,10 +21,12 @@ public final class BalanceBook {
     private final Logger logger;
     private final Map<UUID, Map<String, Long>> balances = new HashMap<>();
     private final ExecutorService saveExecutor;
+    private final String name;
 
     public BalanceBook(BalanceStorage storage, Logger logger, String name) {
         this.storage = storage;
         this.logger = logger;
+        this.name = name;
         this.saveExecutor = Executors.newSingleThreadExecutor(runnable -> {
             Thread thread = new Thread(runnable, "BrassField-" + name + "Save");
             thread.setDaemon(true);
@@ -59,6 +64,7 @@ public final class BalanceBook {
         }
         balances.computeIfAbsent(playerId, id -> new HashMap<>()).put(currency, amount);
         scheduleSave();
+        Bukkit.getPluginManager().callEvent(new BalanceChangedEvent(playerId, name, currency, amount));
     }
 
     /**
