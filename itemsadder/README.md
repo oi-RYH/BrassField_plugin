@@ -16,6 +16,7 @@ tools/itemsadder/backup.sh
 ```
 
 `secret.yml`(비밀값), `storage/`·`output/`·`lib/`(실행 중 생성), `contents/_iainternal/`(ItemsAdder 내장)은 복사하지 않는다.
+`contents/customcrops/`(CustomCrops 구매자용 리소스팩)는 약관상 재배포 금지라 이 공개 저장소에 올리지 않는다.
 이 저장소는 공개 저장소라 백업 전에 새 설정에 비밀값이 없는지 확인한다.
 
 ## 복원 (저장소 → 서버)

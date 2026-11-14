@@ -3,6 +3,7 @@
 # 사용: tools/itemsadder/backup.sh [ItemsAdder 폴더]   기본값: ~/mc-server-dev/plugins/ItemsAdder
 #
 # 비밀값(secret.yml)과 실행 중 생성되는 것(storage, output, lib), ItemsAdder 내장 콘텐츠(_iainternal)는 복사하지 않는다.
+# CustomCrops 구매자용 리소스팩(contents/customcrops)은 재배포 금지라 공개 저장소에 올리지 않는다.
 # 이 저장소는 공개 저장소이므로, 새 설정 파일을 추가할 때 비밀값이 들어가지 않았는지 확인한다.
 set -eu
 
@@ -23,6 +24,7 @@ rsync -a --delete \
     --include 'lang/***' \
     --include 'contents/' \
     --exclude 'contents/_iainternal/' \
+    --exclude 'contents/customcrops/' \
     --include 'contents/***' \
     --exclude '*' \
     "$SRC/" "$DEST/"

@@ -130,7 +130,7 @@ blocks:
     note: true
     mushroom: true
     chorus: true
-    wire: false
+    wire: true
     fire: false
   worlds:
   - '*'
