@@ -1,5 +1,7 @@
-package com.rustport.enhancement;
+package com.brassfield.enhancement;
 
+import com.brassfield.stone.StoneGrade;
+import com.brassfield.stone.StoneWallet;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
@@ -12,21 +14,25 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public final class EnhancementGuiListener implements Listener {
 
-    private final EnhancementPlugin plugin;
+    private final JavaPlugin plugin;
+    private final EnhancementCommand enhancementCommand;
     private final EnhancementService enhancementService;
     private final EnhancementAnimation animation;
     private final StoneWallet wallet;
 
     public EnhancementGuiListener(
-            EnhancementPlugin plugin,
+            JavaPlugin plugin,
+            EnhancementCommand enhancementCommand,
             EnhancementService enhancementService,
             EnhancementAnimation animation,
             StoneWallet wallet
     ) {
         this.plugin = plugin;
+        this.enhancementCommand = enhancementCommand;
         this.enhancementService = enhancementService;
         this.animation = animation;
         this.wallet = wallet;
@@ -76,7 +82,7 @@ public final class EnhancementGuiListener implements Listener {
         }
 
         EnhancementItem.EnhancementTier tier = EnhancementItem.getTier(currentLevel);
-        EnhancementItem.StoneGrade grade = tier.stoneGrade();
+        StoneGrade grade = tier.stoneGrade();
         if (!wallet.withdraw(player.getUniqueId(), grade, tier.stoneCost())) {
             player.sendMessage(Component.text(grade.displayName() + " 강화석이 부족합니다. (필요: " + tier.stoneCost()
                     + "개, 보유: " + wallet.get(player.getUniqueId(), grade) + "개)", NamedTextColor.RED));
@@ -90,7 +96,7 @@ public final class EnhancementGuiListener implements Listener {
                 player,
                 originalItem,
                 result,
-                resultItem -> plugin.openEnhancementGui(player, resultItem)
+                resultItem -> enhancementCommand.openGui(player, resultItem)
         );
     }
 

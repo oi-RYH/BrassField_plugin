@@ -1,6 +1,6 @@
-name: RustportEnhancement
+name: BrassField
 version: '1.0'
-main: com.rustport.enhancement.EnhancementPlugin
+main: com.brassfield.BrassFieldPlugin
 api-version: '26.1'
 depend: [ItemsAdder]
 
@@ -11,6 +11,6 @@ commands:
     description: 강화석 보유량을 확인합니다. (관리자는 지급·차감·설정·상자 지급)
 
 permissions:
-  rustport.stone.admin:
+  brassfield.stone.admin:
     description: 강화석 지급·차감·설정과 강화석 상자 지급
     default: op

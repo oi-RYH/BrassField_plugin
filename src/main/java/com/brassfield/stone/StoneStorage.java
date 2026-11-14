@@ -1,4 +1,4 @@
-package com.rustport.enhancement;
+package com.brassfield.stone;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -9,10 +9,10 @@ import java.util.UUID;
  */
 public interface StoneStorage {
 
-    Map<UUID, EnumMap<EnhancementItem.StoneGrade, Long>> loadAll();
+    Map<UUID, EnumMap<StoneGrade, Long>> loadAll();
 
     /**
      * 전체 보유량 스냅샷을 저장한다. 메인 스레드가 아닌 곳에서 호출될 수 있다.
      */
-    void saveAll(Map<UUID, EnumMap<EnhancementItem.StoneGrade, Long>> snapshot);
+    void saveAll(Map<UUID, EnumMap<StoneGrade, Long>> snapshot);
 }

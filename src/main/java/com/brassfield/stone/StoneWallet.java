@@ -1,4 +1,4 @@
-package com.rustport.enhancement;
+package com.brassfield.stone;
 
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -17,9 +17,9 @@ public final class StoneWallet {
 
     private final StoneStorage storage;
     private final Logger logger;
-    private final Map<UUID, EnumMap<EnhancementItem.StoneGrade, Long>> balances = new HashMap<>();
+    private final Map<UUID, EnumMap<StoneGrade, Long>> balances = new HashMap<>();
     private final ExecutorService saveExecutor = Executors.newSingleThreadExecutor(runnable -> {
-        Thread thread = new Thread(runnable, "RustportEnhancement-StoneSave");
+        Thread thread = new Thread(runnable, "BrassField-StoneSave");
         thread.setDaemon(true);
         return thread;
     });
@@ -30,17 +30,17 @@ public final class StoneWallet {
         balances.putAll(storage.loadAll());
     }
 
-    public long get(UUID playerId, EnhancementItem.StoneGrade grade) {
+    public long get(UUID playerId, StoneGrade grade) {
         requireCurrency(grade);
-        EnumMap<EnhancementItem.StoneGrade, Long> playerBalances = balances.get(playerId);
+        EnumMap<StoneGrade, Long> playerBalances = balances.get(playerId);
         return playerBalances == null ? 0L : playerBalances.getOrDefault(grade, 0L);
     }
 
-    public boolean has(UUID playerId, EnhancementItem.StoneGrade grade, long amount) {
+    public boolean has(UUID playerId, StoneGrade grade, long amount) {
         return get(playerId, grade) >= amount;
     }
 
-    public void deposit(UUID playerId, EnhancementItem.StoneGrade grade, long amount) {
+    public void deposit(UUID playerId, StoneGrade grade, long amount) {
         requirePositive(amount);
         set(playerId, grade, Math.addExact(get(playerId, grade), amount));
     }
@@ -48,7 +48,7 @@ public final class StoneWallet {
     /**
      * 보유량이 충분하면 차감하고 true, 부족하면 아무것도 바꾸지 않고 false를 돌려준다.
      */
-    public boolean withdraw(UUID playerId, EnhancementItem.StoneGrade grade, long amount) {
+    public boolean withdraw(UUID playerId, StoneGrade grade, long amount) {
         requirePositive(amount);
         long current = get(playerId, grade);
         if (current < amount) {
@@ -58,12 +58,12 @@ public final class StoneWallet {
         return true;
     }
 
-    public void set(UUID playerId, EnhancementItem.StoneGrade grade, long amount) {
+    public void set(UUID playerId, StoneGrade grade, long amount) {
         requireCurrency(grade);
         if (amount < 0) {
             throw new IllegalArgumentException("강화석 보유량은 음수가 될 수 없습니다: " + amount);
         }
-        balances.computeIfAbsent(playerId, id -> new EnumMap<>(EnhancementItem.StoneGrade.class)).put(grade, amount);
+        balances.computeIfAbsent(playerId, id -> new EnumMap<>(StoneGrade.class)).put(grade, amount);
         scheduleSave();
     }
 
@@ -83,17 +83,17 @@ public final class StoneWallet {
     }
 
     private void scheduleSave() {
-        Map<UUID, EnumMap<EnhancementItem.StoneGrade, Long>> snapshot = snapshot();
+        Map<UUID, EnumMap<StoneGrade, Long>> snapshot = snapshot();
         saveExecutor.execute(() -> storage.saveAll(snapshot));
     }
 
-    private Map<UUID, EnumMap<EnhancementItem.StoneGrade, Long>> snapshot() {
-        Map<UUID, EnumMap<EnhancementItem.StoneGrade, Long>> copy = new HashMap<>();
+    private Map<UUID, EnumMap<StoneGrade, Long>> snapshot() {
+        Map<UUID, EnumMap<StoneGrade, Long>> copy = new HashMap<>();
         balances.forEach((playerId, playerBalances) -> copy.put(playerId, new EnumMap<>(playerBalances)));
         return copy;
     }
 
-    private static void requireCurrency(EnhancementItem.StoneGrade grade) {
+    private static void requireCurrency(StoneGrade grade) {
         if (!grade.isCurrency()) {
             throw new IllegalArgumentException("재화가 아닌 강화석 등급입니다: " + grade);
         }

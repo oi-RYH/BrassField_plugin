@@ -1,4 +1,4 @@
-package com.rustport.enhancement;
+package com.brassfield.stone;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * plugins/RustportEnhancement/stones.yml 에 보유량을 저장한다.
+ * plugins/BrassField/stones.yml 에 보유량을 저장한다.
  * <pre>
  * players:
  *   &lt;uuid&gt;:
@@ -38,8 +38,8 @@ public final class YamlStoneStorage implements StoneStorage {
     }
 
     @Override
-    public Map<UUID, EnumMap<EnhancementItem.StoneGrade, Long>> loadAll() {
-        Map<UUID, EnumMap<EnhancementItem.StoneGrade, Long>> result = new HashMap<>();
+    public Map<UUID, EnumMap<StoneGrade, Long>> loadAll() {
+        Map<UUID, EnumMap<StoneGrade, Long>> result = new HashMap<>();
         if (!file.exists()) {
             return result;
         }
@@ -59,8 +59,8 @@ public final class YamlStoneStorage implements StoneStorage {
                 continue;
             }
 
-            EnumMap<EnhancementItem.StoneGrade, Long> balances = new EnumMap<>(EnhancementItem.StoneGrade.class);
-            for (EnhancementItem.StoneGrade grade : EnhancementItem.StoneGrade.values()) {
+            EnumMap<StoneGrade, Long> balances = new EnumMap<>(StoneGrade.class);
+            for (StoneGrade grade : StoneGrade.values()) {
                 if (grade.isCurrency()) {
                     balances.put(grade, Math.max(0L, players.getLong(key + "." + grade.name())));
                 }
@@ -71,7 +71,7 @@ public final class YamlStoneStorage implements StoneStorage {
     }
 
     @Override
-    public void saveAll(Map<UUID, EnumMap<EnhancementItem.StoneGrade, Long>> snapshot) {
+    public void saveAll(Map<UUID, EnumMap<StoneGrade, Long>> snapshot) {
         YamlConfiguration yaml = new YamlConfiguration();
         snapshot.forEach((playerId, balances) ->
                 balances.forEach((grade, amount) -> yaml.set(ROOT + "." + playerId + "." + grade.name(), amount))

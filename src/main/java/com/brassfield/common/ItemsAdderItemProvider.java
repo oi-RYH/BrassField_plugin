@@ -1,4 +1,4 @@
-package com.rustport.enhancement;
+package com.brassfield.common;
 
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;

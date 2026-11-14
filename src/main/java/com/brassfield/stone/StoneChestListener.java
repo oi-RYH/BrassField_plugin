@@ -1,5 +1,6 @@
-package com.rustport.enhancement;
+package com.brassfield.stone;
 
+import com.brassfield.common.ItemsAdderItemProvider;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Sound;
@@ -23,10 +24,10 @@ public final class StoneChestListener implements Listener {
     public static final int MIN_STONES = 3;
     public static final int MAX_STONES = 5;
 
-    private static final Map<String, EnhancementItem.StoneGrade> CHEST_GRADES = Map.of(
-            "rustport:low_enhancement_chest", EnhancementItem.StoneGrade.LOW,
-            "rustport:mid_enhancement_chest", EnhancementItem.StoneGrade.MIDDLE,
-            "rustport:high_enhancement_chest", EnhancementItem.StoneGrade.HIGH
+    private static final Map<String, StoneGrade> CHEST_GRADES = Map.of(
+            "rustport:low_enhancement_chest", StoneGrade.LOW,
+            "rustport:mid_enhancement_chest", StoneGrade.MIDDLE,
+            "rustport:high_enhancement_chest", StoneGrade.HIGH
     );
 
     private final ItemsAdderItemProvider itemProvider;
@@ -37,7 +38,7 @@ public final class StoneChestListener implements Listener {
         this.wallet = wallet;
     }
 
-    public static String chestIdOf(EnhancementItem.StoneGrade grade) {
+    public static String chestIdOf(StoneGrade grade) {
         return CHEST_GRADES.entrySet().stream()
                 .filter(entry -> entry.getValue() == grade)
                 .map(Map.Entry::getKey)
@@ -56,7 +57,7 @@ public final class StoneChestListener implements Listener {
             return;
         }
 
-        EnhancementItem.StoneGrade grade = CHEST_GRADES.get(itemProvider.idOf(item));
+        StoneGrade grade = CHEST_GRADES.get(itemProvider.idOf(item));
         if (grade == null) {
             return;
         }

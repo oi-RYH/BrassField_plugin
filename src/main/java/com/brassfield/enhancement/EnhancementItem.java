@@ -1,5 +1,7 @@
-package com.rustport.enhancement;
+package com.brassfield.enhancement;
 
+import com.brassfield.common.ItemsAdderItemProvider;
+import com.brassfield.stone.StoneGrade;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemAttributeModifiers;
 import io.papermc.paper.datacomponent.item.attribute.AttributeModifierDisplay;
@@ -13,6 +15,7 @@ import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -49,6 +52,9 @@ public final class EnhancementItem {
             tier(25, Material.NETHERITE_SWORD, "마스터소드", "customitem:master_sword", 0, 0, 0, StoneGrade.END, 65.0, NamedTextColor.LIGHT_PURPLE)
     };
 
+    // 플러그인 이름이 RustportEnhancement였을 때 만들어진 아이템의 강화 단계 키. 읽기만 하고, 다시 만들 때 새 키로 바뀐다.
+    private static final NamespacedKey LEGACY_ENHANCE_LEVEL_KEY = new NamespacedKey("rustportenhancement", "enhance_level");
+
     private static NamespacedKey enhanceLevelKey;
     private static NamespacedKey attackDamageKey;
     private static NamespacedKey attackSpeedKey;
@@ -70,8 +76,11 @@ public final class EnhancementItem {
             return 0;
         }
 
-        Integer storedLevel = item.getItemMeta().getPersistentDataContainer()
-                .get(enhanceLevelKey, PersistentDataType.INTEGER);
+        PersistentDataContainer data = item.getItemMeta().getPersistentDataContainer();
+        Integer storedLevel = data.get(enhanceLevelKey, PersistentDataType.INTEGER);
+        if (storedLevel == null) {
+            storedLevel = data.get(LEGACY_ENHANCE_LEVEL_KEY, PersistentDataType.INTEGER);
+        }
         return storedLevel == null ? 0 : clampLevel(storedLevel);
     }
 
@@ -90,7 +99,9 @@ public final class EnhancementItem {
         if (itemsAdderItemProvider.matches(item, TIERS[0].customItemId())) {
             return true;
         }
-        return item.getItemMeta().getPersistentDataContainer().has(enhanceLevelKey, PersistentDataType.INTEGER);
+        PersistentDataContainer data = item.getItemMeta().getPersistentDataContainer();
+        return data.has(enhanceLevelKey, PersistentDataType.INTEGER)
+                || data.has(LEGACY_ENHANCE_LEVEL_KEY, PersistentDataType.INTEGER);
     }
 
     public static ItemStack createCustomOrFallback(String namespacedId, Material fallback) {
@@ -248,65 +259,6 @@ public final class EnhancementItem {
     ) {
         public int stoneCost() {
             return stoneGrade.costAt(level);
-        }
-    }
-
-    /**
-     * 강화석 등급. 필요 개수 = 기본 + 추가 초기값 + 공차 × (등급 안에서의 순번, 0부터).
-     * END는 최고 단계 표시용이라 강화석 재화가 아니다.
-     */
-    public enum StoneGrade {
-        LOW("하급", NamedTextColor.GRAY, 0, 10, 0, 1),
-        MIDDLE("중급", NamedTextColor.AQUA, 9, 30, 5, 3),
-        HIGH("상급", NamedTextColor.GOLD, 17, 70, 10, 5),
-        END("엔드", NamedTextColor.LIGHT_PURPLE, 25, 0, 0, 0);
-
-        private final String displayName;
-        private final NamedTextColor color;
-        private final int firstLevel;
-        private final int baseCost;
-        private final int extraStart;
-        private final int extraStep;
-
-        StoneGrade(String displayName, NamedTextColor color, int firstLevel, int baseCost, int extraStart, int extraStep) {
-            this.displayName = displayName;
-            this.color = color;
-            this.firstLevel = firstLevel;
-            this.baseCost = baseCost;
-            this.extraStart = extraStart;
-            this.extraStep = extraStep;
-        }
-
-        public String displayName() {
-            return displayName;
-        }
-
-        public NamedTextColor color() {
-            return color;
-        }
-
-        public int firstLevel() {
-            return firstLevel;
-        }
-
-        public boolean isCurrency() {
-            return this != END;
-        }
-
-        public int costAt(int level) {
-            if (!isCurrency()) {
-                return 0;
-            }
-            return baseCost + extraStart + extraStep * (level - firstLevel);
-        }
-
-        public static StoneGrade fromDisplayName(String name) {
-            for (StoneGrade grade : values()) {
-                if (grade.isCurrency() && grade.displayName.equals(name)) {
-                    return grade;
-                }
-            }
-            return null;
         }
     }
 }

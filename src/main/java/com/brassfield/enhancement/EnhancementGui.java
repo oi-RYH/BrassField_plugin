@@ -1,5 +1,10 @@
-package com.rustport.enhancement;
+package com.brassfield.enhancement;
 
+import com.brassfield.common.FontSpace;
+import com.brassfield.common.ItemDelivery;
+import com.brassfield.common.ItemsAdderGuiBackground;
+import com.brassfield.stone.StoneGrade;
+import com.brassfield.stone.StoneWallet;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -40,10 +45,10 @@ public final class EnhancementGui implements InventoryHolder {
     private static final int BOARD_CENTER_X = 129;
     private static final Map<String, String> BOARD_GLYPH_CACHE = new ConcurrentHashMap<>();
     private static final String BLANK_ICON_ID = "rustport:gui_blank";
-    private static final Map<EnhancementItem.StoneGrade, String> STONE_ICON_IDS = Map.of(
-            EnhancementItem.StoneGrade.LOW, "rustport:low_stone_icon",
-            EnhancementItem.StoneGrade.MIDDLE, "rustport:mid_stone_icon",
-            EnhancementItem.StoneGrade.HIGH, "rustport:high_stone_icon"
+    private static final Map<StoneGrade, String> STONE_ICON_IDS = Map.of(
+            StoneGrade.LOW, "rustport:low_stone_icon",
+            StoneGrade.MIDDLE, "rustport:mid_stone_icon",
+            StoneGrade.HIGH, "rustport:high_stone_icon"
     );
 
     private final Inventory inventory;
@@ -286,7 +291,7 @@ public final class EnhancementGui implements InventoryHolder {
      * 강화석 칸: 이번 강화에 필요한 등급의 강화석 아이콘과 필요/보유 수량. (강화석은 재화라 칸에 넣지 않는다)
      */
     private ItemStack createStoneInfo(EnhancementItem.EnhancementTier tier) {
-        EnhancementItem.StoneGrade grade = tier.stoneGrade();
+        StoneGrade grade = tier.stoneGrade();
         long balance = wallet.get(ownerId, grade);
         boolean enough = balance >= tier.stoneCost();
 

@@ -1,4 +1,4 @@
-package com.rustport.enhancement;
+package com.brassfield.common;
 
 /**
  * ItemsAdder 리소스팩에 들어 있는 공백 이동 글자(Negative Space Font 규격)로 가로 이동 문자열을 만든다.

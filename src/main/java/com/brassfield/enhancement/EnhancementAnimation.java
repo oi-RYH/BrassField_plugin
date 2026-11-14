@@ -1,5 +1,6 @@
-package com.rustport.enhancement;
+package com.brassfield.enhancement;
 
+import com.brassfield.common.ItemDelivery;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
@@ -9,6 +10,7 @@ import org.bukkit.entity.Display;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
@@ -27,10 +29,10 @@ public final class EnhancementAnimation {
     private static final int UPDATE_INTERVAL_TICKS = 2;
     private static final double DISPLAY_DISTANCE = 1.3;
 
-    private final EnhancementPlugin plugin;
+    private final JavaPlugin plugin;
     private final Map<UUID, ActiveAnimation> activeAnimations = new HashMap<>();
 
-    public EnhancementAnimation(EnhancementPlugin plugin) {
+    public EnhancementAnimation(JavaPlugin plugin) {
         this.plugin = plugin;
     }
 

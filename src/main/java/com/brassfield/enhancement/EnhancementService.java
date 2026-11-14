@@ -1,4 +1,4 @@
-package com.rustport.enhancement;
+package com.brassfield.enhancement;
 
 import org.bukkit.inventory.ItemStack;
 

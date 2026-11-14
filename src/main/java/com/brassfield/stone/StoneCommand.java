@@ -1,5 +1,7 @@
-package com.rustport.enhancement;
+package com.brassfield.stone;
 
+import com.brassfield.common.ItemDelivery;
+import com.brassfield.common.ItemsAdderItemProvider;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -22,7 +24,7 @@ import java.util.UUID;
  */
 public final class StoneCommand implements TabExecutor {
 
-    public static final String ADMIN_PERMISSION = "rustport.stone.admin";
+    public static final String ADMIN_PERMISSION = "brassfield.stone.admin";
 
     private static final List<String> ADMIN_SUBCOMMANDS = List.of("확인", "지급", "차감", "설정", "상자");
     private static final List<String> GRADE_NAMES = List.of("하급", "중급", "상급");
@@ -79,7 +81,7 @@ public final class StoneCommand implements TabExecutor {
             return;
         }
         OfflinePlayer target = findPlayer(sender, args[1]);
-        EnhancementItem.StoneGrade grade = parseGrade(sender, args[2]);
+        StoneGrade grade = parseGrade(sender, args[2]);
         Long amount = parseAmount(sender, args[3], subcommand.equals("설정") ? 0 : 1);
         if (target == null || grade == null || amount == null) {
             return;
@@ -112,7 +114,7 @@ public final class StoneCommand implements TabExecutor {
             error(sender, "접속 중인 플레이어를 찾을 수 없습니다: " + args[1]);
             return;
         }
-        EnhancementItem.StoneGrade grade = parseGrade(sender, args[2]);
+        StoneGrade grade = parseGrade(sender, args[2]);
         Long count = args.length == 4 ? parseAmount(sender, args[3], 1) : Long.valueOf(1);
         if (grade == null || count == null) {
             return;
@@ -137,7 +139,7 @@ public final class StoneCommand implements TabExecutor {
 
     private void sendBalances(CommandSender sender, UUID playerId, String owner) {
         sender.sendMessage(Component.text(owner + " 강화석 보유량", NamedTextColor.YELLOW));
-        for (EnhancementItem.StoneGrade grade : EnhancementItem.StoneGrade.values()) {
+        for (StoneGrade grade : StoneGrade.values()) {
             if (!grade.isCurrency()) {
                 continue;
             }
@@ -165,8 +167,8 @@ public final class StoneCommand implements TabExecutor {
         return cached;
     }
 
-    private EnhancementItem.StoneGrade parseGrade(CommandSender sender, String name) {
-        EnhancementItem.StoneGrade grade = EnhancementItem.StoneGrade.fromDisplayName(name);
+    private StoneGrade parseGrade(CommandSender sender, String name) {
+        StoneGrade grade = StoneGrade.fromDisplayName(name);
         if (grade == null) {
             error(sender, "강화석 등급은 하급, 중급, 상급 중 하나여야 합니다: " + name);
         }
