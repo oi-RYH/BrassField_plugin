@@ -1,0 +1,40 @@
+# info:
+#   namespace: customfood
+# categories:
+#   armors:
+#     enabled: true
+#     icon: "itemsadder:ruby_head"
+#     name: 'Armors'
+#     permission: "ia.memu.armors"
+
+#     font_image:
+#       name: "mcguis:blank_memu"
+#       x_position_pixels: -16
+    
+#     title_position_pixels: 0
+#     items:
+#       - "itemsadder:ruby_sword"
+#       - "itemsadder:ruby_head"
+#       - "itemsadder:ruby_chest"
+#       - "itemsadder:ruby_legs"
+#       - "itemsadder:ruby_boots"
+#       - "itemsadder:spinel_haed"
+#       - "itemsadder:spinel_chest"
+#       - "itemsadder:spinel_legs"
+
+info:
+  namespace: customfood
+categories:
+  foods:
+    enabled: true
+    icon: "customfood:orange"
+    name: 'food'
+    permission: "ia.customfood.foods"
+
+    font_image:
+      name: "customfood:food_main"
+      x_position_pixels: -16
+    
+    # title_position_pixels: 0
+    items:
+      - "customfood:orange"

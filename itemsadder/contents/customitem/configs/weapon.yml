@@ -1,0 +1,59 @@
+info:
+  namespace: customitem
+
+items:  
+  stick:
+    display_name: 길에서 얻은 나뭇가지
+    resource:
+      generate: false
+      material: STICK
+      model_path: customitem:weapon/stick
+
+  broken_wooden_sword:
+    display_name: 부서진 목검
+    resource:
+      generate: false
+      material: WOODEN_SWORD
+      model_path: customitem:weapon/broken_wooden_sword
+
+  wooden_sword:
+    display_name: 목검
+    resource:
+      generate: false
+      material: WOODEN_SWORD
+      model_path: customitem:weapon/wooden_sword
+
+  stone_sword:
+    display_name: 돌검
+    resource:
+      generate: false
+      material: STONE_SWORD
+      model_path: customitem:weapon/stone_sword
+    
+  iron_sword:
+    display_name: 철검
+    resource:
+      generate: false
+      material: IRON_SWORD
+      model_path: customitem:weapon/iron_sword
+
+  knight_sword:
+    display_name: 기사의 검
+    resource:
+      generate: false
+      material: IRON_SWORD
+      model_path: customitem:weapon/knight_sword
+
+  hero_sword:
+    display_name: 영웅의 검
+    resource:
+      generate: false
+      material: IRON_SWORD
+      model_path: customitem:weapon/hero_sword
+
+  master_sword:
+    display_name: 마스터소드
+    resource:
+      generate: false
+      material: IRON_SWORD
+      model_path: customitem:weapon/master_sword

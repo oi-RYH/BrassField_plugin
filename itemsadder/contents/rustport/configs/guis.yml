@@ -1,0 +1,8 @@
+info:
+  namespace: rustport
+font_images:
+  enhance_bg:
+    path: gui/enhance_bg
+    suggest_in_command: false
+    scale_ratio: 256
+    y_position: 13

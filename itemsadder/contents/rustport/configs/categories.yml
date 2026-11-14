@@ -1,0 +1,17 @@
+info:
+  namespace: rustport
+categories:
+  enhancement:
+    enabled: true
+    icon: "rustport:low_enhancement_chest"
+    name: '강화'
+    permission: "ia.rustport.enhancement"
+
+    font_image:
+      name: "rustport:enhance_bg"
+      x_position_pixels: -16
+
+    items:
+      - "rustport:low_enhancement_chest"
+      - "rustport:mid_enhancement_chest"
+      - "rustport:high_enhancement_chest"

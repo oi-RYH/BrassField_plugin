@@ -1,0 +1,19 @@
+info:
+  namespace: customitem
+
+categories:
+  customitems:
+    enabled: true
+    icon: "customitem:stick"
+    name: "커스텀 무기"
+    # permission: "ia.customitem.customitems"
+
+    items:
+      - "customitem:stick"
+      - "customitem:broken_wooden_sword"
+      - "customitem:wooden_sword"
+      - "customitem:stone_sword"
+      - "customitem:iron_sword"
+      - "customitem:knight_sword"
+      - "customitem:hero_sword"
+      - "customitem:master_sword"

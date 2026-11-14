@@ -1,0 +1,7 @@
+info:
+  namespace: customfood
+font_images:
+  food_main:
+    path: gui/food_main
+    suggest_in_command: false
+    y_position: 47

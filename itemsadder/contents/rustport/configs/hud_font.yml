@@ -1,0 +1,117 @@
+info:
+  namespace: rustport
+
+# 재화 사이드바에 쓰는 글꼴 이미지 (BrassField CurrencySidebar).
+# y_position = 글자 줄 기준 위로 올라가는 높이(px). 판은 사이드바 제목 줄에서 아래로 늘어뜨려 전체를 덮는다.
+font_images:
+  hud_panel:
+    path: font/hud/panel
+    suggest_in_command: false
+    scale_ratio: 58
+    y_position: 14
+  hud_coin:
+    path: font/hud/coin
+    suggest_in_command: false
+    scale_ratio: 9
+    y_position: 7
+  hud_gem_low:
+    path: font/hud/gem_low
+    suggest_in_command: false
+    scale_ratio: 9
+    y_position: 7
+  hud_gem_mid:
+    path: font/hud/gem_mid
+    suggest_in_command: false
+    scale_ratio: 9
+    y_position: 7
+  hud_gem_high:
+    path: font/hud/gem_high
+    suggest_in_command: false
+    scale_ratio: 9
+    y_position: 7
+  # 숫자·점은 강화 GUI 글자 보드의 그림을 재사용, 단위 글자(K M B T Q E)는 font/hud
+  hud_char_0030:
+    path: font/board/u_0030
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: 6
+  hud_char_0031:
+    path: font/board/u_0031
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: 6
+  hud_char_0032:
+    path: font/board/u_0032
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: 6
+  hud_char_0033:
+    path: font/board/u_0033
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: 6
+  hud_char_0034:
+    path: font/board/u_0034
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: 6
+  hud_char_0035:
+    path: font/board/u_0035
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: 6
+  hud_char_0036:
+    path: font/board/u_0036
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: 6
+  hud_char_0037:
+    path: font/board/u_0037
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: 6
+  hud_char_0038:
+    path: font/board/u_0038
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: 6
+  hud_char_0039:
+    path: font/board/u_0039
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: 6
+  hud_char_002e:
+    path: font/board/u_002e
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: 6
+  hud_char_004b:
+    path: font/hud/u_004b
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: 6
+  hud_char_004d:
+    path: font/hud/u_004d
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: 6
+  hud_char_0042:
+    path: font/hud/u_0042
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: 6
+  hud_char_0054:
+    path: font/hud/u_0054
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: 6
+  hud_char_0051:
+    path: font/hud/u_0051
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: 6
+  hud_char_0045:
+    path: font/hud/u_0045
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: 6

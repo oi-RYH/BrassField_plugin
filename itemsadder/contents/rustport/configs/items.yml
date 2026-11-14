@@ -1,0 +1,65 @@
+info:
+  namespace: rustport
+
+items:
+  low_enhancement_chest:
+    display_name: "하급 강화석 상자"
+    lore:
+      - "&7우클릭하면 하급 강화석 3~5개를 얻습니다."
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/low_enhancement_chest
+
+  mid_enhancement_chest:
+    display_name: "중급 강화석 상자"
+    lore:
+      - "&7우클릭하면 중급 강화석 3~5개를 얻습니다."
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/mid_enhancement_chest
+
+  high_enhancement_chest:
+    display_name: "상급 강화석 상자"
+    lore:
+      - "&7우클릭하면 상급 강화석 3~5개를 얻습니다."
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/high_enhancement_chest
+  # 강화 GUI 강화석 칸·강화석 상점 표시용 아이콘 (실제로 쓰이는 아이템이 아님). 그림은 BrassField tools/hud/make_hud.py 로 생성
+  low_stone_icon:
+    display_name: "하급 강화석"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/stone_icon_low
+  mid_stone_icon:
+    display_name: "중급 강화석"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/stone_icon_mid
+  high_stone_icon:
+    display_name: "상급 강화석"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/stone_icon_high
+  # 강화 GUI의 버튼/정보 칸에 쓰는 투명 아이템 (배경 그림만 보이고 툴팁은 유지)
+  gui_blank:
+    display_name: " "
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - gui/blank
+# enhance_bg는 실제 아이템이 아니라 GUI 배경이므로 font_images로 등록합니다.
+# -> configs/guis.yml 참고

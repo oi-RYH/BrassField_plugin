@@ -1,0 +1,11 @@
+info:
+  namespace: customfood
+items:
+  orange:
+    enabled: true
+    display_name: "%#ffad33%&l오렌지"
+    resource:
+      material: APPLE
+      generate: true
+      textures:
+        - fruit/orange

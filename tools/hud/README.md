@@ -18,3 +18,5 @@ python3 -I tools/hud/make_hud.py $T/font/hud/ $T/item/
 
 동전(`coin.png`)은 따로 그린 그림이라 이 스크립트가 만들지 않는다.
 그림 크기를 바꾸면 `CurrencySidebar`의 좌표 상수와 ItemsAdder `rustport/configs/hud_font.yml`의 `scale_ratio`·`y_position`도 함께 맞춘다.
+
+만든 그림은 `tools/itemsadder/backup.sh`로 저장소의 `itemsadder/`에 백업한다.

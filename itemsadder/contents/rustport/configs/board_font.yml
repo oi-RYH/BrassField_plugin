@@ -1,0 +1,485 @@
+info:
+  namespace: rustport
+
+# 자동 생성 파일 (gen_board_font.py) — 강화 GUI 글자 보드용 글자. 직접 수정하지 말 것.
+font_images:
+  bf1_0025:
+    path: font/board/u_0025
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_002b:
+    path: font/board/u_002b
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_002e:
+    path: font/board/u_002e
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_0030:
+    path: font/board/u_0030
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_0031:
+    path: font/board/u_0031
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_0032:
+    path: font/board/u_0032
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_0033:
+    path: font/board/u_0033
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_0034:
+    path: font/board/u_0034
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_0035:
+    path: font/board/u_0035
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_0036:
+    path: font/board/u_0036
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_0037:
+    path: font/board/u_0037
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_0038:
+    path: font/board/u_0038
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_0039:
+    path: font/board/u_0039
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_2192:
+    path: font/board/u_2192
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_ac00:
+    path: font/board/u_ac00
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_ac15:
+    path: font/board/u_ac15
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_acc4:
+    path: font/board/u_acc4
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_ace0:
+    path: font/board/u_ace0
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_acf5:
+    path: font/board/u_acf5
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_b123:
+    path: font/board/u_b123
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_b2e8:
+    path: font/board/u_b2e8
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_b97c:
+    path: font/board/u_b97c
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_bd88:
+    path: font/board/u_bd88
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_be44:
+    path: font/board/u_be44
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_c131:
+    path: font/board/u_c131
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_c138:
+    path: font/board/u_c138
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_c5b4:
+    path: font/board/u_c5b4
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_c694:
+    path: font/board/u_c694
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_c7a5:
+    path: font/board/u_c7a5
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_c8fc:
+    path: font/board/u_c8fc
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_cd5c:
+    path: font/board/u_cd5c
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf1_d654:
+    path: font/board/u_d654
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -39
+  bf2_0025:
+    path: font/board/u_0025
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_002b:
+    path: font/board/u_002b
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_002e:
+    path: font/board/u_002e
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_0030:
+    path: font/board/u_0030
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_0031:
+    path: font/board/u_0031
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_0032:
+    path: font/board/u_0032
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_0033:
+    path: font/board/u_0033
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_0034:
+    path: font/board/u_0034
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_0035:
+    path: font/board/u_0035
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_0036:
+    path: font/board/u_0036
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_0037:
+    path: font/board/u_0037
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_0038:
+    path: font/board/u_0038
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_0039:
+    path: font/board/u_0039
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_2192:
+    path: font/board/u_2192
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_ac00:
+    path: font/board/u_ac00
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_ac15:
+    path: font/board/u_ac15
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_acc4:
+    path: font/board/u_acc4
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_ace0:
+    path: font/board/u_ace0
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_acf5:
+    path: font/board/u_acf5
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_b123:
+    path: font/board/u_b123
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_b2e8:
+    path: font/board/u_b2e8
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_b97c:
+    path: font/board/u_b97c
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_bd88:
+    path: font/board/u_bd88
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_be44:
+    path: font/board/u_be44
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_c131:
+    path: font/board/u_c131
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_c138:
+    path: font/board/u_c138
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_c5b4:
+    path: font/board/u_c5b4
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_c694:
+    path: font/board/u_c694
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_c7a5:
+    path: font/board/u_c7a5
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_c8fc:
+    path: font/board/u_c8fc
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_cd5c:
+    path: font/board/u_cd5c
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf2_d654:
+    path: font/board/u_d654
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -48
+  bf3_0025:
+    path: font/board/u_0025
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_002b:
+    path: font/board/u_002b
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_002e:
+    path: font/board/u_002e
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_0030:
+    path: font/board/u_0030
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_0031:
+    path: font/board/u_0031
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_0032:
+    path: font/board/u_0032
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_0033:
+    path: font/board/u_0033
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_0034:
+    path: font/board/u_0034
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_0035:
+    path: font/board/u_0035
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_0036:
+    path: font/board/u_0036
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_0037:
+    path: font/board/u_0037
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_0038:
+    path: font/board/u_0038
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_0039:
+    path: font/board/u_0039
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_2192:
+    path: font/board/u_2192
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_ac00:
+    path: font/board/u_ac00
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_ac15:
+    path: font/board/u_ac15
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_acc4:
+    path: font/board/u_acc4
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_ace0:
+    path: font/board/u_ace0
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_acf5:
+    path: font/board/u_acf5
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_b123:
+    path: font/board/u_b123
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_b2e8:
+    path: font/board/u_b2e8
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_b97c:
+    path: font/board/u_b97c
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_bd88:
+    path: font/board/u_bd88
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_be44:
+    path: font/board/u_be44
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_c131:
+    path: font/board/u_c131
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_c138:
+    path: font/board/u_c138
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_c5b4:
+    path: font/board/u_c5b4
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_c694:
+    path: font/board/u_c694
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_c7a5:
+    path: font/board/u_c7a5
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_c8fc:
+    path: font/board/u_c8fc
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_cd5c:
+    path: font/board/u_cd5c
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
+  bf3_d654:
+    path: font/board/u_d654
+    suggest_in_command: false
+    scale_ratio: 8
+    y_position: -44
