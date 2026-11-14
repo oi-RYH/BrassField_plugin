@@ -3,14 +3,25 @@ version: '1.0'
 main: com.brassfield.BrassFieldPlugin
 api-version: '26.1'
 depend: [ItemsAdder]
+softdepend: [Citizens]
 
 commands:
   강화:
     description: 강화 GUI를 엽니다.
   강화석:
     description: 강화석 보유량을 확인합니다. (관리자는 지급·차감·설정·상자 지급)
+  골드:
+    description: 골드를 확인합니다. (관리자는 지급·차감·설정)
+  상점:
+    description: (관리자) 강화석 상점을 엽니다.
 
 permissions:
   brassfield.stone.admin:
     description: 강화석 지급·차감·설정과 강화석 상자 지급
+    default: op
+  brassfield.gold.admin:
+    description: 골드 확인·지급·차감·설정
+    default: op
+  brassfield.shop.admin:
+    description: NPC 없이 /상점 으로 강화석 상점 열기
     default: op

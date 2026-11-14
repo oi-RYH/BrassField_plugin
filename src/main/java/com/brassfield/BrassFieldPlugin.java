@@ -1,7 +1,11 @@
 package com.brassfield;
 
+import com.brassfield.common.BalanceBook;
 import com.brassfield.common.ItemsAdderGuiBackground;
 import com.brassfield.common.ItemsAdderItemProvider;
+import com.brassfield.common.YamlBalanceStorage;
+import com.brassfield.economy.GoldCommand;
+import com.brassfield.economy.GoldWallet;
 import com.brassfield.enhancement.EnhancementAnimation;
 import com.brassfield.enhancement.EnhancementCommand;
 import com.brassfield.enhancement.EnhancementGui;
@@ -9,10 +13,14 @@ import com.brassfield.enhancement.EnhancementGuiListener;
 import com.brassfield.enhancement.EnhancementItem;
 import com.brassfield.enhancement.EnhancementService;
 import com.brassfield.enhancement.StarterKitListener;
+import com.brassfield.shop.StoneShop;
+import com.brassfield.shop.StoneShopCommand;
+import com.brassfield.shop.StoneShopListener;
+import com.brassfield.shop.StoneShopPrices;
+import com.brassfield.shop.citizens.CitizensShopHook;
 import com.brassfield.stone.StoneChestListener;
 import com.brassfield.stone.StoneCommand;
 import com.brassfield.stone.StoneWallet;
-import com.brassfield.stone.YamlStoneStorage;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
@@ -24,18 +32,21 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 /**
- * BrassField 서버 플러그인. 각 모듈(common·enhancement·stone, 이후 economy 등)을 만들고 연결만 한다.
+ * BrassField 서버 플러그인. 각 모듈(common·enhancement·stone·economy·shop)을 만들고 연결만 한다.
  */
 public class BrassFieldPlugin extends JavaPlugin {
 
     private static final String LEGACY_PLUGIN_NAME = "RustportEnhancement";
 
     private EnhancementAnimation animation;
-    private StoneWallet stoneWallet;
+    private BalanceBook stoneBook;
+    private BalanceBook goldBook;
+    private boolean citizensHooked;
 
     @Override
     public void onEnable() {
         migrateLegacyStoneData();
+        saveDefaultConfig();
 
         ItemsAdderItemProvider itemProvider = new ItemsAdderItemProvider(this);
         ItemsAdderGuiBackground guiBackground = new ItemsAdderGuiBackground(this);
@@ -44,11 +55,26 @@ public class BrassFieldPlugin extends JavaPlugin {
         }
 
         // 강화석
-        stoneWallet = new StoneWallet(new YamlStoneStorage(this), getLogger());
+        stoneBook = new BalanceBook(new YamlBalanceStorage(this, "stones.yml"), getLogger(), "Stone");
+        StoneWallet stoneWallet = new StoneWallet(stoneBook);
         StoneCommand stoneCommand = new StoneCommand(stoneWallet, itemProvider);
         PluginCommand stoneCommandEntry = command("강화석");
         stoneCommandEntry.setExecutor(stoneCommand);
         stoneCommandEntry.setTabCompleter(stoneCommand);
+
+        // 골드
+        goldBook = new BalanceBook(new YamlBalanceStorage(this, "gold.yml"), getLogger(), "Gold");
+        GoldWallet goldWallet = new GoldWallet(goldBook);
+        GoldCommand goldCommand = new GoldCommand(goldWallet);
+        PluginCommand goldCommandEntry = command("골드");
+        goldCommandEntry.setExecutor(goldCommand);
+        goldCommandEntry.setTabCompleter(goldCommand);
+
+        // 강화석 상점
+        StoneShop stoneShop = new StoneShop(
+                goldWallet, stoneWallet, StoneShopPrices.load(getConfig(), getLogger()), itemProvider
+        );
+        command("상점").setExecutor(new StoneShopCommand(stoneShop));
 
         // 강화
         EnhancementItem.init(this);
@@ -62,6 +88,14 @@ public class BrassFieldPlugin extends JavaPlugin {
         ), this);
         pluginManager.registerEvents(new StoneChestListener(itemProvider, stoneWallet), this);
         pluginManager.registerEvents(new StarterKitListener(), this);
+        pluginManager.registerEvents(new StoneShopListener(stoneShop), this);
+
+        if (pluginManager.isPluginEnabled("Citizens")) {
+            CitizensShopHook.register(this, stoneShop);
+            citizensHooked = true;
+        } else {
+            getLogger().warning("Citizens가 없어 강화석 상인 NPC를 쓸 수 없습니다. (/상점 으로만 열 수 있음)");
+        }
 
         getLogger().info("BrassField 플러그인이 로드됐습니다!");
     }
@@ -79,8 +113,14 @@ public class BrassFieldPlugin extends JavaPlugin {
         if (animation != null) {
             animation.shutdown();
         }
-        if (stoneWallet != null) {
-            stoneWallet.shutdown();
+        if (citizensHooked) {
+            CitizensShopHook.unregister();
+        }
+        if (stoneBook != null) {
+            stoneBook.shutdown();
+        }
+        if (goldBook != null) {
+            goldBook.shutdown();
         }
         getLogger().info("BrassField 플러그인이 종료됩니다.");
     }

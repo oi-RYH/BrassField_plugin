@@ -1,4 +1,4 @@
-package com.brassfield.stone;
+package com.brassfield.common;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -10,36 +10,33 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * plugins/BrassField/stones.yml 에 보유량을 저장한다.
+ * plugins/BrassField/&lt;파일&gt; 에 보유량을 저장한다.
  * <pre>
  * players:
  *   &lt;uuid&gt;:
- *     LOW: 12
- *     MIDDLE: 0
- *     HIGH: 3
+ *     &lt;재화 키&gt;: 12
  * </pre>
  */
-public final class YamlStoneStorage implements StoneStorage {
+public final class YamlBalanceStorage implements BalanceStorage {
 
     private static final String ROOT = "players";
 
     private final JavaPlugin plugin;
     private final File file;
 
-    public YamlStoneStorage(JavaPlugin plugin) {
+    public YamlBalanceStorage(JavaPlugin plugin, String fileName) {
         this.plugin = plugin;
-        this.file = new File(plugin.getDataFolder(), "stones.yml");
+        this.file = new File(plugin.getDataFolder(), fileName);
     }
 
     @Override
-    public Map<UUID, EnumMap<StoneGrade, Long>> loadAll() {
-        Map<UUID, EnumMap<StoneGrade, Long>> result = new HashMap<>();
+    public Map<UUID, Map<String, Long>> loadAll() {
+        Map<UUID, Map<String, Long>> result = new HashMap<>();
         if (!file.exists()) {
             return result;
         }
@@ -55,15 +52,17 @@ public final class YamlStoneStorage implements StoneStorage {
             try {
                 playerId = UUID.fromString(key);
             } catch (IllegalArgumentException exception) {
-                plugin.getLogger().warning("stones.yml에 잘못된 UUID가 있어 건너뜁니다: " + key);
+                plugin.getLogger().warning(file.getName() + "에 잘못된 UUID가 있어 건너뜁니다: " + key);
                 continue;
             }
 
-            EnumMap<StoneGrade, Long> balances = new EnumMap<>(StoneGrade.class);
-            for (StoneGrade grade : StoneGrade.values()) {
-                if (grade.isCurrency()) {
-                    balances.put(grade, Math.max(0L, players.getLong(key + "." + grade.name())));
-                }
+            ConfigurationSection section = players.getConfigurationSection(key);
+            if (section == null) {
+                continue;
+            }
+            Map<String, Long> balances = new HashMap<>();
+            for (String currency : section.getKeys(false)) {
+                balances.put(currency, Math.max(0L, section.getLong(currency)));
             }
             result.put(playerId, balances);
         }
@@ -71,10 +70,10 @@ public final class YamlStoneStorage implements StoneStorage {
     }
 
     @Override
-    public void saveAll(Map<UUID, EnumMap<StoneGrade, Long>> snapshot) {
+    public void saveAll(Map<UUID, Map<String, Long>> snapshot) {
         YamlConfiguration yaml = new YamlConfiguration();
         snapshot.forEach((playerId, balances) ->
-                balances.forEach((grade, amount) -> yaml.set(ROOT + "." + playerId + "." + grade.name(), amount))
+                balances.forEach((currency, amount) -> yaml.set(ROOT + "." + playerId + "." + currency, amount))
         );
 
         try {
@@ -85,7 +84,7 @@ public final class YamlStoneStorage implements StoneStorage {
             Files.writeString(temp, yaml.saveToString(), StandardCharsets.UTF_8);
             Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException exception) {
-            plugin.getLogger().severe("강화석 보유량 저장에 실패했습니다: " + exception);
+            plugin.getLogger().severe(file.getName() + " 저장에 실패했습니다: " + exception);
         }
     }
 }

@@ -51,6 +51,18 @@ public enum StoneGrade {
         return baseCost + extraStart + extraStep * (level - firstLevel);
     }
 
+    /**
+     * GUI에 강화석을 보여줄 때 쓰는 ItemsAdder 표시 전용 아이콘 ID. 재화가 아니면 null.
+     */
+    public String iconItemId() {
+        return switch (this) {
+            case LOW -> "rustport:low_stone_icon";
+            case MIDDLE -> "rustport:mid_stone_icon";
+            case HIGH -> "rustport:high_stone_icon";
+            case END -> null;
+        };
+    }
+
     public static StoneGrade fromDisplayName(String name) {
         for (StoneGrade grade : values()) {
             if (grade.isCurrency() && grade.displayName.equals(name)) {

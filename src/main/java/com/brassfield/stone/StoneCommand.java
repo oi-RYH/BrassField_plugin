@@ -1,5 +1,12 @@
 package com.brassfield.stone;
 
+import static com.brassfield.common.CommandSupport.error;
+import static com.brassfield.common.CommandSupport.filter;
+import static com.brassfield.common.CommandSupport.findPlayer;
+import static com.brassfield.common.CommandSupport.nameOf;
+import static com.brassfield.common.CommandSupport.onlinePlayerNames;
+import static com.brassfield.common.CommandSupport.parseAmount;
+
 import com.brassfield.common.ItemDelivery;
 import com.brassfield.common.ItemsAdderItemProvider;
 import net.kyori.adventure.text.Component;
@@ -12,7 +19,6 @@ import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -155,46 +161,12 @@ public final class StoneCommand implements TabExecutor {
         sender.sendMessage(Component.text("/" + label + " 상자 <플레이어> <하급|중급|상급> [개수]", NamedTextColor.GRAY));
     }
 
-    private OfflinePlayer findPlayer(CommandSender sender, String name) {
-        Player online = Bukkit.getPlayerExact(name);
-        if (online != null) {
-            return online;
-        }
-        OfflinePlayer cached = Bukkit.getOfflinePlayerIfCached(name);
-        if (cached == null) {
-            error(sender, "서버에 접속한 적이 있는 플레이어를 찾을 수 없습니다: " + name);
-        }
-        return cached;
-    }
-
     private StoneGrade parseGrade(CommandSender sender, String name) {
         StoneGrade grade = StoneGrade.fromDisplayName(name);
         if (grade == null) {
             error(sender, "강화석 등급은 하급, 중급, 상급 중 하나여야 합니다: " + name);
         }
         return grade;
-    }
-
-    private Long parseAmount(CommandSender sender, String text, long minimum) {
-        try {
-            long amount = Long.parseLong(text);
-            if (amount < minimum) {
-                error(sender, "수량은 " + minimum + " 이상이어야 합니다: " + text);
-                return null;
-            }
-            return amount;
-        } catch (NumberFormatException exception) {
-            error(sender, "수량은 숫자여야 합니다: " + text);
-            return null;
-        }
-    }
-
-    private static String nameOf(OfflinePlayer player) {
-        return player.getName() == null ? player.getUniqueId().toString() : player.getName();
-    }
-
-    private static void error(CommandSender sender, String message) {
-        sender.sendMessage(Component.text(message, NamedTextColor.RED));
     }
 
     @Override
@@ -209,17 +181,11 @@ public final class StoneCommand implements TabExecutor {
             return List.of();
         }
         if (args.length == 2) {
-            List<String> names = new ArrayList<>();
-            Bukkit.getOnlinePlayers().forEach(player -> names.add(player.getName()));
-            return filter(names, args[1]);
+            return onlinePlayerNames(args[1]);
         }
         if (args.length == 3 && !args[0].equals("확인")) {
             return filter(GRADE_NAMES, args[2]);
         }
         return List.of();
-    }
-
-    private static List<String> filter(List<String> options, String prefix) {
-        return options.stream().filter(option -> option.startsWith(prefix)).toList();
     }
 }

@@ -45,11 +45,6 @@ public final class EnhancementGui implements InventoryHolder {
     private static final int BOARD_CENTER_X = 129;
     private static final Map<String, String> BOARD_GLYPH_CACHE = new ConcurrentHashMap<>();
     private static final String BLANK_ICON_ID = "rustport:gui_blank";
-    private static final Map<StoneGrade, String> STONE_ICON_IDS = Map.of(
-            StoneGrade.LOW, "rustport:low_stone_icon",
-            StoneGrade.MIDDLE, "rustport:mid_stone_icon",
-            StoneGrade.HIGH, "rustport:high_stone_icon"
-    );
 
     private final Inventory inventory;
     private final ItemsAdderGuiBackground guiBackground;
@@ -297,7 +292,7 @@ public final class EnhancementGui implements InventoryHolder {
 
         ItemStack icon = texturedGui == null
                 ? new ItemStack(Material.AMETHYST_SHARD)
-                : EnhancementItem.createCustomOrFallback(STONE_ICON_IDS.get(grade), Material.AMETHYST_SHARD);
+                : EnhancementItem.createCustomOrFallback(grade.iconItemId(), Material.AMETHYST_SHARD);
         ItemMeta meta = icon.getItemMeta();
         meta.displayName(Component.text(grade.displayName() + " 강화석", grade.color()));
         meta.lore(List.of(
