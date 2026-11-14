@@ -1,6 +1,6 @@
 import sys, random; sys.path.insert(0, '.')
 import png
-OUT = sys.argv[1]  # .../textures/font/hud/
+OUT = sys.argv[1]  # .../textures/font/hud/ (사이드바)
 random.seed(7)
 O=(13,10,7,255)
 BR=[(226,179,99,255),(187,127,54,255),(146,83,40,255),(74,43,24,255)]   # brass light→dark
@@ -106,8 +106,15 @@ GEMS = {
                   'L': (255, 240, 160, 255), 'C': (255, 106, 26, 255), 'D': (181, 40, 22, 255),
                   'F': (255, 106, 26, 255), 'S': (226, 121, 82, 255)}),
 }
+ITEM_OUT = sys.argv[2] if len(sys.argv) > 2 else None  # .../textures/item/ (강화 GUI 강화석 칸 아이콘)
 for name, (rows, pal) in GEMS.items():
-    png.write(OUT + name + '.png', [[T if c == '.' else pal[c] for c in row] for row in rows])
+    gem = [[T if c == '.' else pal[c] for c in row] for row in rows]
+    png.write(OUT + name + '.png', gem)
+    if ITEM_OUT:
+        # 아이템 칸용: 상자 그림과 같은 32x32 캔버스에 2배로 키워 가운데 둔다.
+        icon = png.blank(32, 32)
+        png.paste(icon, png.scale(gem, 2), 7, 7)
+        png.write(ITEM_OUT + name.replace('gem_', 'stone_icon_') + '.png', icon)
 
 W = (255, 255, 255, 255)
 LETTERS = {

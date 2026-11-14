@@ -49,12 +49,12 @@ public final class CurrencySidebar implements Listener {
     private static final int DIGIT_ADVANCE = 6;
     private static final int DOT_ADVANCE = 2;
 
-    // 숫자 색은 아이콘에 맞춘다: 골드는 밝은 금색, 강화석은 받침·결정 색 (철 → 황동 → 불꽃)
+    // 숫자 색: 골드는 밝은 금색, 강화석은 등급 색(StoneGrade.color)
     private static final List<Line> LINES = List.of(
             new Line("rustport:hud_coin", null, TextColor.color(255, 236, 170), "골드"),
-            new Line("rustport:hud_gem_low", StoneGrade.LOW, TextColor.color(190, 180, 166), "하급"),
-            new Line("rustport:hud_gem_mid", StoneGrade.MIDDLE, TextColor.color(255, 200, 90), "중급"),
-            new Line("rustport:hud_gem_high", StoneGrade.HIGH, TextColor.color(255, 120, 40), "상급")
+            new Line("rustport:hud_gem_low", StoneGrade.LOW, StoneGrade.LOW.color(), "하급"),
+            new Line("rustport:hud_gem_mid", StoneGrade.MIDDLE, StoneGrade.MIDDLE.color(), "중급"),
+            new Line("rustport:hud_gem_high", StoneGrade.HIGH, StoneGrade.HIGH.color(), "상급")
     );
 
     private final JavaPlugin plugin;

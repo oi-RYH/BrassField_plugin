@@ -7,6 +7,7 @@ import io.papermc.paper.datacomponent.item.ItemAttributeModifiers;
 import io.papermc.paper.datacomponent.item.attribute.AttributeModifierDisplay;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
@@ -154,7 +155,7 @@ public final class EnhancementItem {
         );
     }
 
-    private static Component loreLine(String label, String value, NamedTextColor valueColor) {
+    private static Component loreLine(String label, String value, TextColor valueColor) {
         return Component.text(label, NamedTextColor.GRAY).append(Component.text(value, valueColor));
     }
 
