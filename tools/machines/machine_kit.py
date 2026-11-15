@@ -251,10 +251,13 @@ def project(view, scale=4):
     """정면(north) 또는 옆면(east)을 플레이어가 보는 방향 그대로 평면 합성한다. (회전 큐브는 회전 없이 그림)
     정면: 모델 x가 클수록 화면 왼쪽 / 옆면(동쪽에서 서쪽을 봄): 앞(z 작음)이 화면 오른쪽"""
     xs = [v for e in elements for v in (e["from"][0], e["to"][0])]
+    ys = [v for e in elements for v in (e["from"][1], e["to"][1])]
     zs = [v for e in elements for v in (e["from"][2], e["to"][2])]
     x_min, x_max, z_min, z_max = min(xs), max(xs), min(zs), max(zs)
+    y_top = max(32, max(ys))
+    height = y_top - min(0, min(ys))
     width = (x_max - x_min) if view == "north" else (z_max - z_min)
-    img = [[rgb(70, 92, 110)] * int(math.ceil(width * scale)) for _ in range(32 * scale)]
+    img = [[rgb(70, 92, 110)] * int(math.ceil(width * scale)) for _ in range(int(math.ceil(height * scale)))]
     if view == "north":
         order = sorted(elements, key=lambda e: -e["from"][2])
         span = lambda e: (x_max - e["to"][0], x_max - e["from"][0])
@@ -269,7 +272,7 @@ def project(view, scale=4):
         px0, py0, px1, py1 = u0 / S, v0 / S, u1 / S, v1 / S
         a, b = span(e)
         x0, x1 = int(round(a * scale)), int(round(b * scale))
-        y0, y1 = int(round((32 - e["to"][1]) * scale)), int(round((32 - e["from"][1]) * scale))
+        y0, y1 = int(round((y_top - e["to"][1]) * scale)), int(round((y_top - e["from"][1]) * scale))
         shade = 1.0 if view == "north" else 0.82
         for y in range(y0, y1):
             for x in range(x0, x1):

@@ -1,6 +1,6 @@
 import zlib,struct
 def read(path):
-    data=open(path,'rb').read(); assert data[:8]==b'\x89PNG\r\n\x1a\n'
+    data=path if isinstance(path,(bytes,bytearray)) else open(path,'rb').read(); assert data[:8]==b'\x89PNG\r\n\x1a\n'
     i=8; idat=b''; plte=None; trns=None
     while i<len(data):
         n=struct.unpack('>I',data[i:i+4])[0]; t=data[i+4:i+8]; d=data[i+8:i+8+n]; i+=12+n
@@ -8,8 +8,28 @@ def read(path):
         elif t==b'PLTE': plte=[tuple(d[j:j+3]) for j in range(0,len(d),3)]
         elif t==b'tRNS': trns=d
         elif t==b'IDAT': idat+=d
-    assert bd==8 and il==0, (bd,il)
-    ch={6:4,2:3,3:1,0:1,4:2}[ct]; raw=zlib.decompress(idat); stride=w*ch; px=[]; prev=bytearray(stride); p=0
+    assert il==0 and (bd==8 or (bd<8 and ct in (0,3))), (bd,il)
+    ch={6:4,2:3,3:1,0:1,4:2}[ct]; raw=zlib.decompress(idat); px=[]; p=0
+    if bd<8:  # 팔레트·회색 1/2/4비트: 한 줄을 바이트 단위로 필터를 풀고 비트를 나눈다
+        stride=(w*bd+7)//8; prev=bytearray(stride)
+        for y in range(h):
+            f=raw[p]; p+=1; line=bytearray(raw[p:p+stride]); p+=stride
+            for x in range(stride):
+                a=line[x-1] if x>=1 else 0; b=prev[x]; c=prev[x-1] if x>=1 else 0
+                if f==1: line[x]=(line[x]+a)&255
+                elif f==2: line[x]=(line[x]+b)&255
+                elif f==3: line[x]=(line[x]+((a+b)>>1))&255
+                elif f==4:
+                    pa,pb,pc=abs(b-c),abs(a-c),abs(a+b-2*c)
+                    pr=a if pa<=pb and pa<=pc else (b if pb<=pc else c); line[x]=(line[x]+pr)&255
+            prev=line; row=[]; per=8//bd; mask=(1<<bd)-1
+            for x in range(w):
+                v=(line[x//per]>>(8-bd*(x%per+1)))&mask
+                if ct==3: row.append(plte[v]+((trns[v] if trns and v<len(trns) else 255),))
+                else: g=v*255//mask; row.append((g,g,g,255))
+            px.append(row)
+        return px
+    stride=w*ch; prev=bytearray(stride)
     for y in range(h):
         f=raw[p]; p+=1; line=bytearray(raw[p:p+stride]); p+=stride
         for x in range(stride):
