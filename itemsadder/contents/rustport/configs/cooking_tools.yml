@@ -1,0 +1,167 @@
+info:
+  namespace: rustport
+
+# 개인 요리 기기 6종 (플레이어가 각자 설치·회수, 빨간 표시 없음). 기능(레시피·GUI)은 다음 단계에서 연결한다.
+# 모델·텍스처: BrassField tools/machines/make_cooking_tools.py (바닥 1칸, 높이 2블록 이하, 키우지 않음: 1픽셀 = 1/16 블록)
+items:
+  mill:
+    display_name: "제분기"
+    lore:
+      - "&7곡물을 가루(밀가루 등)로 가공합니다."
+      - "&8개인 요리 기기 (누구나 설치·회수)"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/cooking/mill
+    behaviours:
+      furniture:
+        entity: item_display
+        opposite_direction: true
+        display_transformation:
+          translation:
+            y: 0.5
+        solid: true
+        cancel_drop: false
+        hitbox:
+          length: 1
+          width: 1
+          height: 2
+        placeable_on:
+          floor: true
+          walls: false
+          ceiling: false
+
+  juicer:
+    display_name: "착즙기"
+    lore:
+      - "&7과일이나 작물에서 즙을 추출합니다."
+      - "&8개인 요리 기기 (누구나 설치·회수)"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/cooking/juicer
+    behaviours:
+      furniture:
+        entity: item_display
+        opposite_direction: true
+        display_transformation:
+          translation:
+            y: 0.5
+        solid: true
+        cancel_drop: false
+        hitbox:
+          length: 1
+          width: 1
+          height: 2
+        placeable_on:
+          floor: true
+          walls: false
+          ceiling: false
+
+  fermenter:
+    display_name: "발효조"
+    lore:
+      - "&7재료를 발효해 특수 식재료(치즈, 요거트 등)를 만듭니다."
+      - "&8개인 요리 기기 (누구나 설치·회수)"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/cooking/fermenter
+    behaviours:
+      furniture:
+        entity: item_display
+        opposite_direction: true
+        display_transformation:
+          translation:
+            y: 0.5
+        solid: true
+        cancel_drop: false
+        hitbox:
+          length: 1
+          width: 1
+          height: 2
+        placeable_on:
+          floor: true
+          walls: false
+          ceiling: false
+
+  smoker:
+    display_name: "훈연기"
+    lore:
+      - "&7고기나 생선을 훈연해 보존식과 특수 요리를 만듭니다."
+      - "&8개인 요리 기기 (누구나 설치·회수)"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/cooking/smoker
+    behaviours:
+      furniture:
+        entity: item_display
+        opposite_direction: true
+        display_transformation:
+          translation:
+            y: 0.5
+        solid: true
+        cancel_drop: false
+        hitbox:
+          length: 1
+          width: 1
+          height: 2
+        placeable_on:
+          floor: true
+          walls: false
+          ceiling: false
+
+  kettle:
+    display_name: "대형 솥"
+    lore:
+      - "&7수프, 스튜 등 대량 요리를 조리합니다."
+      - "&8개인 요리 기기 (누구나 설치·회수)"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/cooking/kettle
+    behaviours:
+      furniture:
+        entity: item_display
+        opposite_direction: true
+        display_transformation:
+          translation:
+            y: 0.5
+        solid: true
+        cancel_drop: false
+        hitbox:
+          length: 1
+          width: 1
+          height: 2
+        placeable_on:
+          floor: true
+          walls: false
+          ceiling: false
+
+  oven:
+    display_name: "제빵 오븐"
+    lore:
+      - "&7빵, 파이 등 베이킹 요리를 구워냅니다."
+      - "&8개인 요리 기기 (누구나 설치·회수)"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/cooking/oven
+    behaviours:
+      furniture:
+        entity: item_display
+        opposite_direction: true
+        display_transformation:
+          translation:
+            y: 0.5
+        solid: true
+        cancel_drop: false
+        hitbox:
+          length: 1
+          width: 1
+          height: 2
+        placeable_on:
+          floor: true
+          walls: false
+          ceiling: false

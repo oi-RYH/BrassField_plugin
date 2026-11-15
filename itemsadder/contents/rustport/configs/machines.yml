@@ -105,3 +105,32 @@ items:
       material: PAPER
       generate: false
       model_path: machine/machine_marker
+
+  # 종합 조리대 (요리 기계). 모델: BrassField tools/machines/make_cooking_station.py
+  # ID는 처음 임시로 설치했던 이름(steam_cooker)을 그대로 쓴다 (이미 설치한 가구가 깨지지 않게)
+  steam_cooker:
+    display_name: "조리대"
+    lore:
+      - "&7개인 요리 기기 (누구나 설치·회수)"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/cooking_station
+    behaviours:
+      furniture:
+        entity: item_display
+        opposite_direction: true
+        # 조리대: 앞면 3 x 옆면 1 x 높이 2블록을 키우지 않고 그대로 (텍스처 1픽셀 = 1/16 블록). 설치한 블록이 가운데 칸.
+        display_transformation:
+          translation:
+            y: 0.5
+        solid: true
+        cancel_drop: false
+        hitbox:
+          length: 1
+          width: 3
+          height: 2
+        placeable_on:
+          floor: true
+          walls: false
+          ceiling: false
