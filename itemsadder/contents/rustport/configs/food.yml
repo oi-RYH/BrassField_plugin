@@ -1,0 +1,180 @@
+info:
+  namespace: rustport
+
+# 첫 요리 세트 (tools/cooking/make_dishes.py 로 생성, 직접 수정하지 말 것)
+# 회복량(배고픔·포만감): 초간단 4·3 / 간단 6·6 / 중급 8·10 / 복잡 10·14. 중간 재료는 먹을 수 없다.
+items:
+  cooked_rice:
+    display_name: "익힌 밥"
+    lore:
+      - "&7초간단 요리"
+    graphics:
+      model: item/food/cooked_rice
+      icon: item/food/cooked_rice
+    consumable:
+      nutrition: 4
+      saturation: 3
+
+  salmon_sushi:
+    display_name: "연어 초밥"
+    lore:
+      - "&7초간단 요리"
+    graphics:
+      model: item/food/salmon_sushi
+      icon: item/food/salmon_sushi
+    consumable:
+      nutrition: 4
+      saturation: 3
+
+  cabbage_wrap:
+    display_name: "양배추 쌈"
+    lore:
+      - "&7초간단 요리"
+    graphics:
+      model: item/food/cabbage_wrap
+      icon: item/food/cabbage_wrap
+    consumable:
+      nutrition: 4
+      saturation: 3
+
+  honey_cookie:
+    display_name: "꿀 쿠키"
+    lore:
+      - "&7초간단 요리"
+    graphics:
+      model: item/food/honey_cookie
+      icon: item/food/honey_cookie
+    consumable:
+      nutrition: 4
+      saturation: 3
+
+  kimbap:
+    display_name: "김밥"
+    lore:
+      - "&7간단 요리"
+    graphics:
+      model: item/food/kimbap
+      icon: item/food/kimbap
+    consumable:
+      nutrition: 6
+      saturation: 6
+
+  mushroom_fried_rice:
+    display_name: "버섯볶음밥"
+    lore:
+      - "&7간단 요리"
+    graphics:
+      model: item/food/mushroom_fried_rice
+      icon: item/food/mushroom_fried_rice
+    consumable:
+      nutrition: 6
+      saturation: 6
+
+  meatball_pasta:
+    display_name: "미트볼 파스타"
+    lore:
+      - "&7중급 요리"
+    graphics:
+      model: item/food/meatball_pasta
+      icon: item/food/meatball_pasta
+    consumable:
+      nutrition: 8
+      saturation: 10
+
+  ratatouille:
+    display_name: "라타투이"
+    lore:
+      - "&7중급 요리"
+    graphics:
+      model: item/food/ratatouille
+      icon: item/food/ratatouille
+    consumable:
+      nutrition: 8
+      saturation: 10
+
+  chicken_soup:
+    display_name: "치킨 수프"
+    lore:
+      - "&7중급 요리"
+    graphics:
+      model: item/food/chicken_soup
+      icon: item/food/chicken_soup
+    consumable:
+      nutrition: 8
+      saturation: 10
+
+  fried_rice:
+    display_name: "볶음밥"
+    lore:
+      - "&7중급 요리"
+    graphics:
+      model: item/food/fried_rice
+      icon: item/food/fried_rice
+    consumable:
+      nutrition: 8
+      saturation: 10
+
+  dumplings:
+    display_name: "만두"
+    lore:
+      - "&7중급 요리"
+    graphics:
+      model: item/food/dumplings
+      icon: item/food/dumplings
+    consumable:
+      nutrition: 8
+      saturation: 10
+
+  vegetable_soup:
+    display_name: "야채 수프"
+    lore:
+      - "&7복잡 요리"
+    graphics:
+      model: item/food/vegetable_soup
+      icon: item/food/vegetable_soup
+    consumable:
+      nutrition: 10
+      saturation: 14
+
+  hamburger:
+    display_name: "햄버거"
+    lore:
+      - "&7복잡 요리"
+    graphics:
+      model: item/food/hamburger
+      icon: item/food/hamburger
+    consumable:
+      nutrition: 10
+      saturation: 14
+
+  dough:
+    display_name: "반죽"
+    lore:
+      - "&7요리 재료"
+    graphics:
+      model: item/food/dough
+      icon: item/food/dough
+
+  noodles:
+    display_name: "면"
+    lore:
+      - "&7요리 재료"
+    graphics:
+      model: item/food/noodles
+      icon: item/food/noodles
+
+  tomato_sauce:
+    display_name: "토마토소스"
+    lore:
+      - "&7요리 재료"
+    graphics:
+      model: item/food/tomato_sauce
+      icon: item/food/tomato_sauce
+
+  patty:
+    display_name: "패티"
+    lore:
+      - "&7요리 재료"
+    graphics:
+      model: item/food/patty
+      icon: item/food/patty
