@@ -1,0 +1,268 @@
+info:
+  namespace: rustport
+
+# BrassField 자체 작물 (tools/crops/make_crops.py 로 생성, 직접 수정하지 말 것)
+items:
+  rice_seeds:
+    display_name: "쌀 씨앗"
+    resource:
+      generate: true
+      material: PAPER
+      textures:
+        - item/crop/rice/rice_seeds
+
+  rice:
+    display_name: "쌀"
+    resource:
+      generate: true
+      material: APPLE
+      textures:
+        - item/crop/rice/rice
+
+  rice_silver_star:
+    display_name: "쌀 (은별)"
+    resource:
+      generate: true
+      material: APPLE
+      textures:
+        - item/crop/rice/rice_silver_star
+
+  rice_golden_star:
+    display_name: "쌀 (금별)"
+    resource:
+      generate: true
+      material: APPLE
+      textures:
+        - item/crop/rice/rice_golden_star
+
+  rice_stage_1:
+    display_name: "쌀 (1단계)"
+    resource:
+      generate: false
+      material: PAPER
+      model_path: block/crop/rice/stage_1
+    specific_properties:
+      block:
+        placed_model:
+          type: REAL_WIRE
+          break_particles: BLOCK
+        hardness: 0
+        blast_resistance: 0
+        sound:
+          break:
+            name: block.crop.break
+          place:
+            name: item.crop.plant
+          hit:
+            name: block.grass.hit
+          step:
+            name: block.grass.step
+          fall:
+            name: block.grass.fall
+
+  rice_stage_2:
+    display_name: "쌀 (2단계)"
+    resource:
+      generate: false
+      material: PAPER
+      model_path: block/crop/rice/stage_2
+    specific_properties:
+      block:
+        placed_model:
+          type: REAL_WIRE
+          break_particles: BLOCK
+        hardness: 0
+        blast_resistance: 0
+        sound:
+          break:
+            name: block.crop.break
+          place:
+            name: item.crop.plant
+          hit:
+            name: block.grass.hit
+          step:
+            name: block.grass.step
+          fall:
+            name: block.grass.fall
+
+  rice_stage_3:
+    display_name: "쌀 (3단계)"
+    resource:
+      generate: false
+      material: PAPER
+      model_path: block/crop/rice/stage_3
+    specific_properties:
+      block:
+        placed_model:
+          type: REAL_WIRE
+          break_particles: BLOCK
+        hardness: 0
+        blast_resistance: 0
+        sound:
+          break:
+            name: block.crop.break
+          place:
+            name: item.crop.plant
+          hit:
+            name: block.grass.hit
+          step:
+            name: block.grass.step
+          fall:
+            name: block.grass.fall
+
+  rice_stage_4:
+    display_name: "쌀 (4단계)"
+    resource:
+      generate: false
+      material: PAPER
+      model_path: block/crop/rice/stage_4
+    specific_properties:
+      block:
+        placed_model:
+          type: REAL_WIRE
+          break_particles: BLOCK
+        hardness: 0
+        blast_resistance: 0
+        sound:
+          break:
+            name: block.crop.break
+          place:
+            name: item.crop.plant
+          hit:
+            name: block.grass.hit
+          step:
+            name: block.grass.step
+          fall:
+            name: block.grass.fall
+
+  onion_seeds:
+    display_name: "양파 씨앗"
+    resource:
+      generate: true
+      material: PAPER
+      textures:
+        - item/crop/onion/onion_seeds
+
+  onion:
+    display_name: "양파"
+    resource:
+      generate: true
+      material: APPLE
+      textures:
+        - item/crop/onion/onion
+
+  onion_silver_star:
+    display_name: "양파 (은별)"
+    resource:
+      generate: true
+      material: APPLE
+      textures:
+        - item/crop/onion/onion_silver_star
+
+  onion_golden_star:
+    display_name: "양파 (금별)"
+    resource:
+      generate: true
+      material: APPLE
+      textures:
+        - item/crop/onion/onion_golden_star
+
+  onion_stage_1:
+    display_name: "양파 (1단계)"
+    resource:
+      generate: false
+      material: PAPER
+      model_path: block/crop/onion/stage_1
+    specific_properties:
+      block:
+        placed_model:
+          type: REAL_WIRE
+          break_particles: BLOCK
+        hardness: 0
+        blast_resistance: 0
+        sound:
+          break:
+            name: block.crop.break
+          place:
+            name: item.crop.plant
+          hit:
+            name: block.grass.hit
+          step:
+            name: block.grass.step
+          fall:
+            name: block.grass.fall
+
+  onion_stage_2:
+    display_name: "양파 (2단계)"
+    resource:
+      generate: false
+      material: PAPER
+      model_path: block/crop/onion/stage_2
+    specific_properties:
+      block:
+        placed_model:
+          type: REAL_WIRE
+          break_particles: BLOCK
+        hardness: 0
+        blast_resistance: 0
+        sound:
+          break:
+            name: block.crop.break
+          place:
+            name: item.crop.plant
+          hit:
+            name: block.grass.hit
+          step:
+            name: block.grass.step
+          fall:
+            name: block.grass.fall
+
+  onion_stage_3:
+    display_name: "양파 (3단계)"
+    resource:
+      generate: false
+      material: PAPER
+      model_path: block/crop/onion/stage_3
+    specific_properties:
+      block:
+        placed_model:
+          type: REAL_WIRE
+          break_particles: BLOCK
+        hardness: 0
+        blast_resistance: 0
+        sound:
+          break:
+            name: block.crop.break
+          place:
+            name: item.crop.plant
+          hit:
+            name: block.grass.hit
+          step:
+            name: block.grass.step
+          fall:
+            name: block.grass.fall
+
+  onion_stage_4:
+    display_name: "양파 (4단계)"
+    resource:
+      generate: false
+      material: PAPER
+      model_path: block/crop/onion/stage_4
+    specific_properties:
+      block:
+        placed_model:
+          type: REAL_WIRE
+          break_particles: BLOCK
+        hardness: 0
+        blast_resistance: 0
+        sound:
+          break:
+            name: block.crop.break
+          place:
+            name: item.crop.plant
+          hit:
+            name: block.grass.hit
+          step:
+            name: block.grass.step
+          fall:
+            name: block.grass.fall

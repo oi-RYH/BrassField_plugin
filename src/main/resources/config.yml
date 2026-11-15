@@ -17,7 +17,7 @@ crop-shop:
     silver: 2
     golden: 4
     special: 10
-  # 작물 ID(customcrops:<ID>) → 이름, 일반 품질 매입가, 씨앗(customcrops:<ID>_seeds) 판매가
+  # 작물 ID → 이름, 일반 품질 매입가, 씨앗(<ID>_seeds) 판매가. 네임스페이스가 없으면 customcrops:<ID>
   # 은별은 <ID>_silver_star, 금별은 <ID>_golden_star. 씨앗값은 일반 매입가의 절반 (수확하면 씨앗도 다시 나와 사실상 시작 비용)
   crops:
     tomato: { name: 토마토, price: 30, seed-price: 15 }
@@ -31,6 +31,9 @@ crop-shop:
     pepper: { name: 고추, price: 30, seed-price: 15 }
     pineapple: { name: 파인애플, price: 20, seed-price: 10 }
     pitaya: { name: 용과, price: 40, seed-price: 20 }
+    # BrassField 자체 작물 (tools/crops/make_crops.py) — 네임스페이스까지 적는다
+    "rustport:rice": { name: 쌀, price: 20, seed-price: 10 }
+    "rustport:onion": { name: 양파, price: 20, seed-price: 10 }
   # 드물게 나오는 수확물 → 어느 작물 가격에 special 배율을 곱할지
   special-items:
     "customcrops:gigantic_tomato": tomato
