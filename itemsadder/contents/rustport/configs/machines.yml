@@ -1,0 +1,33 @@
+info:
+  namespace: rustport
+
+# 마을에 설치하는 거래 기계 (ItemsAdder 가구). 우클릭하면 BrassField가 해당 GUI를 연다.
+# 모델·텍스처는 BrassField tools/machines/make_vending_machine.py 로 생성 (임시 모델)
+items:
+  stone_vending_machine:
+    display_name: "증기 강화석 자판기"
+    lore:
+      - "&7관리자용 설치 아이템"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/stone_vending_machine
+    behaviours:
+      furniture:
+        entity: item_display
+        # 모델 앞면(north)이 설치한 플레이어를 보게 한다
+        opposite_direction: true
+        # item_display는 모델 중심을 기준으로 그려서 반 블록 묻히므로 0.5 올린다
+        display_transformation:
+          translation:
+            y: 0.5
+        solid: true
+        cancel_drop: false
+        hitbox:
+          length: 1
+          width: 1
+          height: 2
+        placeable_on:
+          floor: true
+          walls: false
+          ceiling: false

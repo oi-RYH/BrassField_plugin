@@ -17,6 +17,11 @@ import java.util.UUID;
  */
 public final class StoneShop {
 
+    /**
+     * 강화석 상점을 여는 거래 기계 (ItemsAdder 가구 ID)
+     */
+    public static final String MACHINE_ID = "rustport:stone_vending_machine";
+
     private final GoldWallet goldWallet;
     private final StoneWallet stoneWallet;
     private final StoneShopPrices prices;

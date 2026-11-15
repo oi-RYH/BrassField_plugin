@@ -1,6 +1,7 @@
 package com.brassfield;
 
 import com.brassfield.common.BalanceBook;
+import com.brassfield.common.FurnitureInteractions;
 import com.brassfield.common.ItemsAdderGuiBackground;
 import com.brassfield.common.ItemsAdderItemProvider;
 import com.brassfield.common.YamlBalanceStorage;
@@ -78,6 +79,10 @@ public class BrassFieldPlugin extends JavaPlugin {
         );
         command("상점").setExecutor(new StoneShopCommand(stoneShop));
 
+        // 거래 기계 (ItemsAdder 가구)
+        FurnitureInteractions machines = new FurnitureInteractions(this);
+        machines.onInteract(StoneShop.MACHINE_ID, stoneShop::open);
+
         // 강화
         EnhancementItem.init(this);
         EnhancementCommand enhancementCommand = new EnhancementCommand(guiBackground, stoneWallet);
@@ -91,6 +96,7 @@ public class BrassFieldPlugin extends JavaPlugin {
         pluginManager.registerEvents(new StoneChestListener(itemProvider, stoneWallet), this);
         pluginManager.registerEvents(new StarterKitListener(), this);
         pluginManager.registerEvents(new StoneShopListener(stoneShop), this);
+        machines.start();
 
         // 재화 사이드바
         currencySidebar = new CurrencySidebar(this, goldWallet, stoneWallet, guiBackground);
