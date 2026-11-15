@@ -4,6 +4,7 @@ import com.brassfield.common.BalanceBook;
 import com.brassfield.common.FurnitureInteractions;
 import com.brassfield.common.ItemsAdderGuiBackground;
 import com.brassfield.common.ItemsAdderItemProvider;
+import com.brassfield.common.MachineMarkers;
 import com.brassfield.common.YamlBalanceStorage;
 import com.brassfield.economy.GoldCommand;
 import com.brassfield.economy.GoldWallet;
@@ -45,6 +46,7 @@ public class BrassFieldPlugin extends JavaPlugin {
     private BalanceBook goldBook;
     private boolean citizensHooked;
     private CurrencySidebar currencySidebar;
+    private MachineMarkers machineMarkers;
 
     @Override
     public void onEnable() {
@@ -82,12 +84,17 @@ public class BrassFieldPlugin extends JavaPlugin {
         // 거래 기계 (ItemsAdder 가구)
         FurnitureInteractions machines = new FurnitureInteractions(this);
         machines.onInteract(StoneShop.MACHINE_ID, stoneShop::open);
+        // 기계 위 빨간 표시: 기계 바닥에서 표시 중심까지 높이(블록)
+        machineMarkers = new MachineMarkers(this, itemProvider);
+        machineMarkers.register(StoneShop.MACHINE_ID, 2.65);
 
         // 강화
         EnhancementItem.init(this);
         EnhancementCommand enhancementCommand = new EnhancementCommand(guiBackground, stoneWallet);
         command("강화").setExecutor(enhancementCommand);
         animation = new EnhancementAnimation(this);
+        machines.onInteract(EnhancementCommand.MACHINE_ID, player -> enhancementCommand.openGui(player, null));
+        machineMarkers.register(EnhancementCommand.MACHINE_ID, 2.6);
 
         PluginManager pluginManager = getServer().getPluginManager();
         pluginManager.registerEvents(new EnhancementGuiListener(
@@ -97,6 +104,7 @@ public class BrassFieldPlugin extends JavaPlugin {
         pluginManager.registerEvents(new StarterKitListener(), this);
         pluginManager.registerEvents(new StoneShopListener(stoneShop), this);
         machines.start();
+        machineMarkers.start();
 
         // 재화 사이드바
         currencySidebar = new CurrencySidebar(this, goldWallet, stoneWallet, guiBackground);
@@ -127,6 +135,9 @@ public class BrassFieldPlugin extends JavaPlugin {
         }
         if (currencySidebar != null) {
             currencySidebar.stop();
+        }
+        if (machineMarkers != null) {
+            machineMarkers.stop();
         }
         if (citizensHooked) {
             CitizensShopHook.unregister();

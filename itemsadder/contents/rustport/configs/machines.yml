@@ -31,3 +31,38 @@ items:
           floor: true
           walls: false
           ceiling: false
+
+  enhancement_machine:
+    display_name: "증폭 공작대"
+    lore:
+      - "&7관리자용 설치 아이템"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/enhancement_machine
+    behaviours:
+      furniture:
+        entity: item_display
+        opposite_direction: true
+        display_transformation:
+          translation:
+            y: 0.5
+        solid: true
+        cancel_drop: false
+        # 2블록 폭 작업대 (모델 x -8~24)
+        hitbox:
+          length: 1
+          width: 2
+          height: 2
+        placeable_on:
+          floor: true
+          walls: false
+          ceiling: false
+
+  # 기계 위에 떠서 도는 빨간 역삼각형 표시 (BrassField가 표시 엔티티로 띄움, 설치용 아이템 아님)
+  machine_marker:
+    display_name: "기계 표시"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/machine_marker

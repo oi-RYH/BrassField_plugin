@@ -22,8 +22,8 @@ public final class StarterKitListener implements Listener {
         }
 
         ItemDelivery.giveOrDrop(player, EnhancementItem.buildItem(0));
-        player.sendMessage(Component.text("길에서 주운 나뭇가지를 받았습니다. ", NamedTextColor.GREEN)
-                .append(Component.text("/강화", NamedTextColor.YELLOW))
-                .append(Component.text(" 로 강화를 시작해보세요!", NamedTextColor.GREEN)));
+        player.sendMessage(Component.text("길에서 주운 나뭇가지를 받았습니다. 마을의 ", NamedTextColor.GREEN)
+                .append(Component.text("증폭 공작대", NamedTextColor.YELLOW))
+                .append(Component.text("에서 강화를 시작해보세요!", NamedTextColor.GREEN)));
     }
 }
