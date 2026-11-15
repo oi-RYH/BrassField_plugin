@@ -17,16 +17,22 @@ items:
         entity: item_display
         # 모델 앞면(north)이 설치한 플레이어를 보게 한다
         opposite_direction: true
-        # item_display는 모델 중심을 기준으로 그려서 반 블록 묻히므로 0.5 올린다
+        # 모델(1블록 폭 x 2블록 높이)을 1.5배로 키워 1.5블록 폭 x 3블록 높이로 보인다.
+        # item_display는 모델 가운데를 기준으로 그리고 커지므로 바닥이 0.75블록 내려가 그만큼 올린다.
         display_transformation:
           translation:
-            y: 0.5
+            y: 0.75
+          scale:
+            x: 1.5
+            y: 1.5
+            z: 1.5
         solid: true
         cancel_drop: false
+        # 1.5블록 폭이라 블록 칸에 딱 맞지 않아, 옆 칸을 막지 않게 폭 1로 둔다
         hitbox:
           length: 1
           width: 1
-          height: 2
+          height: 3
         placeable_on:
           floor: true
           walls: false
@@ -54,6 +60,39 @@ items:
           length: 1
           width: 2
           height: 2
+        placeable_on:
+          floor: true
+          walls: false
+          ceiling: false
+
+  crop_buyer:
+    display_name: "종자·작물 거래기"
+    lore:
+      - "&7관리자용 설치 아이템"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/crop_buyer
+    behaviours:
+      furniture:
+        entity: item_display
+        opposite_direction: true
+        # 모델(2블록 폭 x 2블록 높이)을 1.5배로 키워 3블록 폭 x 3블록 높이로 보인다.
+        # 가운데 기준으로 커지므로 바닥이 0.75블록 내려가 그만큼 올린다.
+        display_transformation:
+          translation:
+            y: 0.75
+          scale:
+            x: 1.5
+            y: 1.5
+            z: 1.5
+        solid: true
+        cancel_drop: false
+        # 3블록 폭 x 3블록 높이 (1.5배)
+        hitbox:
+          length: 1
+          width: 3
+          height: 3
         placeable_on:
           floor: true
           walls: false

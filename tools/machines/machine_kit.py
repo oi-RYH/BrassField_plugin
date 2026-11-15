@@ -195,6 +195,23 @@ def cube(frm, to, mat, light=0, faces=None, skip=()):
     elements.append(element)
 
 
+# ═════════════ 정면 기준 좌표 → 모델 좌표 ═════════════
+def view_cube(frm, to, mat, light=0, faces=None, skip=(), rotation=None):
+    """정면에서 본 좌표(vx 왼쪽→오른쪽)로 큐브를 만든다. 모델 x = 16 - vx, 동·서 면은 서로 바뀐다."""
+    mfrm = [16 - to[0], frm[1], frm[2]]
+    mto = [16 - frm[0], to[1], to[2]]
+    swap = {"east": "west", "west": "east"}
+    if faces:
+        faces = {swap.get(k, k): v for k, v in faces.items()}
+    skip = tuple(swap.get(s, s) for s in skip)
+    cube(mfrm, mto, mat, light=light, faces=faces, skip=skip)
+    if rotation:
+        angle, axis, origin = rotation
+        elements[-1]["rotation"] = {"angle": angle, "axis": axis,
+                                                "origin": [16 - origin[0], origin[1], origin[2]]}
+
+
+
 # ═════════════ 저장 ═════════════
 def save(assets, name, credit, display=None):
     """텍스처와 모델을 assets/textures|models/machine/<name> 로 저장하고 큐브 좌표 범위를 검사한다."""

@@ -21,7 +21,6 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from machine_kit import *  # noqa: E402,F401,F403
-import machine_kit  # noqa: E402
 
 random.seed(53)
 
@@ -104,21 +103,7 @@ BOOK_COVERS = [region(8, 8, lambda x, y, c=c: c if (x + y) % 5 else lerp(c, rgb(
                for c in (rgb(132, 46, 36), rgb(112, 78, 46), rgb(52, 88, 84))]
 
 
-# ═════════════ 정면 기준 좌표 → 모델 좌표 ═════════════
-def V(frm, to, mat, light=0, faces=None, skip=(), rotation=None):
-    """정면에서 본 좌표(vx 왼쪽→오른쪽)로 큐브를 만든다. 모델 x = 16 - vx, 동·서 면은 서로 바뀐다."""
-    mfrm = [16 - to[0], frm[1], frm[2]]
-    mto = [16 - frm[0], to[1], to[2]]
-    swap = {"east": "west", "west": "east"}
-    if faces:
-        faces = {swap.get(k, k): v for k, v in faces.items()}
-    skip = tuple(swap.get(s, s) for s in skip)
-    cube(mfrm, mto, mat, light=light, faces=faces, skip=skip)
-    if rotation:
-        angle, axis, origin = rotation
-        machine_kit.elements[-1]["rotation"] = {"angle": angle, "axis": axis,
-                                                "origin": [16 - origin[0], origin[1], origin[2]]}
-
+V = view_cube   # 정면 기준 좌표 (machine_kit)
 
 ALL = ("north", "south", "east", "west", "up", "down")
 
@@ -148,8 +133,8 @@ for cx in (-7.8, 21.8):
 
 # ═════════════ 강화 대 (팔각 받침 + 빛나는 톱니 문양) ═════════════
 V([2, 14.6, 3], [14, 15.2, 13], IRON_DARK_M)
-V([3, 15.2, 4.6], [13, 15.6, 11.4], BRASS_M, light=15, faces={"up": uv_of(RUNE_M)})
-V([4.6, 15.2, 3.6], [11.4, 15.6, 12.4], BRASS_M, light=15, faces={"up": uv_of(RUNE_M)})
+# 문양판은 한 장만 (두 장을 겹치면 문양이 두 번 보이고 같은 높이라 깜빡인다)
+V([3.5, 15.2, 3.5], [12.5, 15.6, 12.5], BRASS_M, light=15, faces={"up": uv_of(RUNE_M)})
 
 # ═════════════ 앞 깃발 (상판 앞에 걸림) ═════════════
 V([2.6, 12.0, -0.25], [13.4, 12.6, 0.3], BRASS_M)                      # 거는 막대

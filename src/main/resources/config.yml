@@ -7,3 +7,33 @@ stone-shop:
     LOW: 1000
     MIDDLE: 1000
     HIGH: 16000
+
+# 종자·작물 거래기: 작물 1개 매입가와 씨앗 1개 판매가(골드). 노션 경제 설계 > 작물 판매 (2026-11-15)
+# 작물은 소소한 기본 수입이고 큰돈은 요리에서 나온다. 원자재 20골드 기준, 오래 자라는 작물일수록 비싸다.
+#   성장 3~4단계 20 / 5~6단계 30 / 8단계 40
+crop-shop:
+  # 품질 배율: 일반 x1, 은별 x2, 금별 x4, 거대·황금 작물 x10
+  quality-multipliers:
+    silver: 2
+    golden: 4
+    special: 10
+  # 작물 ID(customcrops:<ID>) → 이름, 일반 품질 매입가, 씨앗(customcrops:<ID>_seeds) 판매가
+  # 은별은 <ID>_silver_star, 금별은 <ID>_golden_star. 씨앗값은 일반 매입가의 절반 (수확하면 씨앗도 다시 나와 사실상 시작 비용)
+  crops:
+    tomato: { name: 토마토, price: 30, seed-price: 15 }
+    cabbage: { name: 양배추, price: 20, seed-price: 10 }
+    chinese_cabbage: { name: 배추, price: 20, seed-price: 10 }
+    corn: { name: 옥수수, price: 20, seed-price: 10 }
+    eggplant: { name: 가지, price: 20, seed-price: 10 }
+    garlic: { name: 마늘, price: 20, seed-price: 10 }
+    grape: { name: 포도, price: 40, seed-price: 20 }
+    hop: { name: 홉, price: 20, seed-price: 10 }
+    pepper: { name: 고추, price: 30, seed-price: 15 }
+    pineapple: { name: 파인애플, price: 20, seed-price: 10 }
+    pitaya: { name: 용과, price: 40, seed-price: 20 }
+  # 드물게 나오는 수확물 → 어느 작물 가격에 special 배율을 곱할지
+  special-items:
+    "customcrops:gigantic_tomato": tomato
+    "customcrops:golden_tomato": tomato
+    "customcrops:gigantic_cabbage": cabbage
+    "customcrops:gigantic_pineapple": pineapple

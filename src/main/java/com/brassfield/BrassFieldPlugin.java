@@ -16,6 +16,10 @@ import com.brassfield.enhancement.EnhancementItem;
 import com.brassfield.enhancement.EnhancementService;
 import com.brassfield.enhancement.StarterKitListener;
 import com.brassfield.hud.CurrencySidebar;
+import com.brassfield.market.CropMarket;
+import com.brassfield.market.CropPrices;
+import com.brassfield.market.CropSellGui;
+import com.brassfield.market.CropSellListener;
 import com.brassfield.shop.StoneShop;
 import com.brassfield.shop.StoneShopCommand;
 import com.brassfield.shop.StoneShopListener;
@@ -44,6 +48,7 @@ public class BrassFieldPlugin extends JavaPlugin {
     private EnhancementAnimation animation;
     private BalanceBook stoneBook;
     private BalanceBook goldBook;
+    private BalanceBook cropSalesBook;
     private boolean citizensHooked;
     private CurrencySidebar currencySidebar;
     private MachineMarkers machineMarkers;
@@ -52,6 +57,9 @@ public class BrassFieldPlugin extends JavaPlugin {
     public void onEnable() {
         migrateLegacyStoneData();
         saveDefaultConfig();
+        // 업데이트로 새로 생긴 설정 항목(예: crop-shop)을 기존 config.yml에 채워 넣는다
+        getConfig().options().copyDefaults(true);
+        saveConfig();
 
         ItemsAdderItemProvider itemProvider = new ItemsAdderItemProvider(this);
         ItemsAdderGuiBackground guiBackground = new ItemsAdderGuiBackground(this);
@@ -86,7 +94,13 @@ public class BrassFieldPlugin extends JavaPlugin {
         machines.onInteract(StoneShop.MACHINE_ID, stoneShop::open);
         // 기계 위 빨간 표시: 기계 바닥에서 표시 중심까지 높이(블록)
         machineMarkers = new MachineMarkers(this, itemProvider);
-        machineMarkers.register(StoneShop.MACHINE_ID, 2.65);
+        machineMarkers.register(StoneShop.MACHINE_ID, 3.65);   // 자판기는 1.5배(3블록 높이)
+
+        // 작물 매입 (판매 기록: 플레이어별·작물별 판매 개수와 받은 골드)
+        cropSalesBook = new BalanceBook(new YamlBalanceStorage(this, "crop_sales.yml"), getLogger(), "CropSales");
+        CropMarket cropMarket = new CropMarket(goldWallet, CropPrices.load(getConfig(), getLogger()), itemProvider, cropSalesBook);
+        machines.onInteract(CropMarket.MACHINE_ID, cropMarket::open);
+        machineMarkers.register(CropMarket.MACHINE_ID, 3.65);   // 거래기는 1.5배(3블록 높이)
 
         // 강화
         EnhancementItem.init(this);
@@ -103,6 +117,7 @@ public class BrassFieldPlugin extends JavaPlugin {
         pluginManager.registerEvents(new StoneChestListener(itemProvider, stoneWallet), this);
         pluginManager.registerEvents(new StarterKitListener(), this);
         pluginManager.registerEvents(new StoneShopListener(stoneShop), this);
+        pluginManager.registerEvents(new CropSellListener(this), this);
         machines.start();
         machineMarkers.start();
 
@@ -129,6 +144,10 @@ public class BrassFieldPlugin extends JavaPlugin {
                 gui.returnItemsTo(player);
                 player.closeInventory();
             }
+            if (player.getOpenInventory().getTopInventory().getHolder() instanceof CropSellGui gui) {
+                gui.returnItemsTo(player);
+                player.closeInventory();
+            }
         }
         if (animation != null) {
             animation.shutdown();
@@ -147,6 +166,9 @@ public class BrassFieldPlugin extends JavaPlugin {
         }
         if (goldBook != null) {
             goldBook.shutdown();
+        }
+        if (cropSalesBook != null) {
+            cropSalesBook.shutdown();
         }
         getLogger().info("BrassField 플러그인이 종료됩니다.");
     }
