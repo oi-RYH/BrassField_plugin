@@ -1,13 +1,78 @@
 info:
   namespace: rustport
 
-# 첫 요리 세트 (tools/cooking/make_dishes.py 로 생성, 직접 수정하지 말 것)
-# 회복량(배고픔·포만감): 초간단 4·3 / 간단 6·6 / 중급 8·10 / 복잡 10·14. 중간 재료는 먹을 수 없다.
+# 요리 아이템 (tools/cooking/make_dishes.py 로 생성, 직접 수정하지 말 것). 레시피는 BrassField config.yml
+# 단계: 0단계 재료 → 보조 도구·절구 → 1단계 → 조리대 → 2단계
 items:
+  flour:
+    display_name: "밀가루"
+    lore:
+      - "&71단계 재료"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/flour
+
+  cornmeal:
+    display_name: "옥수수가루"
+    lore:
+      - "&71단계 재료"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/cornmeal
+
+  dough:
+    display_name: "반죽"
+    lore:
+      - "&71단계 재료"
+    graphics:
+      model: item/food/dough
+      icon: item/food/dough
+
+  noodles:
+    display_name: "면"
+    lore:
+      - "&71단계 재료"
+    graphics:
+      model: item/food/noodles
+      icon: item/food/noodles
+
+  tomato_sauce:
+    display_name: "토마토소스"
+    lore:
+      - "&71단계 재료"
+    graphics:
+      model: item/food/tomato_sauce
+      icon: item/food/tomato_sauce
+
+  patty:
+    display_name: "패티"
+    lore:
+      - "&71단계 재료"
+    graphics:
+      model: item/food/patty
+      icon: item/food/patty
+
+  pie_crust:
+    display_name: "파이 껍질"
+    lore:
+      - "&71단계 재료"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/pie_crust
+
   cooked_rice:
     display_name: "익힌 밥"
     lore:
-      - "&7초간단 요리"
+      - "&71단계 음식"
     graphics:
       model: item/food/cooked_rice
       icon: item/food/cooked_rice
@@ -15,32 +80,10 @@ items:
       nutrition: 4
       saturation: 3
 
-  salmon_sushi:
-    display_name: "연어 초밥"
-    lore:
-      - "&7초간단 요리"
-    graphics:
-      model: item/food/salmon_sushi
-      icon: item/food/salmon_sushi
-    consumable:
-      nutrition: 4
-      saturation: 3
-
-  cabbage_wrap:
-    display_name: "양배추 쌈"
-    lore:
-      - "&7초간단 요리"
-    graphics:
-      model: item/food/cabbage_wrap
-      icon: item/food/cabbage_wrap
-    consumable:
-      nutrition: 4
-      saturation: 3
-
   honey_cookie:
     display_name: "꿀 쿠키"
     lore:
-      - "&7초간단 요리"
+      - "&71단계 음식"
     graphics:
       model: item/food/honey_cookie
       icon: item/food/honey_cookie
@@ -48,10 +91,241 @@ items:
       nutrition: 4
       saturation: 3
 
+  bread_loaf:
+    display_name: "식빵"
+    lore:
+      - "&71단계 음식"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/bread_loaf
+    consumable:
+      nutrition: 5
+      saturation: 6
+
+  apple_juice:
+    display_name: "사과 주스"
+    lore:
+      - "&71단계 음식"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/apple_juice
+    consumable:
+      nutrition: 4
+      saturation: 2
+      animation: drink
+
+  grape_juice:
+    display_name: "포도 주스"
+    lore:
+      - "&71단계 음식"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/grape_juice
+    consumable:
+      nutrition: 4
+      saturation: 2
+      animation: drink
+
+  pineapple_juice:
+    display_name: "파인애플 주스"
+    lore:
+      - "&71단계 음식"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/pineapple_juice
+    consumable:
+      nutrition: 4
+      saturation: 2
+      animation: drink
+
+  pitaya_juice:
+    display_name: "용과 주스"
+    lore:
+      - "&71단계 음식"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/pitaya_juice
+    consumable:
+      nutrition: 4
+      saturation: 2
+      animation: drink
+
+  cheese:
+    display_name: "치즈"
+    lore:
+      - "&71단계 음식"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/cheese
+    consumable:
+      nutrition: 3
+      saturation: 4
+
+  yogurt:
+    display_name: "요구르트"
+    lore:
+      - "&71단계 음식"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/yogurt
+    consumable:
+      nutrition: 4
+      saturation: 4
+      animation: drink
+
+  kimchi:
+    display_name: "김치"
+    lore:
+      - "&71단계 음식"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/kimchi
+    consumable:
+      nutrition: 2
+      saturation: 2
+
+  smoked_beef:
+    display_name: "훈제 소고기"
+    lore:
+      - "&71단계 음식"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/smoked_beef
+    consumable:
+      nutrition: 7
+      saturation: 9
+
+  bacon:
+    display_name: "베이컨"
+    lore:
+      - "&71단계 음식"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/bacon
+    consumable:
+      nutrition: 5
+      saturation: 6
+
+  smoked_salmon:
+    display_name: "훈제 연어"
+    lore:
+      - "&71단계 음식"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/smoked_salmon
+    consumable:
+      nutrition: 6
+      saturation: 8
+
+  chicken_soup:
+    display_name: "치킨 수프"
+    lore:
+      - "&71단계 음식"
+    graphics:
+      model: item/food/chicken_soup
+      icon: item/food/chicken_soup
+    consumable:
+      nutrition: 6
+      saturation: 7
+
+  vegetable_soup:
+    display_name: "야채 수프"
+    lore:
+      - "&71단계 음식"
+    graphics:
+      model: item/food/vegetable_soup
+      icon: item/food/vegetable_soup
+    consumable:
+      nutrition: 6
+      saturation: 7
+
+  beef_stew:
+    display_name: "소고기 스튜"
+    lore:
+      - "&71단계 음식"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/beef_stew
+    consumable:
+      nutrition: 8
+      saturation: 9
+
+  corn_soup:
+    display_name: "옥수수 수프"
+    lore:
+      - "&71단계 음식"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/corn_soup
+    consumable:
+      nutrition: 5
+      saturation: 6
+
+  salmon_sushi:
+    display_name: "연어 초밥"
+    lore:
+      - "&72단계 요리"
+    graphics:
+      model: item/food/salmon_sushi
+      icon: item/food/salmon_sushi
+    consumable:
+      nutrition: 6
+      saturation: 6
+
+  cabbage_wrap:
+    display_name: "양배추 쌈"
+    lore:
+      - "&72단계 요리"
+    graphics:
+      model: item/food/cabbage_wrap
+      icon: item/food/cabbage_wrap
+    consumable:
+      nutrition: 6
+      saturation: 6
+
   kimbap:
     display_name: "김밥"
     lore:
-      - "&7간단 요리"
+      - "&72단계 요리"
     graphics:
       model: item/food/kimbap
       icon: item/food/kimbap
@@ -62,7 +336,7 @@ items:
   mushroom_fried_rice:
     display_name: "버섯볶음밥"
     lore:
-      - "&7간단 요리"
+      - "&72단계 요리"
     graphics:
       model: item/food/mushroom_fried_rice
       icon: item/food/mushroom_fried_rice
@@ -70,10 +344,38 @@ items:
       nutrition: 6
       saturation: 6
 
+  bacon_and_eggs:
+    display_name: "베이컨 에그"
+    lore:
+      - "&72단계 요리"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/bacon_and_eggs
+    consumable:
+      nutrition: 6
+      saturation: 6
+
+  kimchi_fried_rice:
+    display_name: "김치볶음밥"
+    lore:
+      - "&72단계 요리"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/kimchi_fried_rice
+    consumable:
+      nutrition: 8
+      saturation: 10
+
   meatball_pasta:
     display_name: "미트볼 파스타"
     lore:
-      - "&7중급 요리"
+      - "&72단계 요리"
     graphics:
       model: item/food/meatball_pasta
       icon: item/food/meatball_pasta
@@ -84,7 +386,7 @@ items:
   ratatouille:
     display_name: "라타투이"
     lore:
-      - "&7중급 요리"
+      - "&72단계 요리"
     graphics:
       model: item/food/ratatouille
       icon: item/food/ratatouille
@@ -92,21 +394,10 @@ items:
       nutrition: 8
       saturation: 10
 
-  chicken_soup:
-    display_name: "치킨 수프"
-    lore:
-      - "&7중급 요리"
-    graphics:
-      model: item/food/chicken_soup
-      icon: item/food/chicken_soup
-    consumable:
-      nutrition: 8
-      saturation: 10
-
   fried_rice:
     display_name: "볶음밥"
     lore:
-      - "&7중급 요리"
+      - "&72단계 요리"
     graphics:
       model: item/food/fried_rice
       icon: item/food/fried_rice
@@ -117,7 +408,7 @@ items:
   dumplings:
     display_name: "만두"
     lore:
-      - "&7중급 요리"
+      - "&72단계 요리"
     graphics:
       model: item/food/dumplings
       icon: item/food/dumplings
@@ -125,13 +416,30 @@ items:
       nutrition: 8
       saturation: 10
 
-  vegetable_soup:
-    display_name: "야채 수프"
+  apple_pie:
+    display_name: "애플파이"
     lore:
-      - "&7복잡 요리"
-    graphics:
-      model: item/food/vegetable_soup
-      icon: item/food/vegetable_soup
+      - "&72단계 요리"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/apple_pie
+    consumable:
+      nutrition: 8
+      saturation: 10
+
+  pizza:
+    display_name: "피자"
+    lore:
+      - "&72단계 요리"
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/pizza
     consumable:
       nutrition: 10
       saturation: 14
@@ -139,7 +447,7 @@ items:
   hamburger:
     display_name: "햄버거"
     lore:
-      - "&7복잡 요리"
+      - "&72단계 요리"
     graphics:
       model: item/food/hamburger
       icon: item/food/hamburger
@@ -147,34 +455,31 @@ items:
       nutrition: 10
       saturation: 14
 
-  dough:
-    display_name: "반죽"
+  mortar:
+    display_name: "절구"
     lore:
-      - "&7요리 재료"
-    graphics:
-      model: item/food/dough
-      icon: item/food/dough
+      - "&7요리 도구 (닳지 않음)"
+      - "&8제작 칸에 절구와 재료를 함께 넣으면"
+      - "&8반죽 등을 만듭니다."
+      - "&8(임시 그림)"
+    resource:
+      material: PAPER
+      generate: true
+      textures:
+        - item/food/mortar
 
-  noodles:
-    display_name: "면"
-    lore:
-      - "&7요리 재료"
-    graphics:
-      model: item/food/noodles
-      icon: item/food/noodles
 
-  tomato_sauce:
-    display_name: "토마토소스"
-    lore:
-      - "&7요리 재료"
-    graphics:
-      model: item/food/tomato_sauce
-      icon: item/food/tomato_sauce
-
-  patty:
-    display_name: "패티"
-    lore:
-      - "&7요리 재료"
-    graphics:
-      model: item/food/patty
-      icon: item/food/patty
+recipes:
+  crafting_table:
+    mortar:
+      enabled: true
+      pattern:
+        - " S "
+        - "X X"
+        - " X "
+      ingredients:
+        S: STICK
+        X: SMOOTH_STONE
+      result:
+        item: rustport:mortar
+        amount: 1

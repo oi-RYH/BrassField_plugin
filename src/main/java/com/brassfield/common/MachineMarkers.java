@@ -218,7 +218,12 @@ public final class MachineMarkers implements Listener {
             return true;
         }
         Entity machine = plugin.getServer().getEntity(UUID.fromString(owner));
-        return machine == null || !machine.isValid();
+        if (machine == null || !machine.isValid()) {
+            return true;
+        }
+        // 표시를 더 붙이지 않기로 한 기계(예: 개인 기기가 된 조리대)면 정리한다. ID를 못 읽으면(로딩 중) 건드리지 않는다
+        String id = furnitureId(machine);
+        return id != null && !heights.containsKey(id);
     }
 
     private boolean isMarker(Entity entity) {

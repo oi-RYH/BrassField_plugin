@@ -6,6 +6,11 @@ import com.brassfield.common.ItemsAdderGuiBackground;
 import com.brassfield.common.ItemsAdderItemProvider;
 import com.brassfield.common.MachineMarkers;
 import com.brassfield.common.YamlBalanceStorage;
+import com.brassfield.cooking.CookingListener;
+import com.brassfield.cooking.CookingMachines;
+import com.brassfield.cooking.CookingRecipes;
+import com.brassfield.cooking.CookingStation;
+import com.brassfield.cooking.MortarCrafting;
 import com.brassfield.economy.GoldCommand;
 import com.brassfield.economy.GoldWallet;
 import com.brassfield.enhancement.EnhancementAnimation;
@@ -39,7 +44,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 /**
- * BrassField 서버 플러그인. 각 모듈(common·enhancement·stone·economy·shop·hud)을 만들고 연결만 한다.
+ * BrassField 서버 플러그인. 각 모듈(common·enhancement·stone·economy·shop·market·cooking·hud)을 만들고 연결만 한다.
  */
 public class BrassFieldPlugin extends JavaPlugin {
 
@@ -52,6 +57,7 @@ public class BrassFieldPlugin extends JavaPlugin {
     private boolean citizensHooked;
     private CurrencySidebar currencySidebar;
     private MachineMarkers machineMarkers;
+    private CookingMachines cookingMachines;
 
     @Override
     public void onEnable() {
@@ -89,7 +95,7 @@ public class BrassFieldPlugin extends JavaPlugin {
         );
         command("상점").setExecutor(new StoneShopCommand(stoneShop));
 
-        // 거래 기계 (ItemsAdder 가구)
+        // 거래 기계 (ItemsAdder 가구). 빨간 표시는 마을 공용 기계에만 붙인다
         FurnitureInteractions machines = new FurnitureInteractions(this);
         machines.onInteract(StoneShop.MACHINE_ID, stoneShop::open);
         // 기계 위 빨간 표시: 기계 바닥에서 표시 중심까지 높이(블록)
@@ -101,6 +107,14 @@ public class BrassFieldPlugin extends JavaPlugin {
         CropMarket cropMarket = new CropMarket(goldWallet, CropPrices.load(getConfig(), getLogger()), itemProvider, cropSalesBook);
         machines.onInteract(CropMarket.MACHINE_ID, cropMarket::open);
         machineMarkers.register(CropMarket.MACHINE_ID, 3.65);   // 거래기는 1.5배(3블록 높이)
+
+        // 요리 기기 7종 (조리대 + 보조 도구 6, 개인 기기: 누구나 설치·회수, 빨간 표시 없음. 기기마다 조리칸 하나, 실제 시간 기준으로 익음)
+        cookingMachines = new CookingMachines(this, CookingRecipes.loadStations(getConfig(), itemProvider, getLogger()), itemProvider);
+        for (CookingStation station : cookingMachines.stations()) {
+            machines.onInteractAt(station.furnitureId(), (player, furniture) -> cookingMachines.open(player, furniture, station));
+            machines.onBreak(station.furnitureId(), cookingMachines::destroy);
+            machines.personal(station.furnitureId());
+        }
 
         // 강화
         EnhancementItem.init(this);
@@ -118,7 +132,11 @@ public class BrassFieldPlugin extends JavaPlugin {
         pluginManager.registerEvents(new StarterKitListener(), this);
         pluginManager.registerEvents(new StoneShopListener(stoneShop), this);
         pluginManager.registerEvents(new CropSellListener(this), this);
+        pluginManager.registerEvents(new CookingListener(this), this);
+        // 절구: 제작 칸에서 쓰는 도구 (절구는 남고 재료만 쓴다)
+        pluginManager.registerEvents(new MortarCrafting(this, CookingRecipes.loadMortar(getConfig(), itemProvider, getLogger()), itemProvider), this);
         machines.start();
+        cookingMachines.start();
         machineMarkers.start();
 
         // 재화 사이드바
@@ -157,6 +175,9 @@ public class BrassFieldPlugin extends JavaPlugin {
         }
         if (machineMarkers != null) {
             machineMarkers.stop();
+        }
+        if (cookingMachines != null) {
+            cookingMachines.stop();
         }
         if (citizensHooked) {
             CitizensShopHook.unregister();

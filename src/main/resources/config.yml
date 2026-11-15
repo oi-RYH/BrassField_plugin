@@ -40,3 +40,90 @@ crop-shop:
     "customcrops:golden_tomato": tomato
     "customcrops:gigantic_cabbage": cabbage
     "customcrops:gigantic_pineapple": pineapple
+
+# 요리 기기 레시피. 노션 경제 설계 > 요리 (2026-11-15)
+# 단계: 0단계(작물·바닐라 재료) → 보조 도구(제분기·착즙기·발효조·훈연기·대형 솥·제빵 오븐)·절구 → 1단계
+#       → 조리대(1단계 + 0단계) → 2단계 요리
+# 재료 칸에 든 재료 종류가 레시피와 정확히 같아야 그 결과가 된다 (위치 상관없음). 작물 품질(은별·금별)은 구분하지 않는다.
+# 재료가 여러 세트 들어 있으면 한 세트씩 이어서 만든다. amount: 한 번에 나오는 개수 (기본 1).
+# 우유 양동이·꿀병·물병을 쓰면 빈 양동이·빈 병은 부산물 칸으로 돌려준다.
+cooking:
+  # "#묶음" 재료: 이 중 아무거나
+  groups:
+    raw_meat: { name: 생고기, items: ["minecraft:beef", "minecraft:porkchop", "minecraft:chicken", "minecraft:mutton"] }
+    mushroom: { name: 버섯, items: ["minecraft:brown_mushroom", "minecraft:red_mushroom"] }
+  # 기기 → ItemsAdder 가구 ID, 창 제목, 레시피 (결과 ID(rustport:<ID>) → 조리 시간(초)·개수·재료)
+  stations:
+    mill:
+      furniture: "rustport:mill"
+      title: 제분기
+      recipes:
+        flour: { seconds: 5, ingredients: { "minecraft:wheat": 1 } }
+        cornmeal: { seconds: 5, ingredients: { "customcrops:corn": 1 } }
+        patty: { seconds: 5, ingredients: { "minecraft:beef": 1 } }
+    juicer:
+      furniture: "rustport:juicer"
+      title: 착즙기
+      recipes:
+        apple_juice: { seconds: 8, ingredients: { "minecraft:apple": 2 } }
+        grape_juice: { seconds: 8, ingredients: { "customcrops:grape": 2 } }
+        pineapple_juice: { seconds: 8, ingredients: { "customcrops:pineapple": 1 } }
+        pitaya_juice: { seconds: 8, ingredients: { "customcrops:pitaya": 1 } }
+        tomato_sauce: { seconds: 5, ingredients: { "customcrops:tomato": 2 } }
+    fermenter:
+      furniture: "rustport:fermenter"
+      title: 발효조
+      recipes:
+        cheese: { seconds: 20, ingredients: { "minecraft:milk_bucket": 1 } }
+        yogurt: { seconds: 20, ingredients: { "minecraft:milk_bucket": 1, "minecraft:honey_bottle": 1 } }
+        kimchi: { seconds: 20, ingredients: { "customcrops:chinese_cabbage": 1, "customcrops:pepper": 1, "customcrops:garlic": 1 } }
+    smoker:
+      furniture: "rustport:smoker"
+      title: 훈연기
+      recipes:
+        smoked_beef: { seconds: 15, ingredients: { "minecraft:beef": 1 } }
+        bacon: { seconds: 15, ingredients: { "minecraft:porkchop": 1 } }
+        smoked_salmon: { seconds: 15, ingredients: { "minecraft:salmon": 1 } }
+    kettle:
+      furniture: "rustport:kettle"
+      title: 대형 솥
+      recipes:
+        cooked_rice: { seconds: 5, ingredients: { "rustport:rice": 1 } }
+        noodles: { seconds: 5, ingredients: { "rustport:dough": 1 } }
+        chicken_soup: { seconds: 20, amount: 4, ingredients: { "minecraft:chicken": 1, "minecraft:carrot": 1, "rustport:onion": 1, "customcrops:garlic": 1 } }
+        vegetable_soup: { seconds: 20, amount: 4, ingredients: { "minecraft:carrot": 1, "minecraft:potato": 1, "rustport:onion": 1, "customcrops:tomato": 1, "customcrops:cabbage": 1 } }
+        beef_stew: { seconds: 20, amount: 4, ingredients: { "minecraft:beef": 1, "minecraft:potato": 1, "minecraft:carrot": 1, "rustport:onion": 1 } }
+        corn_soup: { seconds: 20, amount: 4, ingredients: { "customcrops:corn": 1, "minecraft:milk_bucket": 1, "rustport:onion": 1 } }
+    oven:
+      furniture: "rustport:oven"
+      title: 제빵 오븐
+      recipes:
+        bread_loaf: { seconds: 10, ingredients: { "rustport:dough": 1 } }
+        pie_crust: { seconds: 10, ingredients: { "rustport:dough": 1, "minecraft:egg": 1 } }
+        honey_cookie: { seconds: 10, ingredients: { "rustport:flour": 1, "minecraft:honey_bottle": 1 } }
+    # 조리대: 1단계 + 0단계 → 2단계. 조리 시간: 간단 10초 / 중급 20초 / 복잡 40초
+    counter:
+      furniture: "rustport:steam_cooker"
+      title: 조리대
+      recipes:
+        salmon_sushi: { seconds: 10, ingredients: { "minecraft:salmon": 1, "rustport:cooked_rice": 1 } }
+        cabbage_wrap: { seconds: 10, ingredients: { "customcrops:cabbage": 1, "rustport:smoked_beef": 1 } }
+        kimbap: { seconds: 10, ingredients: { "minecraft:dried_kelp": 1, "minecraft:carrot": 1, "rustport:cooked_rice": 1 } }
+        mushroom_fried_rice: { seconds: 10, ingredients: { "#mushroom": 1, "rustport:cooked_rice": 1, "minecraft:potato": 1 } }
+        bacon_and_eggs: { seconds: 10, ingredients: { "rustport:bacon": 1, "minecraft:egg": 1 } }
+        kimchi_fried_rice: { seconds: 20, ingredients: { "rustport:kimchi": 1, "rustport:cooked_rice": 1 } }
+        meatball_pasta: { seconds: 20, ingredients: { "rustport:noodles": 1, "rustport:patty": 1, "rustport:tomato_sauce": 1 } }
+        ratatouille: { seconds: 20, ingredients: { "minecraft:pumpkin": 1, "rustport:tomato_sauce": 1, "rustport:onion": 1, "customcrops:eggplant": 1 } }
+        fried_rice: { seconds: 20, ingredients: { "rustport:cooked_rice": 1, "minecraft:egg": 1, "minecraft:carrot": 1, "rustport:onion": 1 } }
+        dumplings: { seconds: 20, ingredients: { "rustport:dough": 1, "customcrops:cabbage": 1, "rustport:onion": 1, "#raw_meat": 1 } }
+        apple_pie: { seconds: 20, ingredients: { "rustport:pie_crust": 1, "minecraft:apple": 1, "minecraft:sugar": 1 } }
+        pizza: { seconds: 40, ingredients: { "rustport:dough": 1, "rustport:tomato_sauce": 1, "rustport:cheese": 1 } }
+        hamburger: { seconds: 40, ingredients: { "rustport:bread_loaf": 1, "rustport:patty": 1, "customcrops:cabbage": 1, "customcrops:tomato": 1, "rustport:onion": 1 } }
+
+# 절구 (들고 다니는 도구, 설치하지 않음): 제작대·인벤토리 제작 칸에 절구 + 재료를 넣으면 결과가 나오고 절구는 남는다.
+# 물병·물 양동이·우유 양동이는 빈 병·빈 양동이로 돌려준다. 재료는 "#묶음"(위 cooking.groups 또는 아래 mortar.groups)도 된다.
+mortar:
+  groups:
+    liquid: { name: 물이나 우유, items: ["minecraft:potion", "minecraft:water_bucket", "minecraft:milk_bucket"] }
+  recipes:
+    dough: { amount: 1, ingredients: { "rustport:flour": 1, "#liquid": 1 } }
