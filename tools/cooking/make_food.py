@@ -1656,12 +1656,12 @@ MODELS = {
     "ratatouille": ratatouille, "chicken_soup": chicken_soup, "fried_rice": fried_rice, "dumplings": dumplings,
     "vegetable_soup": vegetable_soup, "hamburger": hamburger,
     "tomato_sauce": tomato_sauce,                # 반죽·면·패티는 설치하지 않는 재료라 3D 없음 (2D 아이콘만)
-    "pie_crust": pie_crust, "apple_pie": apple_pie,
+    "apple_pie": apple_pie,                      # 파이 껍질·절구는 2D 확정 (3D 없음)
     "bread_loaf": bread_loaf, "apple_juice": apple_juice, "grape_juice": grape_juice,
     "pineapple_juice": pineapple_juice, "pitaya_juice": pitaya_juice, "cheese": cheese, "yogurt": yogurt,
     "kimchi": kimchi, "beef_stew": beef_stew, "corn_soup": corn_soup, "kimchi_fried_rice": kimchi_fried_rice,
     "smoked_beef": smoked_beef, "bacon": bacon, "smoked_salmon": smoked_salmon, "bacon_and_eggs": bacon_and_eggs,
-    "pizza": pizza, "mortar": mortar,
+    "pizza": pizza,
 }
 
 if __name__ == "__main__":

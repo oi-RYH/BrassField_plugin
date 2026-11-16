@@ -20,7 +20,7 @@ from sprites import SPRITES  # noqa: E402
 from make_food import MODELS  # noqa: E402
 
 # 3D 가 지금 아이콘(시안 축소본)에 맞게 다시 만들어지기 전인 아이템: 확정 전까지 2D 아이콘만 쓴다
-PENDING_3D = {"pie_crust", "mortar"}
+PENDING_3D = set()                                     # (파이 껍질·절구는 2D 확정이라 make_food.MODELS 에서 뺐다)
 
 # (ID, 이름, 단계 설명, (배고픔, 포만감) 또는 None=먹지 못함, 마시는지, 임시 아이콘 (모양, 색))
 # 회복량 기준: 1단계 = 바닐라 날재료 범위(배고픔 2~4), 2단계 = 바닐라 가공 음식 범위(5~10, 포만감 = 배고픔 × 1.2).
