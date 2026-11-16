@@ -139,7 +139,16 @@ public final class MachineMarkers implements Listener {
             return;
         }
         Double height = heights.get(furnitureId(machine));
-        if (height == null || hasMarker(machine)) {
+        if (height == null) {
+            return;
+        }
+        Location location = markerLocation(machine, height);
+        ItemDisplay existing = markerOf(machine);
+        if (existing != null) {
+            // 이미 떠 있는 표시도 설정 높이로 맞춘다 (높이를 바꾼 뒤 재시작하면 옮겨진다)
+            if (existing.getLocation().distanceSquared(location) > 1.0E-4) {
+                existing.teleport(location);
+            }
             return;
         }
         ItemStack markerItem;
@@ -149,10 +158,6 @@ public final class MachineMarkers implements Listener {
             return;  // ItemsAdder가 아직 아이템을 불러오지 못함 → 다음 훑기 때 다시 시도
         }
 
-        Location location = machine.getLocation().clone();
-        location.setYaw(0);
-        location.setPitch(0);
-        location.add(0, height, 0);
         ItemDisplay marker = machine.getWorld().spawn(location, ItemDisplay.class, display -> {
             display.setItemStack(markerItem);
             display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
@@ -166,7 +171,7 @@ public final class MachineMarkers implements Listener {
 
     private void removeMarkers(Entity machine) {
         String owner = machine.getUniqueId().toString();
-        for (Entity nearby : machine.getNearbyEntities(1, 4, 1)) {
+        for (Entity nearby : machine.getNearbyEntities(1, 6, 1)) {
             if (isMarker(nearby) && owner.equals(ownerOf(nearby))) {
                 markers.remove(nearby);
                 nearby.remove();
@@ -174,14 +179,21 @@ public final class MachineMarkers implements Listener {
         }
     }
 
-    private boolean hasMarker(Entity machine) {
+    private ItemDisplay markerOf(Entity machine) {
         String owner = machine.getUniqueId().toString();
-        for (Entity nearby : machine.getNearbyEntities(1, 4, 1)) {
+        for (Entity nearby : machine.getNearbyEntities(1, 6, 1)) {
             if (isMarker(nearby) && owner.equals(ownerOf(nearby))) {
-                return true;
+                return (ItemDisplay) nearby;
             }
         }
-        return false;
+        return null;
+    }
+
+    private static Location markerLocation(Entity machine, double height) {
+        Location location = machine.getLocation().clone();
+        location.setYaw(0);
+        location.setPitch(0);
+        return location.add(0, height, 0);
     }
 
     private void animate() {
