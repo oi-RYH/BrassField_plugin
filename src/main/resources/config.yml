@@ -127,3 +127,18 @@ mortar:
     liquid: { name: 물이나 우유, items: ["minecraft:potion", "minecraft:water_bucket", "minecraft:milk_bucket"] }
   recipes:
     dough: { amount: 1, ingredients: { "rustport:flour": 1, "#liquid": 1 } }
+
+# 요리 놓기: 요리를 들고 웅크린 채 블록 윗면 우클릭 → 3D 모델로 놓인다. 놓인 요리 우클릭 = 먹기, 웅크려 우클릭 = 집기
+placed-food:
+  enabled: true
+  per-chunk-limit: 16        # 한 청크(16x16)에 놓을 수 있는 요리 수 (요리 하나 = 엔티티 2개)
+  others-can-use: false      # false 면 놓은 사람만 먹기·집기 (권한 brassfield.food.admin 은 예외)
+  scale: 0.8                 # 놓인 요리 크기 (1 = 블록 하나 크기)
+  items: [
+    "rustport:tomato_sauce", "rustport:cooked_rice", "rustport:honey_cookie", "rustport:bread_loaf", "rustport:apple_juice", "rustport:grape_juice",
+    "rustport:pineapple_juice", "rustport:pitaya_juice", "rustport:cheese", "rustport:yogurt", "rustport:kimchi", "rustport:smoked_beef",
+    "rustport:bacon", "rustport:smoked_salmon", "rustport:chicken_soup", "rustport:vegetable_soup", "rustport:beef_stew", "rustport:corn_soup",
+    "rustport:salmon_sushi", "rustport:cabbage_wrap", "rustport:kimbap", "rustport:mushroom_fried_rice", "rustport:bacon_and_eggs", "rustport:kimchi_fried_rice",
+    "rustport:meatball_pasta", "rustport:ratatouille", "rustport:fried_rice", "rustport:dumplings", "rustport:apple_pie", "rustport:pizza",
+    "rustport:hamburger"
+  ]

@@ -11,6 +11,7 @@ import com.brassfield.cooking.CookingMachines;
 import com.brassfield.cooking.CookingRecipes;
 import com.brassfield.cooking.CookingStation;
 import com.brassfield.cooking.MortarCrafting;
+import com.brassfield.cooking.PlacedFood;
 import com.brassfield.economy.GoldCommand;
 import com.brassfield.economy.GoldWallet;
 import com.brassfield.enhancement.EnhancementAnimation;
@@ -135,6 +136,11 @@ public class BrassFieldPlugin extends JavaPlugin {
         pluginManager.registerEvents(new CookingListener(this), this);
         // 절구: 제작 칸에서 쓰는 도구 (절구는 남고 재료만 쓴다)
         pluginManager.registerEvents(new MortarCrafting(this, CookingRecipes.loadMortar(getConfig(), itemProvider, getLogger()), itemProvider), this);
+        // 요리 놓기: 웅크려 우클릭으로 블록 위에 3D 요리를 놓고, 우클릭으로 먹고, 웅크려 우클릭으로 집는다
+        PlacedFood placedFood = PlacedFood.load(this, getConfig(), itemProvider, getLogger());
+        if (placedFood != null) {
+            pluginManager.registerEvents(placedFood, this);
+        }
         machines.start();
         cookingMachines.start();
         machineMarkers.start();

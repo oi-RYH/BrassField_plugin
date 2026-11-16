@@ -31,3 +31,6 @@ permissions:
   brassfield.shop.admin:
     description: NPC 없이 /상점 으로 강화석 상점 열기
     default: op
+  brassfield.food.admin:
+    description: 다른 사람이 놓은 요리도 먹거나 집기
+    default: op
