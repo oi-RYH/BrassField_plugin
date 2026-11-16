@@ -14,8 +14,8 @@ public final class StoneShopPrices {
 
     private static final Map<StoneGrade, Long> DEFAULT_PRICES = Map.of(
             StoneGrade.LOW, 1_000L,
-            StoneGrade.MIDDLE, 1_000L,
-            StoneGrade.HIGH, 16_000L
+            StoneGrade.MIDDLE, 5_000L,
+            StoneGrade.HIGH, 10_000L
     );
 
     private final EnumMap<StoneGrade, Long> prices = new EnumMap<>(StoneGrade.class);
