@@ -183,6 +183,15 @@ food-buffs:
 food-market:
   window-hours: 4
   max-change: 0.10
+  # 일간 주문서: 매일 hour 시에 묶음마다 무작위로 count 개를 골라, 그날은 가격 변동 없이 +bonus 에 산다 (한도 없음)
+  daily-orders:
+    hour: 6
+    bonus: 0.80
+    groups:
+      - count: 2               # 2단계 요리
+        from: ["rustport:salmon_sushi", "rustport:cabbage_wrap", "rustport:kimbap", "rustport:mushroom_fried_rice", "rustport:bacon_and_eggs", "rustport:kimchi_fried_rice", "rustport:meatball_pasta", "rustport:ratatouille", "rustport:fried_rice", "rustport:dumplings", "rustport:apple_pie", "rustport:pizza", "rustport:hamburger"]
+      - count: 1               # 1단계 음식
+        from: ["rustport:cooked_rice", "rustport:honey_cookie", "rustport:bread_loaf", "rustport:apple_juice", "rustport:grape_juice", "rustport:pineapple_juice", "rustport:pitaya_juice", "rustport:cheese", "rustport:yogurt", "rustport:kimchi", "rustport:smoked_beef", "rustport:bacon", "rustport:smoked_salmon", "rustport:chicken_soup", "rustport:vegetable_soup", "rustport:beef_stew", "rustport:corn_soup"]
   prices:
     "rustport:cooked_rice": 100
     "rustport:honey_cookie": 200

@@ -115,7 +115,7 @@ public class BrassFieldPlugin extends JavaPlugin {
         cropSalesBook = new BalanceBook(new YamlBalanceStorage(this, "crop_sales.yml"), getLogger(), "CropSales");
         CropMarket cropMarket = new CropMarket(goldWallet, CropPrices.load(getConfig(), getLogger()), itemProvider, cropSalesBook);
         machines.onInteract(CropMarket.MACHINE_ID, cropMarket::open);
-        machineMarkers.register(CropMarket.MACHINE_ID, 3.65);   // 거래기는 1.5배(3블록 높이)
+        machineMarkers.register(CropMarket.MACHINE_ID, 4.65);   // 거래기는 1.5배(3블록 높이), 지붕 위로 한 칸 더
 
         // 요리 납품 로봇 DL-7 (마을 공용): 요리를 골드로 산다. 서버 전체 판매량으로 4시간마다 ±10% 가격 변동
         foodSalesBook = new BalanceBook(new YamlBalanceStorage(this, "food_sales.yml"), getLogger(), "FoodSales");

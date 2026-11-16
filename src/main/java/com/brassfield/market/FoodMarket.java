@@ -24,7 +24,9 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -39,7 +41,9 @@ import java.util.logging.Logger;
  *   <li>서버 전체 판매량을 window-hours(4시간)마다 집계해, 직전 구간에 많이 팔린 요리는 내리고 덜 팔린 요리는 올린다.
  *       변동 = max-change × (1 − 판매 비중 ÷ 기준 비중), ±max-change 로 제한. 기준 비중 = 1 ÷ 요리 수.
  *       직전 구간에 아무것도 안 팔렸으면 모두 기본가. 구간 사이에는 가격이 고정이다.</li>
- *   <li>구간 상태(시작 시각·구간 판매량·현재 변동)는 food_market.yml, 플레이어별 판매 기록은 food_sales.yml.</li>
+ *   <li>일간 주문서: 매일 daily-orders.hour 시(6시)에 묶음마다 무작위로 요리를 골라(2단계 2개 + 1단계 1개),
+ *       그날은 4시간 변동 없이 +bonus(80%)에 산다. 한도 없음.</li>
+ *   <li>상태(구간 시작·구간 판매량·현재 변동·오늘의 주문)는 food_market.yml, 플레이어별 판매 기록은 food_sales.yml.</li>
  * </ul>
  */
 public final class FoodMarket {
@@ -63,11 +67,23 @@ public final class FoodMarket {
     private final Map<String, Double> changes = new HashMap<>();
     private final Map<String, String> names = new HashMap<>();
     private long windowStart;
+    private final int orderHour;
+    private final double orderBonus;
+    private final List<OrderGroup> orderGroups;
+    private final List<String> orders = new ArrayList<>();
+    private long orderStart;
     private DeliveryRobots robots;
     private BukkitTask task;
 
+    /**
+     * 일간 주문서 묶음: from 중에서 count 개를 고른다.
+     */
+    private record OrderGroup(int count, List<String> from) {
+    }
+
     private FoodMarket(JavaPlugin plugin, GoldWallet goldWallet, ItemsAdderItemProvider itemProvider, BalanceBook salesRecord,
-                       Map<String, Long> basePrices, int windowHours, double maxChange) {
+                       Map<String, Long> basePrices, int windowHours, double maxChange,
+                       int orderHour, double orderBonus, List<OrderGroup> orderGroups) {
         this.plugin = plugin;
         this.goldWallet = goldWallet;
         this.itemProvider = itemProvider;
@@ -75,6 +91,9 @@ public final class FoodMarket {
         this.basePrices = basePrices;
         this.windowHours = windowHours;
         this.maxChange = maxChange;
+        this.orderHour = orderHour;
+        this.orderBonus = orderBonus;
+        this.orderGroups = orderGroups;
         this.stateFile = new File(plugin.getDataFolder(), "food_market.yml");
     }
 
@@ -102,7 +121,21 @@ public final class FoodMarket {
         }
         int hours = Math.max(1, section.getInt("window-hours", 4));
         double max = Math.max(0, section.getDouble("max-change", 0.10));
-        FoodMarket market = new FoodMarket(plugin, goldWallet, itemProvider, salesRecord, base, hours, max);
+        List<OrderGroup> groups = new ArrayList<>();
+        for (Map<?, ?> raw : section.getMapList("daily-orders.groups")) {
+            Object count = raw.get("count");
+            Object from = raw.get("from");
+            if (count instanceof Number number && from instanceof List<?> list) {
+                List<String> ids = list.stream().map(String::valueOf).filter(base::containsKey).toList();
+                if (!ids.isEmpty() && number.intValue() > 0) {
+                    groups.add(new OrderGroup(number.intValue(), ids));
+                }
+            }
+        }
+        int orderHour = Math.floorMod(section.getInt("daily-orders.hour", 6), 24);
+        double orderBonus = Math.max(0, section.getDouble("daily-orders.bonus", 0.8));
+        FoodMarket market = new FoodMarket(plugin, goldWallet, itemProvider, salesRecord, base, hours, max,
+                orderHour, orderBonus, groups);
         market.loadState();
         logger.info("요리 판매(DL-7): 요리 " + base.size() + "종, " + hours + "시간마다 ±" + Math.round(max * 100) + "% 가격 변동");
         return market;
@@ -115,6 +148,61 @@ public final class FoodMarket {
     public void start() {
         rollIfNeeded();
         task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::rollIfNeeded, 1200L, 1200L);
+    }
+
+    // ── 일간 주문서 ──
+
+    /**
+     * 지금 주문서의 시작 시각 (매일 orderHour 시. 그 전이면 어제 orderHour 시).
+     */
+    private long orderStartOf(long now) {
+        ZonedDateTime time = Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault());
+        ZonedDateTime start = time.truncatedTo(ChronoUnit.DAYS).withHour(orderHour);
+        if (time.isBefore(start)) {
+            start = start.minusDays(1);
+        }
+        return start.toInstant().toEpochMilli();
+    }
+
+    /**
+     * 날이 바뀌었으면(orderHour 시) 주문 요리를 새로 뽑고 서버에 알린다.
+     */
+    private void rollOrdersIfNeeded(long now) {
+        long start = orderStartOf(now);
+        if (start == orderStart || orderGroups.isEmpty()) {
+            return;
+        }
+        orderStart = start;
+        orders.clear();
+        java.util.Random random = ThreadLocalRandom.current();
+        for (OrderGroup group : orderGroups) {
+            List<String> pool = new ArrayList<>(group.from());
+            pool.removeAll(orders);
+            Collections.shuffle(pool, random);
+            orders.addAll(pool.subList(0, Math.min(group.count(), pool.size())));
+        }
+        if (!orders.isEmpty()) {
+            Component message = Component.text("[DL-7] ", NamedTextColor.GOLD)
+                    .append(Component.text("오늘의 납품 주문: " + ordersText() + " (+" + Math.round(orderBonus * 100) + "%)",
+                            NamedTextColor.YELLOW));
+            plugin.getServer().getOnlinePlayers().forEach(player -> player.sendMessage(message));
+        }
+    }
+
+    boolean isOrdered(String id) {
+        return orders.contains(id);
+    }
+
+    List<String> orders() {
+        return Collections.unmodifiableList(orders);
+    }
+
+    double orderBonus() {
+        return orderBonus;
+    }
+
+    String ordersText() {
+        return String.join(", ", orders.stream().map(this::nameOf).toList());
     }
 
     public void stop() {
@@ -137,6 +225,9 @@ public final class FoodMarket {
                 ? "…수신 확인 없음. 계속 보냅니다."
                 : "삐빅. DL-7, 납품 수령 모드 가동.";
         say(player, line);
+        if (!orders.isEmpty()) {
+            say(player, "오늘의 주문: " + ordersText() + " (+" + Math.round(orderBonus * 100) + "%)");
+        }
     }
 
     static void say(Player player, String line) {
@@ -156,8 +247,11 @@ public final class FoodMarket {
         return Math.max(1, Math.round(base * (1 + changeOf(id))));
     }
 
+    /**
+     * 가격 변동 비율. 오늘의 주문 요리는 4시간 변동 없이 +orderBonus 로 고정.
+     */
     double changeOf(String id) {
-        return changes.getOrDefault(id, 0.0);
+        return isOrdered(id) ? orderBonus : changes.getOrDefault(id, 0.0);
     }
 
     Map<String, Long> basePrices() {
@@ -217,7 +311,7 @@ public final class FoodMarket {
             total = Math.addExact(total, value);
             count += item.getAmount();
             soldById.merge(id, (long) item.getAmount(), Long::sum);
-            cheap |= changeOf(id) <= -maxChange + 1e-9 && maxChange > 0;
+            cheap |= !isOrdered(id) && changeOf(id) <= -maxChange + 1e-9 && maxChange > 0;
         }
         if (total <= 0) {
             return 0;
@@ -259,6 +353,7 @@ public final class FoodMarket {
      */
     private void rollIfNeeded() {
         long now = System.currentTimeMillis();
+        rollOrdersIfNeeded(now);
         long length = windowHours * 3_600_000L;
         if (windowStart > 0 && now < windowStart + length) {
             return;
@@ -287,6 +382,8 @@ public final class FoodMarket {
         }
         YamlConfiguration yaml = YamlConfiguration.loadConfiguration(stateFile);
         windowStart = yaml.getLong("window-start", 0);
+        orderStart = yaml.getLong("order-start", 0);
+        orders.addAll(yaml.getStringList("orders"));
         ConfigurationSection sales = yaml.getConfigurationSection("sales");
         if (sales != null) {
             for (String id : sales.getKeys(false)) {
@@ -305,6 +402,8 @@ public final class FoodMarket {
         YamlConfiguration yaml = new YamlConfiguration();
         yaml.options().setHeader(java.util.List.of("DL-7 요리 판매 구간 상태 (BrassField 가 관리, 직접 수정하지 말 것)"));
         yaml.set("window-start", windowStart);
+        yaml.set("order-start", orderStart);
+        yaml.set("orders", new ArrayList<>(orders));
         windowSales.forEach((id, amount) -> yaml.set("sales." + id, amount));
         changes.forEach((id, change) -> yaml.set("changes." + id, change));
         try {
