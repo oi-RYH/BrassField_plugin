@@ -434,7 +434,7 @@ def save(assets):
             textures[name] = "minecraft:block/" + name
         else:
             raise AssertionError("텍스처 이름 없음: " + name)
-    textures["particle"] = "rustport:machine/cooking_station/iron_plate"
+    textures["particle"] = textures.get("iron") or next(iter(textures.values()))   # 부서질 때 조각 그림 (철판은 크기별 파일뿐이라 iron 사용)
     model = {
         "credit": "BrassField tools/machines/make_cooking_station.py",
         "textures": textures,
