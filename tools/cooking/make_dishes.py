@@ -23,6 +23,12 @@ from make_food import MODELS  # noqa: E402
 PENDING_3D = {"pie_crust", "mortar"}
 
 # (ID, 이름, 단계 설명, (배고픔, 포만감) 또는 None=먹지 못함, 마시는지, 임시 아이콘 (모양, 색))
+# 회복량 기준: 1단계 = 바닐라 날재료 범위(배고픔 2~4), 2단계 = 바닐라 가공 음식 범위(5~10, 포만감 = 배고픔 × 1.2).
+# 그 안에서는 재료 수집 난이도로 매긴다: 0단계 재료 쉬움 1 (밀·감자·당근·사과·설탕·켈프·호박·버섯·달걀·물) /
+# 보통 2 (생고기·연어·우유·토마토·양배추·양파·쌀·옥수수·마늘) / 어려움 3 (꿀·배추·고추·가지·포도·파인애플·용과).
+# 요리 점수 = 0단계까지 풀어 개수만큼 더한 합 ÷ 한 번에 나오는 개수.
+#   1단계: 2점 미만 2/1.2 · 2점 3/1.8 · 4점까지 3/3.6 · 6점까지 4/4.8 · 그 이상 4/6
+#   2단계: 3점 5 · 4점 6 · 6점까지 7 · 8점까지 8 · 그 이상 10
 S1_ING, S1_FOOD, S2 = "1단계 재료", "1단계 음식", "2단계 요리"
 ITEMS = [
     # ── 1단계 재료 (보조 도구·절구) ──
@@ -34,37 +40,37 @@ ITEMS = [
     ("patty", "패티", S1_ING, None, False, None),
     ("pie_crust", "파이 껍질", S1_ING, None, False, ("plate", rgb(222, 170, 96))),
     # ── 1단계 음식 (보조 도구) ──
-    ("cooked_rice", "익힌 밥", S1_FOOD, (4, 3), False, None),
-    ("honey_cookie", "꿀 쿠키", S1_FOOD, (4, 3), False, None),
-    ("bread_loaf", "식빵", S1_FOOD, (5, 6), False, ("loaf", rgb(222, 160, 84))),
-    ("apple_juice", "사과 주스", S1_FOOD, (4, 2), True, ("bottle", rgb(236, 196, 72))),
-    ("grape_juice", "포도 주스", S1_FOOD, (4, 2), True, ("bottle", rgb(128, 52, 120))),
-    ("pineapple_juice", "파인애플 주스", S1_FOOD, (4, 2), True, ("bottle", rgb(250, 220, 90))),
-    ("pitaya_juice", "용과 주스", S1_FOOD, (4, 2), True, ("bottle", rgb(230, 70, 140))),
-    ("cheese", "치즈", S1_FOOD, (3, 4), False, ("lump", rgb(250, 210, 90))),
-    ("yogurt", "요구르트", S1_FOOD, (4, 4), True, ("bowl", rgb(246, 244, 236))),
-    ("kimchi", "김치", S1_FOOD, (2, 2), False, ("bowl", rgb(214, 70, 44))),
-    ("smoked_beef", "훈제 소고기", S1_FOOD, (7, 9), False, ("meat", rgb(140, 62, 40))),
-    ("bacon", "베이컨", S1_FOOD, (5, 6), False, ("meat", rgb(196, 80, 66))),
-    ("smoked_salmon", "훈제 연어", S1_FOOD, (6, 8), False, ("meat", rgb(236, 120, 70))),
-    ("chicken_soup", "치킨 수프", S1_FOOD, (6, 7), False, None),
-    ("vegetable_soup", "야채 수프", S1_FOOD, (6, 7), False, None),
-    ("beef_stew", "소고기 스튜", S1_FOOD, (8, 9), False, ("bowl", rgb(132, 70, 36))),
-    ("corn_soup", "옥수수 수프", S1_FOOD, (5, 6), False, ("bowl", rgb(248, 214, 110))),
+    ("cooked_rice", "익힌 밥", S1_FOOD, (3, 1.8), False, None),
+    ("honey_cookie", "꿀 쿠키", S1_FOOD, (3, 3.6), False, None),
+    ("bread_loaf", "식빵", S1_FOOD, (3, 1.8), False, ("loaf", rgb(222, 160, 84))),
+    ("apple_juice", "사과 주스", S1_FOOD, (3, 1.8), True, ("bottle", rgb(236, 196, 72))),
+    ("grape_juice", "포도 주스", S1_FOOD, (4, 4.8), True, ("bottle", rgb(128, 52, 120))),
+    ("pineapple_juice", "파인애플 주스", S1_FOOD, (3, 3.6), True, ("bottle", rgb(250, 220, 90))),
+    ("pitaya_juice", "용과 주스", S1_FOOD, (3, 3.6), True, ("bottle", rgb(230, 70, 140))),
+    ("cheese", "치즈", S1_FOOD, (3, 1.8), False, ("lump", rgb(250, 210, 90))),
+    ("yogurt", "요구르트", S1_FOOD, (4, 4.8), True, ("bowl", rgb(246, 244, 236))),
+    ("kimchi", "김치", S1_FOOD, (4, 6), False, ("bowl", rgb(214, 70, 44))),
+    ("smoked_beef", "훈제 소고기", S1_FOOD, (3, 1.8), False, ("meat", rgb(140, 62, 40))),
+    ("bacon", "베이컨", S1_FOOD, (3, 1.8), False, ("meat", rgb(196, 80, 66))),
+    ("smoked_salmon", "훈제 연어", S1_FOOD, (3, 1.8), False, ("meat", rgb(236, 120, 70))),
+    ("chicken_soup", "치킨 수프", S1_FOOD, (2, 1.2), False, None),
+    ("vegetable_soup", "야채 수프", S1_FOOD, (3, 1.8), False, None),
+    ("beef_stew", "소고기 스튜", S1_FOOD, (2, 1.2), False, ("bowl", rgb(132, 70, 36))),
+    ("corn_soup", "옥수수 수프", S1_FOOD, (2, 1.2), False, ("bowl", rgb(248, 214, 110))),
     # ── 2단계 요리 (조리대) ──
-    ("salmon_sushi", "연어 초밥", S2, (6, 6), False, None),
-    ("cabbage_wrap", "양배추 쌈", S2, (6, 6), False, None),
-    ("kimbap", "김밥", S2, (6, 6), False, None),
-    ("mushroom_fried_rice", "버섯볶음밥", S2, (6, 6), False, None),
-    ("bacon_and_eggs", "베이컨 에그", S2, (6, 6), False, ("plate", rgb(250, 230, 120))),
-    ("kimchi_fried_rice", "김치볶음밥", S2, (8, 10), False, ("bowl", rgb(222, 100, 50))),
-    ("meatball_pasta", "미트볼 파스타", S2, (8, 10), False, None),
-    ("ratatouille", "라타투이", S2, (8, 10), False, None),
-    ("fried_rice", "볶음밥", S2, (8, 10), False, None),
-    ("dumplings", "만두", S2, (8, 10), False, None),
-    ("apple_pie", "애플파이", S2, (8, 10), False, ("plate", rgb(214, 150, 70))),
-    ("pizza", "피자", S2, (10, 14), False, ("plate", rgb(214, 70, 44))),
-    ("hamburger", "햄버거", S2, (10, 14), False, None),
+    ("salmon_sushi", "연어 초밥", S2, (6, 7.2), False, None),
+    ("cabbage_wrap", "양배추 쌈", S2, (6, 7.2), False, None),
+    ("kimbap", "김밥", S2, (6, 7.2), False, None),
+    ("mushroom_fried_rice", "버섯볶음밥", S2, (6, 7.2), False, None),
+    ("bacon_and_eggs", "베이컨 에그", S2, (5, 6), False, ("plate", rgb(250, 230, 120))),
+    ("kimchi_fried_rice", "김치볶음밥", S2, (10, 12), False, ("bowl", rgb(222, 100, 50))),
+    ("meatball_pasta", "미트볼 파스타", S2, (8, 9.6), False, None),
+    ("ratatouille", "라타투이", S2, (10, 12), False, None),
+    ("fried_rice", "볶음밥", S2, (7, 8.4), False, None),
+    ("dumplings", "만두", S2, (8, 9.6), False, None),
+    ("apple_pie", "애플파이", S2, (7, 8.4), False, ("plate", rgb(214, 150, 70))),
+    ("pizza", "피자", S2, (8, 9.6), False, ("plate", rgb(214, 70, 44))),
+    ("hamburger", "햄버거", S2, (10, 12), False, None),
 ]
 
 

@@ -66,9 +66,10 @@ public final class PlacedFood implements Listener {
     private final int chunkLimit;
     private final boolean othersCanUse;
     private final float scale;
+    private final FoodBuffs buffs;
 
     private PlacedFood(JavaPlugin plugin, ItemsAdderItemProvider itemProvider, Set<String> placeable,
-                       int chunkLimit, boolean othersCanUse, float scale) {
+                       int chunkLimit, boolean othersCanUse, float scale, FoodBuffs buffs) {
         this.plugin = plugin;
         this.itemProvider = itemProvider;
         this.ownerKey = new NamespacedKey(plugin, "placed_food_owner");
@@ -77,12 +78,14 @@ public final class PlacedFood implements Listener {
         this.chunkLimit = chunkLimit;
         this.othersCanUse = othersCanUse;
         this.scale = scale;
+        this.buffs = buffs;
     }
 
     /**
      * config.yml 의 placed-food 항목을 읽는다. 꺼져 있거나 항목이 없으면 null.
      */
-    public static PlacedFood load(JavaPlugin plugin, FileConfiguration config, ItemsAdderItemProvider itemProvider, Logger logger) {
+    public static PlacedFood load(JavaPlugin plugin, FileConfiguration config, ItemsAdderItemProvider itemProvider,
+                                  FoodBuffs buffs, Logger logger) {
         ConfigurationSection section = config.getConfigurationSection("placed-food");
         if (section == null || !section.getBoolean("enabled", true)) {
             return null;
@@ -95,7 +98,7 @@ public final class PlacedFood implements Listener {
         return new PlacedFood(plugin, itemProvider, new HashSet<>(items),
                 Math.max(1, section.getInt("per-chunk-limit", 16)),
                 section.getBoolean("others-can-use", false),
-                (float) section.getDouble("scale", 0.8));
+                (float) section.getDouble("scale", 0.8), buffs);
     }
 
     // ── 놓기 ──
@@ -203,6 +206,9 @@ public final class PlacedFood implements Listener {
         player.setSaturation(Math.min(level, player.getSaturation() + saturation));
         player.getWorld().playSound(hitbox.getLocation(), Sound.ENTITY_GENERIC_EAT, 1.0f, 1.0f);
         player.getWorld().playSound(hitbox.getLocation(), Sound.ENTITY_PLAYER_BURP, 0.5f, 1.0f);
+        if (buffs != null) {
+            buffs.apply(player, itemProvider.idOf(food));            // 2단계 요리 버프 (손으로 먹을 때와 같게)
+        }
         remove(hitbox, display);
     }
 

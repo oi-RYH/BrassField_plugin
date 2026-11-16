@@ -50,6 +50,7 @@ crop-shop:
 cooking:
   # "#묶음" 재료: 이 중 아무거나
   groups:
+    flour: { name: 밀가루나 옥수수가루, items: ["rustport:flour", "rustport:cornmeal"] }     # 옥수수가루는 밀가루 대신 쓸 수 있다
     raw_meat: { name: 생고기, items: ["minecraft:beef", "minecraft:porkchop", "minecraft:chicken", "minecraft:mutton"] }
     mushroom: { name: 버섯, items: ["minecraft:brown_mushroom", "minecraft:red_mushroom"] }
   # 기기 → ItemsAdder 가구 ID, 창 제목, 레시피 (결과 ID(rustport:<ID>) → 조리 시간(초)·개수·재료)
@@ -93,14 +94,14 @@ cooking:
         chicken_soup: { seconds: 20, amount: 4, ingredients: { "minecraft:chicken": 1, "minecraft:carrot": 1, "rustport:onion": 1, "customcrops:garlic": 1 } }
         vegetable_soup: { seconds: 20, amount: 4, ingredients: { "minecraft:carrot": 1, "minecraft:potato": 1, "rustport:onion": 1, "customcrops:tomato": 1, "customcrops:cabbage": 1 } }
         beef_stew: { seconds: 20, amount: 4, ingredients: { "minecraft:beef": 1, "minecraft:potato": 1, "minecraft:carrot": 1, "rustport:onion": 1 } }
-        corn_soup: { seconds: 20, amount: 4, ingredients: { "customcrops:corn": 1, "minecraft:milk_bucket": 1, "rustport:onion": 1 } }
+        corn_soup: { seconds: 20, amount: 4, ingredients: { "rustport:cornmeal": 1, "minecraft:milk_bucket": 1, "rustport:onion": 1 } }
     oven:
       furniture: "rustport:oven"
       title: 제빵 오븐
       recipes:
         bread_loaf: { seconds: 10, ingredients: { "rustport:dough": 1 } }
         pie_crust: { seconds: 10, ingredients: { "rustport:dough": 1, "minecraft:egg": 1 } }
-        honey_cookie: { seconds: 10, ingredients: { "rustport:flour": 1, "minecraft:honey_bottle": 1 } }
+        honey_cookie: { seconds: 10, ingredients: { "#flour": 1, "minecraft:honey_bottle": 1 } }
     # 조리대: 1단계 + 0단계 → 2단계. 조리 시간: 간단 10초 / 중급 20초 / 복잡 40초
     counter:
       furniture: "rustport:steam_cooker"
@@ -126,7 +127,7 @@ mortar:
   groups:
     liquid: { name: 물이나 우유, items: ["minecraft:potion", "minecraft:water_bucket", "minecraft:milk_bucket"] }
   recipes:
-    dough: { amount: 1, ingredients: { "rustport:flour": 1, "#liquid": 1 } }
+    dough: { amount: 1, ingredients: { "#flour": 1, "#liquid": 1 } }
 
 # 요리 놓기: 요리를 들고 웅크린 채 블록 윗면 우클릭 → 3D 모델로 놓인다. 놓인 요리 우클릭 = 먹기, 웅크려 우클릭 = 집기
 placed-food:
@@ -142,3 +143,36 @@ placed-food:
     "rustport:meatball_pasta", "rustport:ratatouille", "rustport:fried_rice", "rustport:dumplings", "rustport:apple_pie", "rustport:pizza",
     "rustport:hamburger"
   ]
+
+# 2단계 요리 버프: 먹으면(손으로든 놓인 요리든) 그 요리의 효과 후보 중 하나가 무작위로 붙는다 (레벨 I)
+food-buffs:
+  enabled: true
+  effects:                   # 효과 ID (minecraft:<ID>) → 알림에 보일 이름
+    speed: 신속
+    haste: 성급함
+    strength: 힘
+    jump_boost: 점프 강화
+    resistance: 저항
+    fire_resistance: 화염 저항
+    water_breathing: 수중 호흡
+    dolphins_grace: 돌고래의 우아함
+    night_vision: 야간 투시
+    absorption: 흡수
+    luck: 행운
+    regeneration: 재생
+  max-seconds:               # 너무 센 효과는 요리 지속 시간과 관계없이 이 시간까지만
+    regeneration: 30
+  items:                     # 요리 → 지속 시간(초, 간단 60 / 중급 120 / 복잡 180)과 효과 후보 (최대 2개)
+    "rustport:salmon_sushi": { seconds: 60, effects: [water_breathing, dolphins_grace] }
+    "rustport:cabbage_wrap": { seconds: 60, effects: [resistance, absorption] }
+    "rustport:kimbap": { seconds: 60, effects: [speed, jump_boost] }
+    "rustport:mushroom_fried_rice": { seconds: 60, effects: [night_vision, haste] }
+    "rustport:bacon_and_eggs": { seconds: 60, effects: [haste, speed] }
+    "rustport:kimchi_fried_rice": { seconds: 120, effects: [fire_resistance, strength] }
+    "rustport:meatball_pasta": { seconds: 120, effects: [strength, resistance] }
+    "rustport:ratatouille": { seconds: 120, effects: [regeneration, absorption] }
+    "rustport:fried_rice": { seconds: 120, effects: [haste, speed] }
+    "rustport:dumplings": { seconds: 120, effects: [resistance, absorption] }
+    "rustport:apple_pie": { seconds: 120, effects: [luck, absorption] }
+    "rustport:pizza": { seconds: 180, effects: [strength, absorption] }
+    "rustport:hamburger": { seconds: 180, effects: [strength, resistance] }

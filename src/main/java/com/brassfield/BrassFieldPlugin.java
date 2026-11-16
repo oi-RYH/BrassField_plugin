@@ -10,6 +10,7 @@ import com.brassfield.cooking.CookingListener;
 import com.brassfield.cooking.CookingMachines;
 import com.brassfield.cooking.CookingRecipes;
 import com.brassfield.cooking.CookingStation;
+import com.brassfield.cooking.FoodBuffs;
 import com.brassfield.cooking.MortarCrafting;
 import com.brassfield.cooking.PlacedFood;
 import com.brassfield.economy.GoldCommand;
@@ -137,7 +138,12 @@ public class BrassFieldPlugin extends JavaPlugin {
         // 절구: 제작 칸에서 쓰는 도구 (절구는 남고 재료만 쓴다)
         pluginManager.registerEvents(new MortarCrafting(this, CookingRecipes.loadMortar(getConfig(), itemProvider, getLogger()), itemProvider), this);
         // 요리 놓기: 웅크려 우클릭으로 블록 위에 3D 요리를 놓고, 우클릭으로 먹고, 웅크려 우클릭으로 집는다
-        PlacedFood placedFood = PlacedFood.load(this, getConfig(), itemProvider, getLogger());
+        // 2단계 요리 버프: 먹으면 이로운 효과 하나가 무작위로 붙는다
+        FoodBuffs foodBuffs = FoodBuffs.load(getConfig(), itemProvider, getLogger());
+        if (foodBuffs != null) {
+            pluginManager.registerEvents(foodBuffs, this);
+        }
+        PlacedFood placedFood = PlacedFood.load(this, getConfig(), itemProvider, foodBuffs, getLogger());
         if (placedFood != null) {
             pluginManager.registerEvents(placedFood, this);
         }
