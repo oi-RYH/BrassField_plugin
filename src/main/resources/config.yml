@@ -162,17 +162,55 @@ food-buffs:
     regeneration: 재생
   max-seconds:               # 너무 센 효과는 요리 지속 시간과 관계없이 이 시간까지만
     regeneration: 30
-  items:                     # 요리 → 지속 시간(초, 간단 60 / 중급 120 / 복잡 180)과 효과 후보 (최대 2개)
-    "rustport:salmon_sushi": { seconds: 60, effects: [water_breathing, dolphins_grace] }
-    "rustport:cabbage_wrap": { seconds: 60, effects: [resistance, absorption] }
-    "rustport:kimbap": { seconds: 60, effects: [speed, jump_boost] }
-    "rustport:mushroom_fried_rice": { seconds: 60, effects: [night_vision, haste] }
-    "rustport:bacon_and_eggs": { seconds: 60, effects: [haste, speed] }
-    "rustport:kimchi_fried_rice": { seconds: 120, effects: [fire_resistance, strength] }
-    "rustport:meatball_pasta": { seconds: 120, effects: [strength, resistance] }
-    "rustport:ratatouille": { seconds: 120, effects: [regeneration, absorption] }
-    "rustport:fried_rice": { seconds: 120, effects: [haste, speed] }
-    "rustport:dumplings": { seconds: 120, effects: [resistance, absorption] }
-    "rustport:apple_pie": { seconds: 120, effects: [luck, absorption] }
-    "rustport:pizza": { seconds: 180, effects: [strength, absorption] }
-    "rustport:hamburger": { seconds: 180, effects: [strength, resistance] }
+  items:                     # 요리 → 지속 시간(초, 간단 60 / 중급 120 / 복잡 180)과 효과 후보 (최대 3개, 그중 하나가 무작위)
+    "rustport:salmon_sushi": { seconds: 60, effects: [water_breathing, dolphins_grace, night_vision] }
+    "rustport:cabbage_wrap": { seconds: 60, effects: [resistance, absorption, regeneration] }
+    "rustport:kimbap": { seconds: 60, effects: [speed, jump_boost, haste] }
+    "rustport:mushroom_fried_rice": { seconds: 60, effects: [night_vision, haste, resistance] }
+    "rustport:bacon_and_eggs": { seconds: 60, effects: [haste, speed, absorption] }
+    "rustport:kimchi_fried_rice": { seconds: 120, effects: [fire_resistance, strength, speed] }
+    "rustport:meatball_pasta": { seconds: 120, effects: [strength, resistance, absorption] }
+    "rustport:ratatouille": { seconds: 120, effects: [regeneration, absorption, resistance] }
+    "rustport:fried_rice": { seconds: 120, effects: [haste, speed, fire_resistance] }
+    "rustport:dumplings": { seconds: 120, effects: [resistance, absorption, regeneration] }
+    "rustport:apple_pie": { seconds: 120, effects: [luck, absorption, regeneration] }
+    "rustport:pizza": { seconds: 180, effects: [strength, absorption, speed] }
+    "rustport:hamburger": { seconds: 180, effects: [strength, resistance, haste] }
+
+# 요리 납품 로봇 DL-7 (마을 공용): 요리를 골드로 산다. 1단계 재료(밀가루·반죽·면·소스·패티·파이 껍질)는 사지 않는다.
+# 기본가 = 재료 난이도 점수 × 단계 배율 (1단계 점수×50, 2단계 점수×400×조리 시간 보너스). 노션 "요리 시스템 (구현 기준)" 참고.
+# 서버 전체 판매량을 window-hours 마다 집계: 변동 = max-change × (1 − 판매 비중 ÷ 기준 비중), ±max-change 로 제한.
+food-market:
+  window-hours: 4
+  max-change: 0.10
+  prices:
+    "rustport:cooked_rice": 100
+    "rustport:honey_cookie": 200
+    "rustport:bread_loaf": 100
+    "rustport:apple_juice": 100
+    "rustport:grape_juice": 300
+    "rustport:pineapple_juice": 150
+    "rustport:pitaya_juice": 150
+    "rustport:cheese": 100
+    "rustport:yogurt": 250
+    "rustport:kimchi": 400
+    "rustport:smoked_beef": 100
+    "rustport:bacon": 100
+    "rustport:smoked_salmon": 100
+    "rustport:chicken_soup": 90
+    "rustport:vegetable_soup": 100
+    "rustport:beef_stew": 80
+    "rustport:corn_soup": 80
+    "rustport:bacon_and_eggs": 1200
+    "rustport:salmon_sushi": 1600
+    "rustport:cabbage_wrap": 1600
+    "rustport:kimbap": 1600
+    "rustport:mushroom_fried_rice": 1600
+    "rustport:apple_pie": 2500
+    "rustport:fried_rice": 3000
+    "rustport:meatball_pasta": 4000
+    "rustport:dumplings": 4000
+    "rustport:kimchi_fried_rice": 5000
+    "rustport:ratatouille": 5000
+    "rustport:pizza": 4800
+    "rustport:hamburger": 6000

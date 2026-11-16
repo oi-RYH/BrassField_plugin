@@ -27,6 +27,10 @@ import com.brassfield.market.CropMarket;
 import com.brassfield.market.CropPrices;
 import com.brassfield.market.CropSellGui;
 import com.brassfield.market.CropSellListener;
+import com.brassfield.market.DeliveryRobots;
+import com.brassfield.market.FoodMarket;
+import com.brassfield.market.FoodSellGui;
+import com.brassfield.market.FoodSellListener;
 import com.brassfield.shop.StoneShop;
 import com.brassfield.shop.StoneShopCommand;
 import com.brassfield.shop.StoneShopListener;
@@ -60,6 +64,9 @@ public class BrassFieldPlugin extends JavaPlugin {
     private CurrencySidebar currencySidebar;
     private MachineMarkers machineMarkers;
     private CookingMachines cookingMachines;
+    private BalanceBook foodSalesBook;
+    private FoodMarket foodMarket;
+    private DeliveryRobots deliveryRobots;
 
     @Override
     public void onEnable() {
@@ -110,6 +117,16 @@ public class BrassFieldPlugin extends JavaPlugin {
         machines.onInteract(CropMarket.MACHINE_ID, cropMarket::open);
         machineMarkers.register(CropMarket.MACHINE_ID, 3.65);   // 거래기는 1.5배(3블록 높이)
 
+        // 요리 납품 로봇 DL-7 (마을 공용): 요리를 골드로 산다. 서버 전체 판매량으로 4시간마다 ±10% 가격 변동
+        foodSalesBook = new BalanceBook(new YamlBalanceStorage(this, "food_sales.yml"), getLogger(), "FoodSales");
+        foodMarket = FoodMarket.load(this, getConfig(), goldWallet, itemProvider, foodSalesBook, getLogger());
+        if (foodMarket != null) {
+            deliveryRobots = new DeliveryRobots(this, itemProvider, FoodMarket.MACHINE_ID);
+            foodMarket.robots(deliveryRobots);
+            machines.onInteractAt(FoodMarket.MACHINE_ID, foodMarket::open);
+            machineMarkers.register(FoodMarket.MACHINE_ID, 2.75);
+        }
+
         // 요리 기기 7종 (조리대 + 보조 도구 6, 개인 기기: 누구나 설치·회수, 빨간 표시 없음. 기기마다 조리칸 하나, 실제 시간 기준으로 익음)
         cookingMachines = new CookingMachines(this, CookingRecipes.loadStations(getConfig(), itemProvider, getLogger()), itemProvider);
         for (CookingStation station : cookingMachines.stations()) {
@@ -134,6 +151,7 @@ public class BrassFieldPlugin extends JavaPlugin {
         pluginManager.registerEvents(new StarterKitListener(), this);
         pluginManager.registerEvents(new StoneShopListener(stoneShop), this);
         pluginManager.registerEvents(new CropSellListener(this), this);
+        pluginManager.registerEvents(new FoodSellListener(this), this);
         pluginManager.registerEvents(new CookingListener(this), this);
         // 절구: 제작 칸에서 쓰는 도구 (절구는 남고 재료만 쓴다)
         pluginManager.registerEvents(new MortarCrafting(this, CookingRecipes.loadMortar(getConfig(), itemProvider, getLogger()), itemProvider), this);
@@ -150,6 +168,10 @@ public class BrassFieldPlugin extends JavaPlugin {
         machines.start();
         cookingMachines.start();
         machineMarkers.start();
+        if (foodMarket != null) {
+            foodMarket.start();
+            deliveryRobots.start();
+        }
 
         // 재화 사이드바
         currencySidebar = new CurrencySidebar(this, goldWallet, stoneWallet, guiBackground);
@@ -178,6 +200,10 @@ public class BrassFieldPlugin extends JavaPlugin {
                 gui.returnItemsTo(player);
                 player.closeInventory();
             }
+            if (player.getOpenInventory().getTopInventory().getHolder() instanceof FoodSellGui gui) {
+                gui.returnItemsTo(player);
+                player.closeInventory();
+            }
         }
         if (animation != null) {
             animation.shutdown();
@@ -191,6 +217,12 @@ public class BrassFieldPlugin extends JavaPlugin {
         if (cookingMachines != null) {
             cookingMachines.stop();
         }
+        if (foodMarket != null) {
+            foodMarket.stop();
+        }
+        if (deliveryRobots != null) {
+            deliveryRobots.stop();
+        }
         if (citizensHooked) {
             CitizensShopHook.unregister();
         }
@@ -202,6 +234,9 @@ public class BrassFieldPlugin extends JavaPlugin {
         }
         if (cropSalesBook != null) {
             cropSalesBook.shutdown();
+        }
+        if (foodSalesBook != null) {
+            foodSalesBook.shutdown();
         }
         getLogger().info("BrassField 플러그인이 종료됩니다.");
     }
