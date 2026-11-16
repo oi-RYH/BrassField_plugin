@@ -19,6 +19,9 @@ from food_kit import png, rgb, blank, dark_outline  # noqa: E402
 from sprites import SPRITES  # noqa: E402
 from make_food import MODELS  # noqa: E402
 
+# 3D 가 지금 아이콘(시안 축소본)에 맞게 다시 만들어지기 전인 아이템: 확정 전까지 2D 아이콘만 쓴다
+PENDING_3D = {"pie_crust", "mortar"}
+
 # (ID, 이름, 단계 설명, (배고픔, 포만감) 또는 None=먹지 못함, 마시는지, 임시 아이콘 (모양, 색))
 S1_ING, S1_FOOD, S2 = "1단계 재료", "1단계 음식", "2단계 요리"
 ITEMS = [
@@ -154,18 +157,21 @@ lines = ["info:", "  namespace: rustport", "",
          "# 단계: 0단계 재료 → 보조 도구·절구 → 1단계 → 조리대 → 2단계", "items:"]
 preview = []
 for item_id, name, stage, food, drink, temp in ITEMS:
-    full = item_id in SPRITES and item_id in MODELS
-    img = SPRITES[item_id]() if item_id in SPRITES else placeholder(*temp)
+    drawn = item_id in SPRITES
+    full = drawn and item_id in MODELS and item_id not in PENDING_3D    # 확정된 3D 만 (가루 같은 재료는 2D 아이콘만)
+    img = SPRITES[item_id]() if drawn else placeholder(*temp)
     png.write(os.path.join(tex_dir, item_id + ".png"), img)
     preview.append(img)
     if full:
         MODELS[item_id]().save(assets)
-    lore = ["&7" + stage] + ([] if full else ["&8(임시 그림)"])
+    lore = ["&7" + stage] + ([] if drawn else ["&8(임시 그림)"])
     lines.append(entry(item_id, name, lore, "full" if full else "temp", food, drink))
 
 # 절구: 제작 칸에서 쓰는 도구 (닳지 않음). 제작법: 위 막대기, 양옆·아래 매끄러운 돌
-png.write(os.path.join(tex_dir, "mortar.png"), mortar_icon())
-lines.append(entry("mortar", "절구", ["&7요리 도구 (닳지 않음)", "&8제작 칸에 절구와 재료를 함께 넣으면", "&8반죽 등을 만듭니다.", "&8(임시 그림)"], "temp"))
+mortar_img = SPRITES["mortar"]() if "mortar" in SPRITES else mortar_icon()
+png.write(os.path.join(tex_dir, "mortar.png"), mortar_img)
+lines.append(entry("mortar", "절구", ["&7요리 도구 (닳지 않음)", "&8제작 칸에 절구와 재료를 함께 넣으면", "&8반죽 등을 만듭니다."]
+                   + ([] if "mortar" in SPRITES else ["&8(임시 그림)"]), "temp"))
 lines.append("""
 recipes:
   crafting_table:
@@ -188,7 +194,7 @@ if os.environ.get("PREVIEW"):
     cols = 10
     rows = math.ceil((len(preview) + 1) / cols)
     sheet = png.blank(18 * cols, 18 * rows)
-    for i, img in enumerate(preview + [mortar_icon()]):
+    for i, img in enumerate(preview + [mortar_img]):
         png.paste(sheet, img, (i % cols) * 18, (i // cols) * 18)
     png.write(os.environ["PREVIEW"], png.scale(sheet, 6))
 print("ok: %d items + mortar" % len(ITEMS))

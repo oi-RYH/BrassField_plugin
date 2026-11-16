@@ -114,7 +114,7 @@ def render(model, textures, forward, scale, size):
     # 바닥 격자 범위 (블록 칸 단위)
     gx0, gx1 = math.floor(min(xs) / 16) * 16, math.ceil(max(xs) / 16) * 16
     gz0, gz1 = math.floor(min(zs) / 16) * 16, math.ceil(max(zs) / 16) * 16
-    corners = [(x, y, z) for x in (gx0, gx1) for y in (min(p[1] for p in pts + [(0, 0, 0)]), max(p[1] for p in pts + [(0, 32, 0)]))
+    corners = [(x, y, z) for x in (gx0, gx1) for y in (min(p[1] for p in pts + [(0, 0, 0)]), max(p[1] for p in pts))
                for z in (gz0, gz1)]
     sxs = [sum(c[i] * r[i] for i in range(3)) for c in corners]
     sys_ = [-sum(c[i] * u[i] for i in range(3)) for c in corners]
@@ -182,8 +182,12 @@ def sheet(model_path, assets, out, jar=DEFAULT_JAR, scale=8):
     with open(model_path, encoding="utf-8") as fp:
         model = json.load(fp)
     textures = Textures(model, assets, jar)
-    small = (56 * scale, 44 * scale)
-    big = (84 * scale, 66 * scale)
+    # 모델 크기에 맞춰 칸 크기·배율을 정한다 (1블록 아이템은 크게, 여러 블록 가구는 작게)
+    pts = [v for e in model.get("elements", []) for v in (e["from"], e["to"])]
+    ext = max(16, max(max(p[i] for p in pts) - min(p[i] for p in pts) for i in range(3))) if pts else 16
+    scale = max(4, min(16, int(scale * 48 / ext)))
+    small = (int(ext * 1.15 + 10) * scale, int(ext * 0.9 + 10) * scale)
+    big = (int(ext * 1.75 + 12) * scale, int(ext * 1.35 + 12) * scale)
     views = [
         render(model, textures, (0, 0, 1), scale, small),          # 정면 (north를 봄)
         render(model, textures, (1, 0, 0), scale, small),          # 오른쪽 옆면 (정면에서 볼 때 오른쪽)
