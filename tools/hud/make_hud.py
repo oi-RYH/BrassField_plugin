@@ -1,3 +1,4 @@
+import os
 import sys, random; sys.path.insert(0, '.')
 import png
 OUT = sys.argv[1]  # .../textures/font/hud/ (사이드바)
@@ -107,13 +108,20 @@ GEMS = {
                   'F': (255, 106, 26, 255), 'S': (226, 121, 82, 255)}),
 }
 ITEM_OUT = sys.argv[2] if len(sys.argv) > 2 else None  # .../textures/item/ (강화 GUI 강화석 칸 아이콘)
+import make_stones  # noqa: E402  사이드바 강화석은 시안을 옮겨 그린 픽셀 그림 (2026-11-16)
+_, SIDE_GEMS = make_stones.build()
 for name, (rows, pal) in GEMS.items():
     gem = [[T if c == '.' else pal[c] for c in row] for row in rows]
-    png.write(OUT + name + '.png', gem)
+    png.write(OUT + name + '.png', SIDE_GEMS[name.replace('gem_', '')])
     if ITEM_OUT:
-        # 아이템 칸용: 상자 그림과 같은 32x32 캔버스에 2배로 키워 가운데 둔다.
-        icon = png.blank(32, 32)
-        png.paste(icon, png.scale(gem, 2), 7, 7)
+        # 아이템 칸용 (강화 창 강화석 칸·강화석 상점): 사용자 시안(art/stones_concept2.png)을 줄인 32x32 그림이 있으면 그것을 쓴다.
+        # 크기는 상급 32칸 · 중급 상급의 80% · 하급 중급의 70% (2026-11-16 확정). 없으면 옛 방식(보석을 2배로 키워 가운데).
+        art = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'art', name.replace('gem_', 'stone_icon_') + '.png')
+        if os.path.exists(art):
+            icon = png.read(art)
+        else:
+            icon = png.blank(32, 32)
+            png.paste(icon, png.scale(gem, 2), 7, 7)
         png.write(ITEM_OUT + name.replace('gem_', 'stone_icon_') + '.png', icon)
 
 W = (255, 255, 255, 255)
