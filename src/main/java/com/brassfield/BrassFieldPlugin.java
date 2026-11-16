@@ -100,7 +100,7 @@ public class BrassFieldPlugin extends JavaPlugin {
 
         // 강화석 상점
         StoneShop stoneShop = new StoneShop(
-                goldWallet, stoneWallet, StoneShopPrices.load(getConfig(), getLogger()), itemProvider
+                goldWallet, stoneWallet, StoneShopPrices.load(getConfig(), getLogger()), itemProvider, guiBackground
         );
         command("상점").setExecutor(new StoneShopCommand(stoneShop));
 

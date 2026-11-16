@@ -1,6 +1,7 @@
 package com.brassfield.shop;
 
 import com.brassfield.common.CommandSupport;
+import com.brassfield.common.ItemsAdderGuiBackground;
 import com.brassfield.stone.StoneGrade;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -20,12 +21,19 @@ import java.util.UUID;
 
 /**
  * 강화석 상점 창 (4줄).
- * 첫 줄 가운데: 보유 골드 / 2~4줄: 하급·중급·상급 강화석 (왼쪽 아이콘, 오른쪽 1개·10개·64개 구매 버튼)
+ * 2~4줄: 하급·중급·상급 강화석 (왼쪽 아이콘, 가운데 +1·+10·+64 구매 버튼) / 3줄 오른쪽 끝: 보유 골드
+ * ItemsAdder 배경(rustport:stone_shop_bg)이 있으면 배경 그림에 제목·칸 테두리가 그려져 있어 빈 칸은 비워 둔다.
+ * 없으면 바닐라 창 제목과 회색 유리판으로 대신한다.
  */
 public final class StoneShopGui implements InventoryHolder {
 
     private static final int SIZE = 36;
-    private static final int GOLD_SLOT = 4;
+    private static final int GOLD_SLOT = 26;            // 3줄(중급 줄) 오른쪽 끝
+    private static final String BACKGROUND_FONT_IMAGE = "rustport:stone_shop_bg";
+    private static final int BACKGROUND_TITLE_OFFSET = 0;
+    private static final int BACKGROUND_TEXTURE_OFFSET = -8;
+    private static final String GOLD_ITEM_ID = "rustport:gold_icon";
+    private static final String[] NUMBER_ITEM_IDS = {"rustport:number_1", "rustport:number_10", "rustport:number_64"};
     private static final int ICON_COLUMN = 1;
     private static final int[] BUTTON_COLUMNS = {4, 5, 6};
     private static final int[] QUANTITIES = {1, 10, 64};
@@ -34,12 +42,19 @@ public final class StoneShopGui implements InventoryHolder {
     private final StoneShop shop;
     private final UUID ownerId;
     private final Inventory inventory;
+    private final ItemsAdderGuiBackground.TexturedGui texturedGui;
     private final Map<Integer, Purchase> purchases = new HashMap<>();
 
     StoneShopGui(StoneShop shop, UUID ownerId) {
         this.shop = shop;
         this.ownerId = ownerId;
-        this.inventory = Bukkit.createInventory(this, SIZE, Component.text("강화석 상점"));
+        // 배경 그림에 제목이 들어 있으므로 제목 글자 없이 연다
+        this.texturedGui = shop.guiBackground().build(
+                this, SIZE, "", BACKGROUND_FONT_IMAGE, BACKGROUND_TITLE_OFFSET, BACKGROUND_TEXTURE_OFFSET
+        );
+        this.inventory = texturedGui != null
+                ? texturedGui.inventory()
+                : Bukkit.createInventory(this, SIZE, Component.text("강화석 상점"));
         for (int row = 0; row < GRADES.length; row++) {
             for (int i = 0; i < QUANTITIES.length; i++) {
                 purchases.put(slot(row + 1, BUTTON_COLUMNS[i]), new Purchase(GRADES[row], QUANTITIES[i]));
@@ -54,7 +69,11 @@ public final class StoneShopGui implements InventoryHolder {
     }
 
     void open(Player player) {
-        player.openInventory(inventory);
+        if (texturedGui != null) {
+            shop.guiBackground().show(texturedGui, player);
+        } else {
+            player.openInventory(inventory);
+        }
     }
 
     Purchase purchaseAt(int slot) {
@@ -62,13 +81,15 @@ public final class StoneShopGui implements InventoryHolder {
     }
 
     void refresh() {
-        ItemStack filler = named(new ItemStack(Material.GRAY_STAINED_GLASS_PANE), Component.empty(), List.of());
+        ItemStack filler = texturedGui != null
+                ? null
+                : named(new ItemStack(Material.GRAY_STAINED_GLASS_PANE), Component.empty(), List.of());
         for (int slot = 0; slot < SIZE; slot++) {
             inventory.setItem(slot, filler);
         }
 
         long gold = shop.goldOf(ownerId);
-        inventory.setItem(GOLD_SLOT, named(new ItemStack(Material.GOLD_INGOT),
+        inventory.setItem(GOLD_SLOT, named(createGoldIcon(),
                 Component.text("보유 골드", NamedTextColor.GOLD),
                 List.of(Component.text(CommandSupport.formatNumber(gold) + "골드", NamedTextColor.YELLOW))));
 
@@ -76,8 +97,16 @@ public final class StoneShopGui implements InventoryHolder {
             StoneGrade grade = GRADES[row];
             inventory.setItem(slot(row + 1, ICON_COLUMN), createStoneIcon(grade));
             for (int i = 0; i < QUANTITIES.length; i++) {
-                inventory.setItem(slot(row + 1, BUTTON_COLUMNS[i]), createBuyButton(grade, QUANTITIES[i], gold));
+                inventory.setItem(slot(row + 1, BUTTON_COLUMNS[i]), createBuyButton(grade, i, gold));
             }
+        }
+    }
+
+    private ItemStack createGoldIcon() {
+        try {
+            return shop.itemProvider().create(GOLD_ITEM_ID);                 // 사이드바와 같은 골드 동전
+        } catch (IllegalStateException exception) {
+            return new ItemStack(Material.GOLD_INGOT);
         }
     }
 
@@ -96,10 +125,16 @@ public final class StoneShopGui implements InventoryHolder {
         ));
     }
 
-    private ItemStack createBuyButton(StoneGrade grade, int quantity, long gold) {
+    private ItemStack createBuyButton(StoneGrade grade, int index, long gold) {
+        int quantity = QUANTITIES[index];
         long total = shop.priceOf(grade) * quantity;
         boolean affordable = gold >= total;
-        ItemStack button = new ItemStack(Material.GOLD_NUGGET, quantity);
+        ItemStack button;
+        try {
+            button = shop.itemProvider().create(NUMBER_ITEM_IDS[index]);      // +1 · +10 · +64 숫자 아이템
+        } catch (IllegalStateException exception) {
+            button = new ItemStack(Material.GOLD_NUGGET, quantity);
+        }
         return named(button,
                 Component.text(grade.displayName() + " 강화석 " + quantity + "개 구매",
                         affordable ? NamedTextColor.GREEN : NamedTextColor.RED),

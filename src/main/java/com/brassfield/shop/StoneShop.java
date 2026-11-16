@@ -1,6 +1,7 @@
 package com.brassfield.shop;
 
 import com.brassfield.common.CommandSupport;
+import com.brassfield.common.ItemsAdderGuiBackground;
 import com.brassfield.common.ItemsAdderItemProvider;
 import com.brassfield.economy.GoldWallet;
 import com.brassfield.stone.StoneGrade;
@@ -26,12 +27,15 @@ public final class StoneShop {
     private final StoneWallet stoneWallet;
     private final StoneShopPrices prices;
     private final ItemsAdderItemProvider itemProvider;
+    private final ItemsAdderGuiBackground guiBackground;
 
-    public StoneShop(GoldWallet goldWallet, StoneWallet stoneWallet, StoneShopPrices prices, ItemsAdderItemProvider itemProvider) {
+    public StoneShop(GoldWallet goldWallet, StoneWallet stoneWallet, StoneShopPrices prices,
+                     ItemsAdderItemProvider itemProvider, ItemsAdderGuiBackground guiBackground) {
         this.goldWallet = goldWallet;
         this.stoneWallet = stoneWallet;
         this.prices = prices;
         this.itemProvider = itemProvider;
+        this.guiBackground = guiBackground;
     }
 
     public void open(Player player) {
@@ -68,5 +72,9 @@ public final class StoneShop {
 
     ItemsAdderItemProvider itemProvider() {
         return itemProvider;
+    }
+
+    ItemsAdderGuiBackground guiBackground() {
+        return guiBackground;
     }
 }
