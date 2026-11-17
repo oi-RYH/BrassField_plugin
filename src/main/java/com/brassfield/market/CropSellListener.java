@@ -14,7 +14,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * 작물 매입 창: 위 4줄에는 작물만 넣고 뺄 수 있고, 아래 줄은 버튼만 동작한다.
+ * 작물 판매 창: 도마 칸에는 작물만 넣고 뺄 수 있고, 나머지 칸은 버튼만 동작한다.
  */
 public final class CropSellListener implements Listener {
 
@@ -39,7 +39,7 @@ public final class CropSellListener implements Listener {
         boolean clickedTop = event.getClickedInventory() == event.getView().getTopInventory();
         int slot = event.getRawSlot();
 
-        if (clickedTop && slot >= CropSellGui.DEPOSIT_SLOTS) {
+        if (clickedTop && !CropSellGui.isDeposit(slot)) {
             event.setCancelled(true);
             if (slot == CropSellGui.SELL_SLOT) {
                 gui.sellDeposited(player);
@@ -87,6 +87,10 @@ public final class CropSellListener implements Listener {
             plugin.getServer().getScheduler().runTask(plugin, () -> gui.market().open(player));
             return;
         }
+        if (slot == SeedShopGui.PREV_SLOT || slot == SeedShopGui.NEXT_SLOT) {
+            gui.turnPage(slot == SeedShopGui.PREV_SLOT ? -1 : 1);
+            return;
+        }
         CropPrices.Entry crop = gui.cropAt(slot);
         if (crop == null) {
             return;
@@ -114,7 +118,7 @@ public final class CropSellListener implements Listener {
                 continue;
             }
             touchesTop = true;
-            if (slot >= CropSellGui.DEPOSIT_SLOTS) {
+            if (!CropSellGui.isDeposit(slot)) {
                 event.setCancelled(true);
                 return;
             }

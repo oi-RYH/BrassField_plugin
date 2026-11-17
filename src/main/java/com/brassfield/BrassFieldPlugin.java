@@ -113,7 +113,8 @@ public class BrassFieldPlugin extends JavaPlugin {
 
         // 작물 매입 (판매 기록: 플레이어별·작물별 판매 개수와 받은 골드)
         cropSalesBook = new BalanceBook(new YamlBalanceStorage(this, "crop_sales.yml"), getLogger(), "CropSales");
-        CropMarket cropMarket = new CropMarket(goldWallet, CropPrices.load(getConfig(), getLogger()), itemProvider, cropSalesBook);
+        CropMarket cropMarket = new CropMarket(goldWallet, CropPrices.load(getConfig(), getLogger()), itemProvider, cropSalesBook,
+                guiBackground);
         machines.onInteract(CropMarket.MACHINE_ID, cropMarket::open);
         machineMarkers.register(CropMarket.MACHINE_ID, 3.65);   // 거래기는 1.5배(3블록 높이)
 

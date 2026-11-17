@@ -3,6 +3,7 @@ package com.brassfield.market;
 import com.brassfield.common.BalanceBook;
 import com.brassfield.common.CommandSupport;
 import com.brassfield.common.ItemDelivery;
+import com.brassfield.common.ItemsAdderGuiBackground;
 import com.brassfield.common.ItemsAdderItemProvider;
 import com.brassfield.economy.GoldWallet;
 import net.kyori.adventure.text.Component;
@@ -34,12 +35,17 @@ public final class CropMarket {
     private final CropPrices prices;
     private final ItemsAdderItemProvider itemProvider;
     private final BalanceBook salesRecord;
+    private final ItemsAdderGuiBackground guiBackground;
+    private final CropFont font;
 
-    public CropMarket(GoldWallet goldWallet, CropPrices prices, ItemsAdderItemProvider itemProvider, BalanceBook salesRecord) {
+    public CropMarket(GoldWallet goldWallet, CropPrices prices, ItemsAdderItemProvider itemProvider, BalanceBook salesRecord,
+                      ItemsAdderGuiBackground guiBackground) {
         this.goldWallet = goldWallet;
         this.prices = prices;
         this.itemProvider = itemProvider;
         this.salesRecord = salesRecord;
+        this.guiBackground = guiBackground;
+        this.font = new CropFont(guiBackground);
     }
 
     public void open(Player player) {
@@ -56,6 +62,25 @@ public final class CropMarket {
 
     ItemsAdderItemProvider itemProvider() {
         return itemProvider;
+    }
+
+    ItemsAdderGuiBackground guiBackground() {
+        return guiBackground;
+    }
+
+    CropFont font() {
+        return font;
+    }
+
+    /**
+     * ItemsAdder 아이템을 만든다. 없으면 fallback 을 쓴다 (ItemsAdder 가 없거나 아이템이 아직 등록되지 않았을 때).
+     */
+    ItemStack icon(String itemId, ItemStack fallback) {
+        try {
+            return itemProvider.create(itemId);
+        } catch (IllegalStateException exception) {
+            return fallback;
+        }
     }
 
     /**
