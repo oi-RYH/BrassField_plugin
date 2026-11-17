@@ -6,6 +6,7 @@ import com.brassfield.common.ItemsAdderGuiBackground;
 import com.brassfield.common.TitleCanvas;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
@@ -43,6 +44,8 @@ public final class CropSellGui implements InventoryHolder {
     private final ItemsAdderGuiBackground.TexturedGui texturedGui;
     private final Inventory inventory;
     private long shownTotal = -1;                                   // 제목에 띄운 금액 (바뀔 때만 제목을 다시 보낸다)
+    private static final int PRICE_LIST_PER_PAGE = 5;
+    private int priceListPage;
 
     CropSellGui(CropMarket market) {
         this.market = market;
@@ -60,7 +63,7 @@ public final class CropSellGui implements InventoryHolder {
                 Component.text("씨앗 구매", NamedTextColor.GREEN),
                 List.of(Component.text("씨앗 구매 화면으로 바꿉니다.", NamedTextColor.GRAY),
                         Component.text("올려 둔 작물은 돌려받습니다.", NamedTextColor.GRAY))));
-        inventory.setItem(PRICE_LIST_SLOT, createPriceList());
+        inventory.setItem(PRICE_LIST_SLOT, createPriceList());   // 매입 가격표 (클릭으로 페이지 넘김)
         inventory.setItem(SELL_ALL_SLOT, named(market.icon("rustport:crop_sell_all", new ItemStack(Material.HOPPER)),
                 Component.text("가방의 작물 모두 팔기", NamedTextColor.YELLOW),
                 List.of(Component.text("가방에 있는 작물을 한 번에 팝니다.", NamedTextColor.GRAY))));
@@ -209,17 +212,44 @@ public final class CropSellGui implements InventoryHolder {
                 : named(new ItemStack(Material.GRAY_STAINED_GLASS_PANE), Component.empty(), List.of());
     }
 
+    /**
+     * 매입 가격표 페이지를 넘긴다 (좌클릭 다음 · 우클릭 이전, 끝에서 처음으로 돈다). 아이템을 바꾸면 보고 있던 설명 창도 바로 바뀐다.
+     */
+    void turnPriceList(int delta) {
+        int pages = priceListPages();
+        priceListPage = Math.floorMod(priceListPage + delta, pages);
+        inventory.setItem(PRICE_LIST_SLOT, createPriceList());
+    }
+
+    private int priceListPages() {
+        return Math.max(1, (market.prices().crops().size() + PRICE_LIST_PER_PAGE - 1) / PRICE_LIST_PER_PAGE);
+    }
+
+    /**
+     * 매입 가격표: 한 페이지에 작물 5종. ItemsAdder 가 있으면 줄마다 일반·은별·금별 작물 그림과 금화 가격표
+     * (그림이 설명 두 줄 높이라 그림 줄 다음 줄은 비운다), 없으면 글자로 쓴다.
+     */
     private ItemStack createPriceList() {
+        List<CropPrices.Entry> crops = market.prices().crops();
+        int pages = priceListPages();
         List<Component> lore = new ArrayList<>();
-        lore.add(Component.text("작물 1개 매입가 (일반 / 은별 / 금별)", NamedTextColor.GRAY));
-        for (CropPrices.Entry crop : market.prices().crops()) {
-            lore.add(Component.text(crop.name() + ": ", NamedTextColor.WHITE)
-                    .append(Component.text(crop.normal() + " / " + crop.silver() + " / " + crop.golden() + "골드",
-                            NamedTextColor.YELLOW)));
+        int first = priceListPage * PRICE_LIST_PER_PAGE;
+        for (CropPrices.Entry crop : crops.subList(first, Math.min(crops.size(), first + PRICE_LIST_PER_PAGE))) {
+            if (texturedGui != null) {
+                String name = crop.itemId().substring(crop.itemId().indexOf(':') + 1);
+                lore.add(Component.text(market.font().tipRow(name, crop.normal(), crop.silver(), crop.golden()), NamedTextColor.WHITE)
+                        .decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.empty());
+            } else {
+                lore.add(Component.text(crop.name() + ": ", NamedTextColor.WHITE)
+                        .append(Component.text(crop.normal() + " / " + crop.silver() + " / " + crop.golden() + "골드",
+                                NamedTextColor.YELLOW)));
+            }
         }
-        lore.add(Component.text("거대·황금 작물은 훨씬 비싸게 삽니다.", NamedTextColor.GRAY));
+        lore.add(Component.text("좌클릭 다음 · 우클릭 이전 (" + (priceListPage + 1) + "/" + pages + ")", NamedTextColor.GRAY)
+                .decoration(TextDecoration.ITALIC, false));
         return named(market.icon("rustport:crop_price_list", new ItemStack(Material.BOOK)),
-                Component.text("매입 가격표", NamedTextColor.AQUA), lore);
+                Component.text("매입 가격표", NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false), lore);
     }
 
     private static ItemStack named(ItemStack item, Component name, List<Component> lore) {

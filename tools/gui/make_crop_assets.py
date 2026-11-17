@@ -6,13 +6,15 @@
   글꼴 그림    textures/font/crop/*.png — 창 제목 글자로 띄우는 숫자
                amber_*   : 금액 창·페이지 번호 창 숫자 (3x5 호박색, 5줄 y=114)
                tag<줄>_* : 씨앗 가격표 조각 (왼쪽 끝 = 테+금화, 숫자 칸, 오른쪽 끝). 줄마다 높이가 달라 4벌
+               tip_*     : 매입 가격표 설명 창 — 작물 그림(일반·은별·금별, 16px, 설명 두 줄에 걸침)과 가격표 조각
+                           (작물 그림은 서버의 작물 아이템 그림을 복사 — CustomCrops 그림이라 저장소에는 넣지 않는다)
   설정        configs/crop_gui.yml (자동 생성 — 직접 고치지 말 것)
 
 글꼴 그림의 이동량 = 그림 폭 (오른쪽 빈 칸에는 alpha 1 점을 찍어 폭을 고정, 강화 창 배경과 같은 규칙).
 y_position = 13 - (창 기준 그림 윗줄 y). 배경은 간판 여백 PAD_TOP 만큼 올린 21.
 Java 쪽 이름·이동량은 com.brassfield.market.CropFont 와 맞춘다.
 
-사용: python3 tools/gui/make_crop_assets.py <enhance_bg.png> <rustport 콘텐츠 폴더>
+사용: python3 tools/gui/make_crop_assets.py <enhance_bg.png> <rustport 콘텐츠 폴더> <customcrops 콘텐츠 폴더>
 """
 import os
 import sys
@@ -28,6 +30,9 @@ from gui_kit import DARK, cut_black, shrink_art
 TAG_ROW_TOPS = {row: bg.slot_box(row, 0)[1] + 4 for row in (1, 2, 3, 4)}    # 가격표 윗줄 y (봉투 칸 y + 4)
 AMBER_TOP = bg.slot_box(5, 0)[1] + 7                                       # 금액·페이지 숫자 윗줄 y
 AMBER = (255, 196, 80)
+TIP_ICON_ASCENT = 8                     # 설명 줄 윗줄보다 1px 위에서 시작해 두 줄(20px)에 걸치는 16px 작물 그림
+TIP_TAG_ASCENT = 4                      # 가격표(9px)는 작물 그림 세로 가운데
+TIP_GRADES = {"n": "", "s": "_silver_star", "g": "_golden_star"}
 CREAM = (253, 226, 150)
 B0, B2 = bg.BRASS[0], bg.BRASS[2]
 
@@ -96,7 +101,26 @@ def board_tab_icon():
     return icon
 
 
-def main(enh_path, content):
+def crop_texture(name, suffix, content, customcrops):
+    """작물 아이템 그림 (CustomCrops 작물이면 customcrops 폴더, 쌀·양파는 rustport 폴더)"""
+    for base in (os.path.join(customcrops, "resourcepack", "assets", "customcrops", "textures", "item", "crop"),
+                 os.path.join(content, "resourcepack", "assets", "rustport", "textures", "item", "crop")):
+        path = os.path.join(base, name, name + suffix + ".png")
+        if os.path.exists(path):
+            return Image.open(path).convert("RGBA")
+    raise FileNotFoundError(name + suffix)
+
+
+def full_width(img):
+    """오른쪽 끝 열에 alpha 1 점 (이동량을 그림 폭으로 고정)"""
+    img = img.copy()
+    p = img.load()
+    if all(p[img.width - 1, y][3] == 0 for y in range(img.height)):
+        p[img.width - 1, 0] = (0, 0, 0, 1)
+    return img
+
+
+def main(enh_path, content, customcrops):
     tex = os.path.join(content, "resourcepack", "assets", "rustport", "textures")
     for sub in ("gui", "item/gui", "font/crop"):
         os.makedirs(os.path.join(tex, sub), exist_ok=True)
@@ -121,7 +145,16 @@ def main(enh_path, content):
         glyphs["crop_tag%d_right" % row] = (tag_piece("right"), top)
         for d in range(10):
             glyphs["crop_tag%d_%d" % (row, d)] = (tag_piece("digit", str(d)), top)
-    for name, (img, _) in glyphs.items():
+    tips = {}                                                            # 이름 → (그림, ascent)
+    for crop in bg.SEED_ORDER:
+        for key, suffix in TIP_GRADES.items():
+            tips["crop_tip_%s_%s" % (crop, key)] = (full_width(crop_texture(crop, suffix, content, customcrops)),
+                                                    TIP_ICON_ASCENT)
+    tips["crop_tip_tag_left"] = (tag_piece("left"), TIP_TAG_ASCENT)
+    tips["crop_tip_tag_right"] = (tag_piece("right"), TIP_TAG_ASCENT)
+    for d in range(10):
+        tips["crop_tip_tag_%d" % d] = (tag_piece("digit", str(d)), TIP_TAG_ASCENT)
+    for name, (img, _) in list(glyphs.items()) + list(tips.items()):
         img.save(os.path.join(tex, "font", "crop", name + ".png"))
 
     lines = ["info:", "  namespace: rustport", "",
@@ -137,10 +170,13 @@ def main(enh_path, content):
     for name, (img, top) in glyphs.items():
         lines += ["  %s:" % name, "    path: font/crop/%s" % name, "    suggest_in_command: false",
                   "    scale_ratio: %d" % img.height, "    y_position: %d" % (13 - top)]
+    for name, (img, ascent) in tips.items():                             # 설명 창 글자: 그 줄 기준 높이
+        lines += ["  %s:" % name, "    path: font/crop/%s" % name, "    suggest_in_command: false",
+                  "    scale_ratio: %d" % img.height, "    y_position: %d" % ascent]
     with open(os.path.join(content, "configs", "crop_gui.yml"), "w") as f:
         f.write("\n".join(lines) + "\n")
-    print("items", len(items), "glyphs", len(glyphs))
+    print("items", len(items), "glyphs", len(glyphs) + len(tips))
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], sys.argv[3])

@@ -164,8 +164,6 @@ public final class SeedShopGui implements InventoryHolder {
         return named(icon, Component.text(crop.name() + " 씨앗", affordable ? NamedTextColor.GREEN : NamedTextColor.RED), List.of(
                 Component.text("1개 가격: ", NamedTextColor.GRAY)
                         .append(Component.text(CommandSupport.formatNumber(crop.seedPrice()) + "골드", NamedTextColor.YELLOW)),
-                Component.text("수확물 매입가: ", NamedTextColor.GRAY)
-                        .append(Component.text(crop.normal() + " / " + crop.silver() + " / " + crop.golden() + "골드", NamedTextColor.WHITE)),
                 Component.empty(),
                 Component.text("좌클릭 1개 · 우클릭 8개 · Shift+클릭 64개", NamedTextColor.GRAY)
         ));

@@ -1,5 +1,6 @@
 package com.brassfield.market;
 
+import com.brassfield.common.FontSpace;
 import com.brassfield.common.ItemsAdderGuiBackground;
 import com.brassfield.common.TitleCanvas;
 
@@ -10,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 종자·작물 거래기 창 제목으로 띄우는 숫자 글꼴 그림 (BrassField tools/gui/make_crop_assets.py 가 만든 ItemsAdder font_images).
  * amber : 금액 창·페이지 번호 창 숫자 (숫자·'/' 이동량 4, ',' 2)
  * tag<줄> : 씨앗 가격표 조각 — 왼쪽 끝(테두리+금화, 8) · 숫자(4) · 오른쪽 끝(2). 봉투 줄(1~4)마다 높이가 달라 따로 있다.
+ * tip_<작물>_<n|s|g>, tip_tag_* : 매입 가격표 설명 창 줄 — 작물 그림(16, 두 줄에 걸침) + 가격표. 설명 줄 기준 높이라 한 벌.
  */
 final class CropFont {
 
@@ -21,6 +23,9 @@ final class CropFont {
     private static final int COMMA_ADVANCE = 2;
     private static final int TAG_LEFT_ADVANCE = 8;
     private static final int TAG_RIGHT_ADVANCE = 2;
+    private static final int TIP_ICON_ADVANCE = 16;
+    private static final int TIP_COLUMN = 44;                       // 설명 창 한 등급 칸 폭 (그림 16 + 틈 + 가격표)
+    private static final String[] TIP_GRADES = {"n", "s", "g"};
 
     private final ItemsAdderGuiBackground fontImages;
     private final Map<String, String> glyphs = new ConcurrentHashMap<>();
@@ -54,6 +59,28 @@ final class CropFont {
             canvas.place(x, glyph("rustport:crop_amber_" + key), advance);
             x += advance;
         }
+    }
+
+    /**
+     * 매입 가격표 설명 창 한 줄: 일반·은별·금별 작물 그림 옆에 각 가격표. cropName = 작물 ID 의 콜론 뒤 이름
+     */
+    String tipRow(String cropName, long... prices) {
+        StringBuilder builder = new StringBuilder();
+        int cursor = 0;
+        for (int i = 0; i < prices.length && i < TIP_GRADES.length; i++) {
+            int x = i * TIP_COLUMN;
+            builder.append(FontSpace.of(x - cursor)).append(glyph("rustport:crop_tip_" + cropName + "_" + TIP_GRADES[i]));
+            x += TIP_ICON_ADVANCE + 1;
+            builder.append(FontSpace.of(1)).append(glyph("rustport:crop_tip_tag_left"));
+            x += TAG_LEFT_ADVANCE;
+            for (char ch : Long.toString(prices[i]).toCharArray()) {
+                builder.append(glyph("rustport:crop_tip_tag_" + ch));
+                x += DIGIT_ADVANCE;
+            }
+            builder.append(glyph("rustport:crop_tip_tag_right"));
+            cursor = x + TAG_RIGHT_ADVANCE;
+        }
+        return builder.toString();
     }
 
     /**

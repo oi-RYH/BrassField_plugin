@@ -45,6 +45,8 @@ public final class CropSellListener implements Listener {
                 gui.sellDeposited(player);
             } else if (slot == CropSellGui.SELL_ALL_SLOT) {
                 gui.sellFromInventory(player);
+            } else if (slot == CropSellGui.PRICE_LIST_SLOT) {
+                gui.turnPriceList(event.isRightClick() ? -1 : 1);
             } else if (slot == CropSellGui.SEED_TAB_SLOT) {
                 // 창을 바꾸면 닫기 이벤트로 넣어 둔 작물이 돌아온다
                 plugin.getServer().getScheduler().runTask(plugin, () -> market.openSeeds(player));
