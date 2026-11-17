@@ -2,6 +2,7 @@ package com.brassfield.market;
 
 import com.brassfield.common.BalanceBook;
 import com.brassfield.common.CommandSupport;
+import com.brassfield.common.ItemsAdderGuiBackground;
 import com.brassfield.common.ItemsAdderItemProvider;
 import com.brassfield.economy.GoldWallet;
 import net.kyori.adventure.text.Component;
@@ -58,6 +59,7 @@ public final class FoodMarket {
     private final JavaPlugin plugin;
     private final GoldWallet goldWallet;
     private final ItemsAdderItemProvider itemProvider;
+    private final ItemsAdderGuiBackground guiBackground;
     private final BalanceBook salesRecord;
     private final Map<String, Long> basePrices;
     private final int windowHours;
@@ -81,12 +83,14 @@ public final class FoodMarket {
     private record OrderGroup(int count, List<String> from) {
     }
 
-    private FoodMarket(JavaPlugin plugin, GoldWallet goldWallet, ItemsAdderItemProvider itemProvider, BalanceBook salesRecord,
+    private FoodMarket(JavaPlugin plugin, GoldWallet goldWallet, ItemsAdderItemProvider itemProvider,
+                       ItemsAdderGuiBackground guiBackground, BalanceBook salesRecord,
                        Map<String, Long> basePrices, int windowHours, double maxChange,
                        int orderHour, double orderBonus, List<OrderGroup> orderGroups) {
         this.plugin = plugin;
         this.goldWallet = goldWallet;
         this.itemProvider = itemProvider;
+        this.guiBackground = guiBackground;
         this.salesRecord = salesRecord;
         this.basePrices = basePrices;
         this.windowHours = windowHours;
@@ -101,7 +105,8 @@ public final class FoodMarket {
      * config.yml 의 food-market 을 읽는다. 항목이 없거나 가격이 비어 있으면 null.
      */
     public static FoodMarket load(JavaPlugin plugin, FileConfiguration config, GoldWallet goldWallet,
-                                  ItemsAdderItemProvider itemProvider, BalanceBook salesRecord, Logger logger) {
+                                  ItemsAdderItemProvider itemProvider, ItemsAdderGuiBackground guiBackground,
+                                  BalanceBook salesRecord, Logger logger) {
         ConfigurationSection section = config.getConfigurationSection("food-market");
         ConfigurationSection prices = section == null ? null : section.getConfigurationSection("prices");
         if (prices == null) {
@@ -134,7 +139,7 @@ public final class FoodMarket {
         }
         int orderHour = Math.floorMod(section.getInt("daily-orders.hour", 6), 24);
         double orderBonus = Math.max(0, section.getDouble("daily-orders.bonus", 0.8));
-        FoodMarket market = new FoodMarket(plugin, goldWallet, itemProvider, salesRecord, base, hours, max,
+        FoodMarket market = new FoodMarket(plugin, goldWallet, itemProvider, guiBackground, salesRecord, base, hours, max,
                 orderHour, orderBonus, groups);
         market.loadState();
         logger.info("요리 판매(DL-7): 요리 " + base.size() + "종, " + hours + "시간마다 ±" + Math.round(max * 100) + "% 가격 변동");
@@ -227,6 +232,52 @@ public final class FoodMarket {
         say(player, line);
         if (!orders.isEmpty()) {
             say(player, "오늘의 주문: " + ordersText() + " (+" + Math.round(orderBonus * 100) + "%)");
+        }
+    }
+
+    ItemsAdderGuiBackground guiBackground() {
+        return guiBackground;
+    }
+
+    JavaPlugin plugin() {
+        return plugin;
+    }
+
+    /**
+     * ItemsAdder 아이템을 만든다. 없으면 fallback 을 쓴다.
+     */
+    ItemStack icon(String itemId, ItemStack fallback) {
+        try {
+            return itemProvider.create(itemId);
+        } catch (IllegalStateException exception) {
+            return fallback;
+        }
+    }
+
+    /**
+     * /요리가격: 요리 단가표와 오늘의 주문을 채팅으로 보여 준다 (DL-7 납품 창에서 단가표를 뺀 대신).
+     */
+    public void sendPriceList(org.bukkit.command.CommandSender sender) {
+        rollIfNeeded();
+        sender.sendMessage(Component.text("── DL-7 요리 납품 단가 (다음 변동 " + nextChangeTime() + ") ──", NamedTextColor.GOLD));
+        for (Map.Entry<String, Long> entry : basePrices().entrySet()) {
+            String id = entry.getKey();
+            double change = changeOf(id);
+            Component line = Component.text(nameOf(id) + ": ", NamedTextColor.WHITE)
+                    .append(Component.text(CommandSupport.formatNumber(priceOf(id)) + "골드", NamedTextColor.YELLOW));
+            if (isOrdered(id)) {
+                line = line.append(Component.text(" ★주문 +" + Math.round(change * 100) + "%", NamedTextColor.GOLD));
+            } else if (change > 1e-9) {
+                line = line.append(Component.text(" ▲" + Math.round(change * 100) + "%", NamedTextColor.GREEN));
+            } else if (change < -1e-9) {
+                line = line.append(Component.text(" ▼" + Math.round(-change * 100) + "%", NamedTextColor.RED));
+            }
+            sender.sendMessage(line);
+        }
+        sender.sendMessage(Component.text("많이 납품된 요리는 내리고, 덜 납품된 요리는 올립니다.", NamedTextColor.GRAY));
+        if (!orders.isEmpty()) {
+            sender.sendMessage(Component.text("오늘의 주문: " + ordersText() + " (+" + Math.round(orderBonus * 100) + "%, 매일 오전 6시에 바뀜)",
+                    NamedTextColor.GOLD));
         }
     }
 

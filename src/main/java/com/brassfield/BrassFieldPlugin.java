@@ -1,5 +1,8 @@
 package com.brassfield;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+
 import com.brassfield.common.BalanceBook;
 import com.brassfield.common.FurnitureInteractions;
 import com.brassfield.common.ItemsAdderGuiBackground;
@@ -120,13 +123,22 @@ public class BrassFieldPlugin extends JavaPlugin {
 
         // 요리 납품 로봇 DL-7 (마을 공용): 요리를 골드로 산다. 서버 전체 판매량으로 4시간마다 ±10% 가격 변동
         foodSalesBook = new BalanceBook(new YamlBalanceStorage(this, "food_sales.yml"), getLogger(), "FoodSales");
-        foodMarket = FoodMarket.load(this, getConfig(), goldWallet, itemProvider, foodSalesBook, getLogger());
+        foodMarket = FoodMarket.load(this, getConfig(), goldWallet, itemProvider, guiBackground, foodSalesBook, getLogger());
         if (foodMarket != null) {
             deliveryRobots = new DeliveryRobots(this, itemProvider, FoodMarket.MACHINE_ID);
             foodMarket.robots(deliveryRobots);
             machines.onInteractAt(FoodMarket.MACHINE_ID, foodMarket::open);
             machineMarkers.register(FoodMarket.MACHINE_ID, 2.75);
         }
+        FoodMarket priceMarket = foodMarket;                         // /요리가격: DL-7 납품 단가표와 오늘의 주문 (창에서 뺀 대신)
+        command("요리가격").setExecutor((sender, cmd, label, args) -> {
+            if (priceMarket == null) {
+                sender.sendMessage(Component.text("요리 납품(DL-7)이 꺼져 있습니다.", NamedTextColor.RED));
+            } else {
+                priceMarket.sendPriceList(sender);
+            }
+            return true;
+        });
 
         // 요리 기기 7종 (조리대 + 보조 도구 6, 개인 기기: 누구나 설치·회수, 빨간 표시 없음. 기기마다 조리칸 하나, 실제 시간 기준으로 익음)
         cookingMachines = new CookingMachines(this, CookingRecipes.loadStations(getConfig(), itemProvider, getLogger()), itemProvider);

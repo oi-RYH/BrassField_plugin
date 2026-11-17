@@ -14,7 +14,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * DL-7 납품 창: 위 4줄에는 매입하는 요리만 넣고 뺄 수 있고, 아래 줄은 버튼만 동작한다.
+ * DL-7 납품 창: 화물 상자 칸에는 매입하는 요리만 넣고 뺄 수 있고, 나머지 칸은 버튼만 동작한다.
  */
 public final class FoodSellListener implements Listener {
 
@@ -31,6 +31,10 @@ public final class FoodSellListener implements Listener {
             return;
         }
         FoodMarket market = gui.market();
+        if (gui.isStamping()) {
+            event.setCancelled(true);                               // 도장 연출 중에는 아무것도 못 옮긴다
+            return;
+        }
         if (event.getAction() == InventoryAction.COLLECT_TO_CURSOR) {
             event.setCancelled(true);
             return;
@@ -38,10 +42,10 @@ public final class FoodSellListener implements Listener {
         boolean clickedTop = event.getClickedInventory() == event.getView().getTopInventory();
         int slot = event.getRawSlot();
 
-        if (clickedTop && slot >= FoodSellGui.DEPOSIT_SLOTS) {
+        if (clickedTop && !FoodSellGui.isDeposit(slot)) {
             event.setCancelled(true);
-            if (slot == FoodSellGui.SELL_SLOT) {
-                gui.sellDeposited(player);
+            if (FoodSellGui.isSell(slot)) {
+                gui.stampAndSell(player);
             } else if (slot == FoodSellGui.SELL_ALL_SLOT) {
                 gui.sellFromInventory(player);
             }
@@ -69,13 +73,17 @@ public final class FoodSellListener implements Listener {
         if (!(event.getInventory().getHolder() instanceof FoodSellGui gui)) {
             return;
         }
+        if (gui.isStamping()) {
+            event.setCancelled(true);
+            return;
+        }
         boolean touchesTop = false;
         for (int slot : event.getRawSlots()) {
             if (slot >= FoodSellGui.SIZE) {
                 continue;
             }
             touchesTop = true;
-            if (slot >= FoodSellGui.DEPOSIT_SLOTS) {
+            if (!FoodSellGui.isDeposit(slot)) {
                 event.setCancelled(true);
                 return;
             }
