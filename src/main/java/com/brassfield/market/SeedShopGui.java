@@ -1,5 +1,6 @@
 package com.brassfield.market;
 
+import com.brassfield.common.GuiItems;
 import com.brassfield.common.CommandSupport;
 import com.brassfield.common.ItemsAdderGuiBackground;
 import com.brassfield.common.TitleCanvas;
@@ -100,8 +101,8 @@ public final class SeedShopGui implements InventoryHolder {
     }
 
     void refresh() {
-        ItemStack filler = named(texturedGui != null ? market.icon(BLANK_ID, new ItemStack(Material.GRAY_STAINED_GLASS_PANE))
-                : new ItemStack(Material.GRAY_STAINED_GLASS_PANE), Component.empty(), List.of());
+        ItemStack filler = GuiItems.hideTooltip(named(texturedGui != null ? market.icon(BLANK_ID, new ItemStack(Material.GRAY_STAINED_GLASS_PANE))
+                : new ItemStack(Material.GRAY_STAINED_GLASS_PANE), Component.empty(), List.of()));
         for (int slot = 0; slot < SIZE; slot++) {
             inventory.setItem(slot, filler);
         }

@@ -137,6 +137,18 @@ public final class CookingRecipes {
         return recipes;
     }
 
+    /**
+     * 요리 ID로 레시피 찾기 (없으면 null)
+     */
+    public Recipe byResult(String resultId) {
+        for (Recipe recipe : recipes) {
+            if (recipe.resultId().equals(resultId)) {
+                return recipe;
+            }
+        }
+        return null;
+    }
+
     public String groupName(String groupKey) {
         Group group = groups.get(groupKey);
         return group == null ? groupKey : group.name();

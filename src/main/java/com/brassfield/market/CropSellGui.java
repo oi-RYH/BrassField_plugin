@@ -1,5 +1,6 @@
 package com.brassfield.market;
 
+import com.brassfield.common.GuiItems;
 import com.brassfield.common.CommandSupport;
 import com.brassfield.common.ItemDelivery;
 import com.brassfield.common.ItemsAdderGuiBackground;
@@ -207,9 +208,9 @@ public final class CropSellGui implements InventoryHolder {
     }
 
     private ItemStack filler() {
-        return texturedGui != null
+        return GuiItems.hideTooltip(texturedGui != null
                 ? named(market.icon(BLANK_ID, new ItemStack(Material.GRAY_STAINED_GLASS_PANE)), Component.empty(), List.of())
-                : named(new ItemStack(Material.GRAY_STAINED_GLASS_PANE), Component.empty(), List.of());
+                : named(new ItemStack(Material.GRAY_STAINED_GLASS_PANE), Component.empty(), List.of()));
     }
 
     /**

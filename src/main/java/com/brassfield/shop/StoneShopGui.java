@@ -1,5 +1,6 @@
 package com.brassfield.shop;
 
+import com.brassfield.common.GuiItems;
 import com.brassfield.common.CommandSupport;
 import com.brassfield.common.ItemsAdderGuiBackground;
 import com.brassfield.stone.StoneGrade;
@@ -83,7 +84,7 @@ public final class StoneShopGui implements InventoryHolder {
     void refresh() {
         ItemStack filler = texturedGui != null
                 ? null
-                : named(new ItemStack(Material.GRAY_STAINED_GLASS_PANE), Component.empty(), List.of());
+                : GuiItems.hideTooltip(named(new ItemStack(Material.GRAY_STAINED_GLASS_PANE), Component.empty(), List.of()));
         for (int slot = 0; slot < SIZE; slot++) {
             inventory.setItem(slot, filler);
         }

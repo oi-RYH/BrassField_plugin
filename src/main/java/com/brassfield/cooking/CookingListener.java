@@ -10,27 +10,21 @@ import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.Set;
-
 /**
- * 요리 기계 창의 클릭 규칙.
+ * 요리 기계 창의 클릭 규칙. 위 창의 칸은 진짜 아이템 칸이 아니라 보관 개수를 보여 주는 그림이라 모든 클릭을 막고 직접 처리한다.
  * <ul>
- *   <li>재료 칸(3x3): 레시피에 쓰이는 재료만 넣고 뺄 수 있다.</li>
- *   <li>완성품 칸·부산물(빈 그릇) 칸: 꺼내기만 할 수 있다.</li>
- *   <li>가방에서 Shift+클릭하면 재료만 재료 칸으로 옮긴다.</li>
+ *   <li>가방에서 Shift+클릭: 걸린 요리의 재료면 그 묶음을 통째로 넣는다.</li>
+ *   <li>재료 칸: 아이템을 들고 클릭하면 넣기, 빈손 클릭은 한 묶음 꺼내기, Shift+클릭은 가방에 들어가는 만큼 꺼내기.</li>
+ *   <li>접시: 클릭 한 묶음, Shift+클릭 모두 꺼내기. 빈 그릇 칸: 클릭하면 가방에 들어가는 만큼.</li>
+ *   <li>레시피 책 칸: 레시피 책을 연다 (요리 고르기).</li>
+ *   <li>화덕 문 불 버튼: 조리 시작·멈춤.</li>
  * </ul>
- * 재료가 바뀌면 바뀌기 전까지 익은 것을 먼저 정산하고, 바뀐 뒤 다음 틱에 다시 계산한다.
+ * 바꾸기 전에 그때까지 익은 것을 먼저 정산한다.
  */
 public final class CookingListener implements Listener {
-
-    private static final Set<InventoryAction> TAKE_ACTIONS = Set.of(
-            InventoryAction.PICKUP_ALL, InventoryAction.PICKUP_HALF, InventoryAction.PICKUP_ONE,
-            InventoryAction.PICKUP_SOME, InventoryAction.MOVE_TO_OTHER_INVENTORY, InventoryAction.DROP_ONE_SLOT,
-            InventoryAction.DROP_ALL_SLOT);
 
     private final JavaPlugin plugin;
 
@@ -44,85 +38,102 @@ public final class CookingListener implements Listener {
                 || !(event.getWhoClicked() instanceof Player player)) {
             return;
         }
-        if (event.getAction() == InventoryAction.COLLECT_TO_CURSOR) {
-            // 더블클릭 모으기는 완성품·재료 칸에서 끌어올 수 있어 막는다
-            event.setCancelled(true);
-            return;
-        }
-        CookingRecipes recipes = machine.recipes();
         boolean clickedTop = event.getClickedInventory() == event.getView().getTopInventory();
-        int slot = event.getRawSlot();
-        long now = System.currentTimeMillis();
-
         if (!clickedTop) {
-            if (event.isShiftClick()) {
-                event.setCancelled(true);
-                ItemStack item = event.getCurrentItem();
-                if (item == null || item.getType().isAir()) {
-                    return;
-                }
-                if (!recipes.isIngredient(item)) {
-                    player.sendMessage(Component.text("요리 재료만 넣을 수 있습니다.", NamedTextColor.RED));
-                    return;
-                }
-                machine.update(now);
-                ItemStack rest = moveIntoIngredients(machine.getInventory(), item);
+            if (event.getAction() == InventoryAction.COLLECT_TO_CURSOR) {
+                event.setCancelled(true);                   // 더블클릭 모으기가 위 창 그림 아이템을 끌어오지 않게
+                return;
+            }
+            if (!event.isShiftClick()) {
+                return;                                     // 가방 안 정리는 자유롭게
+            }
+            event.setCancelled(true);
+            ItemStack item = event.getCurrentItem();
+            if (item == null || item.getType().isAir()) {
+                return;
+            }
+            long now = System.currentTimeMillis();
+            machine.update(now);
+            ItemStack rest = deposit(player, machine, item);
+            if (rest != item) {
                 event.setCurrentItem(rest);
                 changed(machine);
             }
             return;
         }
 
-        if (slot == CookingMachine.BOOK_SLOT) {
-            event.setCancelled(true);
+        event.setCancelled(true);
+        int slot = event.getRawSlot();
+        long now = System.currentTimeMillis();
+        if (CookingMachine.isBookSlot(slot)) {
             plugin.getServer().getScheduler().runTask(plugin, () -> new RecipeBookGui(machine).open(player));
             return;
         }
-        if (slot == CookingMachine.OUTPUT_SLOT || CookingMachine.isByproductSlot(slot)) {
-            if (!TAKE_ACTIONS.contains(event.getAction())) {
-                event.setCancelled(true);
-                return;
-            }
-            machine.update(now);
-            changed(machine);
-            return;
-        }
-        if (!CookingMachine.isIngredientSlot(slot)) {
-            event.setCancelled(true);
-            return;
-        }
-        ItemStack incoming = event.getClick() == ClickType.NUMBER_KEY
-                ? player.getInventory().getItem(event.getHotbarButton())
-                : event.getClick() == ClickType.SWAP_OFFHAND ? player.getInventory().getItemInOffHand() : event.getCursor();
-        if (incoming != null && !incoming.getType().isAir() && !recipes.isIngredient(incoming)) {
-            event.setCancelled(true);
-            player.sendMessage(Component.text("요리 재료만 넣을 수 있습니다.", NamedTextColor.RED));
-            return;
-        }
-        // 바뀌기 전까지 익은 만큼 먼저 정산
         machine.update(now);
+        if (slot == CookingMachine.FIRE_SLOT) {
+            machine.toggleFire(player);
+        } else if (CookingMachine.isIngredientSlot(slot)) {
+            ItemStack cursor = event.getCursor();
+            if (cursor != null && !cursor.getType().isAir()) {
+                ItemStack rest = deposit(player, machine, cursor);
+                if (rest != cursor) {
+                    player.setItemOnCursor(rest);
+                }
+            } else if (event.getClick() == ClickType.LEFT || event.getClick() == ClickType.RIGHT || event.isShiftClick()) {
+                int index = indexOf(CookingMachine.INGREDIENT_SLOTS, slot);
+                machine.withdrawIngredient(player, index, event.isShiftClick());
+            }
+        } else if (CookingMachine.isPlateSlot(slot)) {
+            if (event.getClick() == ClickType.LEFT || event.getClick() == ClickType.RIGHT || event.isShiftClick()) {
+                machine.withdrawOutput(player, event.isShiftClick());
+            }
+        } else if (CookingMachine.isByproductSlot(slot)) {
+            machine.withdrawByproduct(player, indexOf(CookingMachine.BYPRODUCT_SLOTS, slot));
+        } else {
+            return;
+        }
         changed(machine);
+    }
+
+    /**
+     * 재료 넣기. 걸린 요리가 없거나 그 재료가 아니면 알려 주고 그대로 돌려준다.
+     */
+    private static ItemStack deposit(Player player, CookingMachine machine, ItemStack item) {
+        if (machine.pinned() == null) {
+            player.sendMessage(Component.text("먼저 레시피 책에서 만들 요리를 거세요.", NamedTextColor.RED));
+            return item;
+        }
+        if (machine.ingredientOf(item) == null) {
+            player.sendMessage(Component.text("걸린 요리의 재료만 넣을 수 있습니다.", NamedTextColor.RED));
+            return item;
+        }
+        ItemStack rest = machine.deposit(item);
+        if (rest != null && rest.getAmount() == item.getAmount()) {
+            player.sendMessage(Component.text("이 재료는 더 넣을 수 없습니다 (최대 " + String.format("%,d", CookingMachine.STOCK_LIMIT) + "개).",
+                    NamedTextColor.RED));
+            return item;
+        }
+        return rest;
+    }
+
+    private static int indexOf(int[] slots, int slot) {
+        for (int i = 0; i < slots.length; i++) {
+            if (slots[i] == slot) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     @EventHandler
     public void onMachineDrag(InventoryDragEvent event) {
-        if (!(event.getInventory().getHolder() instanceof CookingMachine machine)) {
+        if (!(event.getInventory().getHolder() instanceof CookingMachine)) {
             return;
         }
         int topSize = event.getView().getTopInventory().getSize();
-        for (int slot : event.getRawSlots()) {
-            if (slot < topSize && !CookingMachine.isIngredientSlot(slot)) {
-                event.setCancelled(true);
-                return;
-            }
-        }
-        if (event.getRawSlots().stream().anyMatch(slot -> slot < topSize)
-                && !machine.recipes().isIngredient(event.getOldCursor())) {
+        if (event.getRawSlots().stream().anyMatch(slot -> slot < topSize)) {
             event.setCancelled(true);
-            return;
         }
-        machine.update(System.currentTimeMillis());
-        changed(machine);
     }
 
     @EventHandler
@@ -140,8 +151,8 @@ public final class CookingListener implements Listener {
             return;
         }
         event.setCancelled(true);
-        if (event.getRawSlot() == RecipeBookGui.BACK_SLOT) {
-            plugin.getServer().getScheduler().runTask(plugin, () -> gui.machine().open(player));
+        if (event.getClickedInventory() == event.getView().getTopInventory()) {
+            gui.click(player, event.getRawSlot());
         }
     }
 
@@ -153,35 +164,10 @@ public final class CookingListener implements Listener {
     }
 
     /**
-     * 클릭으로 칸이 바뀐 뒤(다음 틱) 레시피를 다시 맞춰 보고 진행을 새로 그린다.
+     * 바뀐 내용을 저장 대상으로 표시하고 창을 새로 그린다.
      */
     private void changed(CookingMachine machine) {
         machine.machines().markDirty();
-        plugin.getServer().getScheduler().runTask(plugin, () -> machine.update(System.currentTimeMillis()));
-    }
-
-    /**
-     * 아이템을 재료 칸으로 옮긴다: 같은 아이템이 든 칸부터 채우고, 남으면 빈 칸에. 다 못 넣은 나머지를 돌려준다.
-     */
-    private static ItemStack moveIntoIngredients(Inventory inventory, ItemStack item) {
-        ItemStack rest = item.clone();
-        for (int pass = 0; pass < 2 && rest.getAmount() > 0; pass++) {
-            for (int slot : CookingMachine.INGREDIENT_SLOTS) {
-                ItemStack current = inventory.getItem(slot);
-                boolean empty = current == null || current.getType().isAir();
-                if (pass == 0 && !empty && current.isSimilar(rest)) {
-                    int move = Math.min(rest.getAmount(), current.getMaxStackSize() - current.getAmount());
-                    current.setAmount(current.getAmount() + move);
-                    rest.setAmount(rest.getAmount() - move);
-                } else if (pass == 1 && empty) {
-                    inventory.setItem(slot, rest.clone());
-                    rest.setAmount(0);
-                }
-                if (rest.getAmount() == 0) {
-                    break;
-                }
-            }
-        }
-        return rest.getAmount() == 0 ? null : rest;
+        machine.update(System.currentTimeMillis());
     }
 }

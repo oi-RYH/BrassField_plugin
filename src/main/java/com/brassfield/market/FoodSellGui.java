@@ -1,5 +1,6 @@
 package com.brassfield.market;
 
+import com.brassfield.common.GuiItems;
 import com.brassfield.common.CommandSupport;
 import com.brassfield.common.ItemDelivery;
 import com.brassfield.common.ItemsAdderGuiBackground;
@@ -74,7 +75,7 @@ public final class FoodSellGui implements InventoryHolder {
         this.inventory = texturedGui != null
                 ? texturedGui.inventory()
                 : Bukkit.createInventory(this, SIZE, Component.text("DL-7 · 납품 수령"));
-        ItemStack filler = icon(BLANK_ID, Material.GRAY_STAINED_GLASS_PANE, Component.empty(), List.of());
+        ItemStack filler = GuiItems.hideTooltip(icon(BLANK_ID, Material.GRAY_STAINED_GLASS_PANE, Component.empty(), List.of()));
         for (int slot = 0; slot < SIZE; slot++) {
             if (!isDeposit(slot)) {
                 inventory.setItem(slot, filler);

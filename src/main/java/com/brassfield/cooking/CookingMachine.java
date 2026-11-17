@@ -1,40 +1,55 @@
 package com.brassfield.cooking;
 
+import com.brassfield.common.GuiItems;
+import com.brassfield.common.Grades;
+import com.brassfield.common.ItemsAdderGuiBackground;
+import com.brassfield.common.TitleCanvas;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 마을에 설치한 요리 기계 한 대 (조리칸 하나, 누구나 같이 씀).
+ * 마을에 설치한 요리 기계 한 대 (누구나 같이 씀).
  * <ul>
- *   <li>재료 칸(3x3)에 넣은 재료가 레시피와 맞으면 바로 조리를 시작하고, 재료가 남아 있는 만큼 이어서 만든다.</li>
- *   <li>진행은 실제 시간 기준이라 창을 닫거나 자리를 떠도(청크가 내려가도, 서버를 다시 켜도) 계속 익는다.
- *       창을 열거나 보고 있을 때 그동안 익은 만큼을 한꺼번에 완성품 칸으로 옮긴다.</li>
- *   <li>완성품 칸이 가득 차면 조리를 멈춘다 (꺼내면 그 묶음부터 다시 익는다).</li>
- *   <li>우유 양동이·꿀병처럼 그릇이 남는 재료를 쓰면 빈 양동이·빈 병을 부산물 칸(완성품 아래)에 돌려준다.</li>
- *   <li>기기 종류(조리대·제분기·착즙기 …)마다 창 제목과 레시피가 다르다 ({@link CookingStation}).</li>
+ *   <li>레시피 책에서 만들 요리를 하나 걸어 두면, 그 요리의 재료만 받아 개수로 쌓아 둔다 (칸 수 제한 없음, 재료당 최대 {@link #STOCK_LIMIT}개).
+ *       재료는 구름 위 칸에 걸린 요리의 재료 순서대로 아이콘과 개수로 보인다.</li>
+ *   <li>요리 등급 = 한 번 만들 때 쓴 재료 중 등급 있는 재료(작물·등급 요리)의 등급 평균 (일반 0 · 은별 1 · 금별 2, 소수점 버림).
+ *       재료는 싼 것부터 쓴다 (일반 → 은별 → 금별). 은별·금별 요리는 &lt;요리&gt;_silver_star · _golden_star.</li>
+ *   <li>화덕 문 자리 불 버튼으로 조리를 시작·멈춘다. 멈추면 만들던 1개의 진행이 남아 다시 시작하면 이어서 익는다.
+ *       재료가 떨어지거나 요리를 바꾸면 꺼진다 (다시 눌러야 시작).</li>
+ *   <li>켜져 있고 재료가 한 번 만들 만큼 있으면 계속 익힌다. 진행은 실제 시간 기준이라 창을 닫거나 자리를 떠도 익는다.
+ *       창을 열거나 보고 있을 때 그동안 익은 만큼을 한꺼번에 접시(완성품)로 옮긴다. 완성품도 개수로 쌓인다.</li>
+ *   <li>우유 양동이·꿀병처럼 그릇이 남는 재료를 쓰면 빈 양동이·빈 병을 부산물 칸에 개수로 쌓는다.</li>
+ *   <li>걸린 요리를 바꾸면 남은 재료와 접시 위 요리를 바꾼 사람에게 돌려준다.</li>
+ *   <li>창 그림은 기기마다 rustport:cook_&lt;기기&gt;_bg (없으면 공통 그림). 진행 게이지·개수는 제목 글꼴 그림 ({@link CookGlyphs}).</li>
  * </ul>
  */
 public final class CookingMachine implements InventoryHolder {
 
     static final int SIZE = 54;
-    static final int[] INGREDIENT_SLOTS = {10, 11, 12, 19, 20, 21, 28, 29, 30};
-    static final int PROGRESS_SLOT = 23;
-    static final int OUTPUT_SLOT = 25;
-    static final int BOOK_SLOT = 49;
-    static final int[] BYPRODUCT_SLOTS = {34, 35};
+    static final int[] INGREDIENT_SLOTS = {1, 2, 3, 10, 11};        // 구름 위 (0줄 1~3열, 1줄 1·2열)
+    static final int[] PLATE_SLOTS = {24, 25, 33, 34};             // 접시 2x2 (2~3줄 6~7열), 음식 그림은 첫 칸에 2배 크기 모델
+    static final int[] BOOK_SLOTS = {6, 7, 15, 16};                // 레시피 책 그림 2x2 (0~1줄 6~7열, 배경 그림)
+    static final int[] BYPRODUCT_SLOTS = {52, 53};
+    static final int FIRE_SLOT = 38;                              // 불 버튼 (4줄 2열, 화덕 문 자리)
+    static final int[] GAUGE_SLOTS = {30, 31};                     // 솥 게이지가 걸친 두 칸 (3줄 3·4열): 마우스를 올리면 남은 시간
+    static final int STOCK_LIMIT = 1728;                          // 재료 하나당 최대 보관 (27묶음)
+    private static final String BLANK_ID = "rustport:gui_blank";
     /** 다 쓰고 그릇이 남는 재료 → 남는 그릇 */
     private static final Map<String, Material> CONTAINERS = Map.of(
             "minecraft:milk_bucket", Material.BUCKET,
@@ -42,27 +57,47 @@ public final class CookingMachine implements InventoryHolder {
             "minecraft:honey_bottle", Material.GLASS_BOTTLE,
             "minecraft:potion", Material.GLASS_BOTTLE);
 
+    /** 보관 중인 재료 한 종류 (같은 아이템끼리 묶음, 품질이 다르면 따로) */
+    static final class Stock {
+        final ItemStack sample;
+        int count;
+
+        Stock(ItemStack sample, int count) {
+            this.sample = sample.asOne();
+            this.count = count;
+        }
+    }
+
     private final CookingMachines machines;
     private final CookingStation station;
     private final String key;
+    private final ItemsAdderGuiBackground.TexturedGui texturedGui;
     private final Inventory inventory;
-    private String recipeId;
-    private long startedAt = -1;
-    private boolean blocked;
+    private final List<Stock> stocks = new ArrayList<>();
+    private final Map<Material, Integer> byproducts = new EnumMap<>(Material.class);
+    private final List<ItemStack> legacy = new ArrayList<>();      // 예전(칸 방식) 저장에서 넘어온 아이템: 처음 연 사람에게 돌려준다
+    private CookingRecipes.Recipe pinned;
+    private ItemStack outputSample;                                // 접시 위 요리 (일반 등급 아이템)
+    private final int[] outputs = new int[3];                      // 접시 위 요리 개수: 일반 · 은별 · 금별
+    private long startedAt = -1;                                  // 켜져서 익는 중인 1개의 시작 시각 (-1 = 꺼짐)
+    private long pausedProgress;                                   // 꺼질 때 만들던 1개가 익은 시간 (다시 켜면 이어서)
+    private String background;
+    private String shownTitle;
 
     CookingMachine(CookingMachines machines, CookingStation station, String key) {
         this.machines = machines;
         this.station = station;
         this.key = key;
-        this.inventory = Bukkit.createInventory(this, SIZE, Component.text(station.title()));
-        ItemStack filler = named(new ItemStack(Material.GRAY_STAINED_GLASS_PANE), Component.empty(), List.of());
+        ItemsAdderGuiBackground gui = machines.glyphs().background();
+        String wanted = CookGlyphs.machineBackground(station.key());
+        background = machines.glyphs().glyph(wanted).isEmpty() ? CookGlyphs.GENERIC_BACKGROUND : wanted;   // 그림 없는 기기는 공통 그림
+        ItemsAdderGuiBackground.TexturedGui built = gui.build(this, SIZE, "", background, 0, -8);
+        this.texturedGui = built;
+        this.inventory = built != null ? built.inventory() : Bukkit.createInventory(this, SIZE, Component.text(station.title()));
+        ItemStack filler = blank(Component.empty(), List.of());
         for (int slot = 0; slot < SIZE; slot++) {
-            if (!isIngredientSlot(slot) && slot != OUTPUT_SLOT && !isByproductSlot(slot)) {
-                inventory.setItem(slot, filler);
-            }
+            inventory.setItem(slot, filler);
         }
-        inventory.setItem(BOOK_SLOT, named(new ItemStack(Material.KNOWLEDGE_BOOK), Component.text("레시피 보기", NamedTextColor.YELLOW),
-                List.of(Component.text("만들 수 있는 요리와 재료를 봅니다.", NamedTextColor.GRAY))));
     }
 
     @Override
@@ -86,224 +121,696 @@ public final class CookingMachine implements InventoryHolder {
         return station.recipes();
     }
 
-    static boolean isByproductSlot(int slot) {
-        return slot == BYPRODUCT_SLOTS[0] || slot == BYPRODUCT_SLOTS[1];
-    }
-
-    String recipeId() {
-        return recipeId;
+    CookingRecipes.Recipe pinned() {
+        return pinned;
     }
 
     long startedAt() {
         return startedAt;
     }
 
-    void restore(String recipeId, long startedAt) {
-        this.recipeId = recipeId;
-        this.startedAt = startedAt;
+    long pausedProgress() {
+        return pausedProgress;
+    }
+
+    boolean running() {
+        return startedAt >= 0;
+    }
+
+    List<Stock> stocks() {
+        return stocks;
+    }
+
+    ItemStack outputSample() {
+        return outputSample;
+    }
+
+    int outputCount() {
+        return outputs[0] + outputs[1] + outputs[2];
+    }
+
+    int[] outputs() {
+        return outputs;
+    }
+
+    Map<Material, Integer> byproducts() {
+        return byproducts;
+    }
+
+    List<ItemStack> legacy() {
+        return legacy;
+    }
+
+    boolean isEmpty() {
+        return stocks.isEmpty() && outputCount() == 0;
+    }
+
+    void restore(String recipeId, long startedAt, long pausedProgress, ItemStack outputSample, int[] counts) {
+        this.pinned = recipeId == null ? null : recipes().byResult(recipeId);
+        this.startedAt = pinned == null ? -1 : startedAt;
+        this.pausedProgress = pinned == null ? 0 : Math.max(0, pausedProgress);
+        this.outputSample = outputSample == null ? null : outputSample.asOne();
+        for (int g = 0; g < 3; g++) {
+            outputs[g] = this.outputSample == null ? 0 : counts[g];
+        }
     }
 
     void open(Player player) {
         update(System.currentTimeMillis());
-        player.openInventory(inventory);
+        if (!legacy.isEmpty()) {
+            give(player, legacy);
+            legacy.clear();
+            player.sendMessage(Component.text("예전 조리칸에 남아 있던 아이템을 돌려받았습니다.", NamedTextColor.YELLOW));
+            machines.markDirty();
+        }
+        if (texturedGui != null) {
+            machines.glyphs().background().show(texturedGui, player);
+            shownTitle = null;
+            redraw(System.currentTimeMillis());
+        } else {
+            player.openInventory(inventory);
+        }
     }
 
     static boolean isIngredientSlot(int slot) {
-        for (int ingredientSlot : INGREDIENT_SLOTS) {
-            if (ingredientSlot == slot) {
-                return true;
-            }
-        }
-        return false;
+        return indexOf(INGREDIENT_SLOTS, slot) >= 0;
     }
 
-    List<ItemStack> ingredientItems() {
-        List<ItemStack> items = new ArrayList<>();
-        for (int slot : INGREDIENT_SLOTS) {
-            ItemStack item = inventory.getItem(slot);
-            if (item != null && !item.getType().isAir()) {
-                items.add(item);
+    static boolean isPlateSlot(int slot) {
+        return indexOf(PLATE_SLOTS, slot) >= 0;
+    }
+
+    static boolean isBookSlot(int slot) {
+        return indexOf(BOOK_SLOTS, slot) >= 0;
+    }
+
+    static boolean isByproductSlot(int slot) {
+        return indexOf(BYPRODUCT_SLOTS, slot) >= 0;
+    }
+
+    private static int indexOf(int[] slots, int slot) {
+        for (int i = 0; i < slots.length; i++) {
+            if (slots[i] == slot) {
+                return i;
             }
         }
-        return items;
+        return -1;
     }
+
+    // ── 조리 ──
 
     /**
-     * 지금까지 익은 만큼 완성품 칸으로 옮기고 진행 표시를 새로 그린다. 무언가 바뀌었으면 true.
+     * 지금까지 익은 만큼 접시로 옮기고 창을 새로 그린다. 무언가 바뀌었으면 true.
      */
     boolean update(long now) {
         boolean changed = settle(now);
-        drawProgress(now);
+        redraw(now);
         return changed;
     }
 
     private boolean settle(long now) {
-        CookingRecipes.Match match = recipes().match(ingredientItems());
-        blocked = false;
-        if (match == null) {
-            boolean changed = recipeId != null;
-            recipeId = null;
+        if (pinned == null || startedAt < 0) {
             startedAt = -1;
-            return changed;
+            return false;
         }
-        CookingRecipes.Recipe recipe = match.recipe();
-        if (!recipe.resultId().equals(recipeId) || startedAt < 0) {
-            // 새 요리 시작 (재료를 바꿔 다른 요리가 되면 진행도 처음부터)
-            recipeId = recipe.resultId();
-            startedAt = now;
+        int batches = batchesAvailable();
+        if (batches == 0) {
+            startedAt = -1;                                        // 재료가 떨어지면 꺼진다
+            pausedProgress = 0;
             return true;
         }
-        long perBatch = recipe.seconds() * 1000L;
-        long elapsedBatches = Math.max(0, (now - startedAt) / perBatch);
-        ItemStack result = machines.createResult(recipe.resultId());
-        int capacity = outputCapacity(result) / recipe.amount();
-        int done = (int) Math.min(Math.min(elapsedBatches, match.batches()), capacity);
-        Map<Material, Integer> containers = containersPerBatch(recipe);
-        while (done > 0 && !byproductsFit(containers, done)) {
-            done--;                                          // 부산물 칸이 가득 차면 그만큼만
+        long perBatch = pinned.seconds() * 1000L;
+        int done = (int) Math.min(batches, Math.max(0, (now - startedAt) / perBatch));
+        if (done == 0) {
+            return false;
         }
-        if (done > 0) {
-            consume(recipe, done);
-            ItemStack output = inventory.getItem(OUTPUT_SLOT);
-            if (output == null || output.getType().isAir()) {
-                result.setAmount(done * recipe.amount());
-                inventory.setItem(OUTPUT_SLOT, result);
-            } else {
-                output.setAmount(output.getAmount() + done * recipe.amount());
-            }
-            for (Map.Entry<Material, Integer> entry : containers.entrySet()) {
-                addByproduct(entry.getKey(), entry.getValue() * done);
-            }
-            startedAt += done * perBatch;
+        ItemStack result = machines.createResult(pinned.resultId());
+        if (outputSample == null || !outputSample.isSimilar(result)) {
+            outputSample = result.asOne();
+            java.util.Arrays.fill(outputs, 0);
         }
-        if (done == match.batches()) {
-            // 재료를 다 썼다
-            recipeId = null;
-            startedAt = -1;
-        } else if (elapsedBatches > done) {
-            // 완성품 칸이 가득 차 더 만들지 못함: 꺼낼 때까지 멈춘다
-            blocked = true;
-            startedAt = now;
-        }
-        return done > 0;
-    }
-
-    private int outputCapacity(ItemStack result) {
-        ItemStack output = inventory.getItem(OUTPUT_SLOT);
-        if (output == null || output.getType().isAir()) {
-            return result.getMaxStackSize();
-        }
-        return output.isSimilar(result) ? Math.max(0, output.getMaxStackSize() - output.getAmount()) : 0;
-    }
-
-    /**
-     * 한 번 만들 때 남는 그릇 (우유 양동이 → 빈 양동이 등)
-     */
-    private static Map<Material, Integer> containersPerBatch(CookingRecipes.Recipe recipe) {
-        Map<Material, Integer> out = new java.util.EnumMap<>(Material.class);
-        recipe.ingredients().forEach((ingredient, count) -> {
-            Material container = CONTAINERS.get(ingredient);
-            if (container != null) {
-                out.merge(container, count, Integer::sum);
-            }
-        });
-        return out;
-    }
-
-    /**
-     * 부산물 칸 두 개에 batches 번 만든 만큼의 그릇이 들어가는지
-     */
-    private boolean byproductsFit(Map<Material, Integer> perBatch, int batches) {
-        ItemStack[] slots = {copy(inventory.getItem(BYPRODUCT_SLOTS[0])), copy(inventory.getItem(BYPRODUCT_SLOTS[1]))};
-        for (Map.Entry<Material, Integer> entry : perBatch.entrySet()) {
-            int left = entry.getValue() * batches;
-            for (int i = 0; i < slots.length && left > 0; i++) {
-                ItemStack slot = slots[i];
-                int max = entry.getKey().getMaxStackSize();
-                if (slot == null) {
-                    int put = Math.min(left, max);
-                    slots[i] = new ItemStack(entry.getKey(), put);
-                    left -= put;
-                } else if (slot.getType() == entry.getKey()) {
-                    int put = Math.min(left, max - slot.getAmount());
-                    slot.setAmount(slot.getAmount() + put);
-                    left -= put;
+        for (int batch = 0; batch < done; batch++) {
+            int gradeSum = 0;
+            int graded = 0;
+            for (Map.Entry<String, Integer> entry : pinned.ingredients().entrySet()) {
+                boolean gradable = machines.isGradable(entry.getKey(), recipes());
+                for (ItemStack used : take(entry.getKey(), entry.getValue())) {
+                    if (gradable) {
+                        gradeSum += grade(used) * used.getAmount();
+                        graded += used.getAmount();
+                    }
                 }
             }
-            if (left > 0) {
-                return false;
+            outputs[graded == 0 ? 0 : gradeSum / graded] += pinned.amount();
+        }
+        for (Map.Entry<String, Integer> entry : pinned.ingredients().entrySet()) {
+            Material container = CONTAINERS.get(entry.getKey());
+            if (container != null) {
+                byproducts.merge(container, entry.getValue() * done, Integer::sum);
             }
+        }
+        if (done == batches) {
+            startedAt = -1;                                        // 재료를 다 썼다: 꺼진다
+            pausedProgress = 0;
+        } else {
+            startedAt += done * perBatch;
         }
         return true;
     }
 
-    private void addByproduct(Material material, int count) {
-        for (int slot : BYPRODUCT_SLOTS) {
-            if (count <= 0) {
-                return;
-            }
-            ItemStack item = inventory.getItem(slot);
-            if (item == null || item.getType().isAir()) {
-                int put = Math.min(count, material.getMaxStackSize());
-                inventory.setItem(slot, new ItemStack(material, put));
-                count -= put;
-            } else if (item.getType() == material) {
-                int put = Math.min(count, material.getMaxStackSize() - item.getAmount());
-                item.setAmount(item.getAmount() + put);
-                count -= put;
+    /** 걸린 요리를 지금 재료로 몇 번 만들 수 있는지 */
+    int batchesAvailable() {
+        if (pinned == null) {
+            return 0;
+        }
+        int batches = Integer.MAX_VALUE;
+        for (Map.Entry<String, Integer> entry : pinned.ingredients().entrySet()) {
+            batches = Math.min(batches, stored(entry.getKey()) / entry.getValue());
+        }
+        return batches;
+    }
+
+    /** 레시피 재료(정확한 ID 또는 #묶음)에 맞는 보관 개수 */
+    int stored(String ingredient) {
+        int total = 0;
+        for (Stock stock : stocks) {
+            if (matches(ingredient, stock.sample)) {
+                total += stock.count;
             }
         }
+        return total;
     }
 
-    private static ItemStack copy(ItemStack item) {
-        return item == null || item.getType().isAir() ? null : item.clone();
+    private boolean matches(String ingredient, ItemStack item) {
+        String itemKey = recipes().keyOf(item);
+        return itemKey != null && pinned != null && ingredient.equals(recipes().ingredientFor(pinned, itemKey));
     }
 
-    private void consume(CookingRecipes.Recipe recipe, int batches) {
-        CookingRecipes recipes = recipes();
-        for (Map.Entry<String, Integer> entry : recipe.ingredients().entrySet()) {
-            int need = entry.getValue() * batches;
-            for (int slot : INGREDIENT_SLOTS) {
-                if (need == 0) {
-                    break;
-                }
-                ItemStack item = inventory.getItem(slot);
-                String itemKey = recipes.keyOf(item);
-                if (itemKey == null || !entry.getKey().equals(recipes.ingredientFor(recipe, itemKey))) {
-                    continue;
-                }
-                int take = Math.min(need, item.getAmount());
-                item.setAmount(item.getAmount() - take);
-                inventory.setItem(slot, item.getAmount() == 0 ? null : item);
-                need -= take;
+    /** 레시피 재료 하나를 count 개 덜어 낸다 (싼 것부터: 일반 → 은별 → 금별). 덜어 낸 아이템 묶음을 돌려준다 */
+    private List<ItemStack> take(String ingredient, int count) {
+        List<ItemStack> out = new ArrayList<>();
+        List<Stock> matching = new ArrayList<>(stocks.stream().filter(s -> matches(ingredient, s.sample)).toList());
+        matching.sort((a, b) -> Integer.compare(grade(a.sample), grade(b.sample)));
+        for (Stock stock : matching) {
+            if (count == 0) {
+                break;
+            }
+            int n = Math.min(count, stock.count);
+            stock.count -= n;
+            count -= n;
+            out.addAll(stacks(stock.sample, n));
+            if (stock.count == 0) {
+                stocks.remove(stock);
             }
         }
+        return out;
     }
 
-    private void drawProgress(long now) {
-        CookingRecipes.Match match = recipes().match(ingredientItems());
-        if (match == null || recipeId == null) {
-            inventory.setItem(PROGRESS_SLOT, named(new ItemStack(Material.CAMPFIRE), Component.text("조리 대기", NamedTextColor.GRAY), List.of(
-                    Component.text("왼쪽 칸에 레시피 재료를 넣으면", NamedTextColor.GRAY),
-                    Component.text("바로 조리를 시작합니다.", NamedTextColor.GRAY))));
+    /**
+     * 가방이나 커서의 아이템을 재료로 넣는다. 걸린 요리의 재료가 아니면 그대로, 한도를 넘는 만큼은 남겨 돌려준다.
+     */
+    ItemStack deposit(ItemStack item) {
+        if (pinned == null || item == null || item.getType().isAir()) {
+            return item;
+        }
+        String ingredient = ingredientOf(item);
+        if (ingredient == null) {
+            return item;
+        }
+        int room = STOCK_LIMIT - stored(ingredient);
+        int put = Math.min(room, item.getAmount());
+        if (put <= 0) {
+            return item;
+        }
+        Stock target = null;
+        for (Stock stock : stocks) {
+            if (stock.sample.isSimilar(item)) {
+                target = stock;
+                break;
+            }
+        }
+        if (target == null) {
+            stocks.add(new Stock(item, put));
+        } else {
+            target.count += put;
+        }
+        ItemStack rest = item.clone();
+        rest.setAmount(item.getAmount() - put);
+        return rest.getAmount() == 0 ? null : rest;
+    }
+
+    /** 작물·요리 등급: 0 일반 · 1 은별 · 2 금별 */
+    private int grade(ItemStack item) {
+        return Grades.of(machines.itemProvider().idOf(item));
+    }
+
+    /** 걸린 요리의 어느 재료인지 (아니면 null) */
+    String ingredientOf(ItemStack item) {
+        String itemKey = recipes().keyOf(item);
+        return itemKey == null || pinned == null ? null : recipes().ingredientFor(pinned, itemKey);
+    }
+
+    /** 재료 칸 index 의 재료를 꺼낸다: all 이면 가방에 들어가는 만큼, 아니면 한 묶음 */
+    void withdrawIngredient(Player player, int index, boolean all) {
+        String ingredient = ingredientAt(index);
+        if (ingredient == null) {
             return;
         }
-        Component dish = machines.resultName(recipeId);
-        if (blocked) {
-            inventory.setItem(PROGRESS_SLOT, named(new ItemStack(Material.BARRIER), Component.text("완성품 칸이 가득 찼습니다", NamedTextColor.RED), List.of(
-                    Component.text("완성품이나 빈 그릇(아래 칸)을 꺼내면 다시 조리합니다.", NamedTextColor.GRAY))));
+        int available = stored(ingredient);
+        if (available == 0) {
             return;
         }
-        long perBatch = match.recipe().seconds() * 1000L;
-        long remaining = Math.max(0, perBatch - (now - startedAt));
-        long seconds = (remaining + 999) / 1000;
-        inventory.setItem(PROGRESS_SLOT, named(new ItemStack(Material.CLOCK), Component.text("조리 중: ", NamedTextColor.GOLD).append(dish), List.of(
-                Component.text("다음 완성까지 ", NamedTextColor.GRAY).append(Component.text(seconds + "초", NamedTextColor.YELLOW)),
+        ItemStack sample = stocks.stream().filter(s -> matches(ingredient, s.sample)).max((a, b) -> Integer.compare(a.count, b.count))
+                .map(s -> s.sample).orElseThrow();
+        int want = all ? Math.min(available, room(player, sample)) : Math.min(available, sample.getMaxStackSize());
+        if (want <= 0) {
+            player.sendMessage(Component.text("가방에 빈자리가 없습니다.", NamedTextColor.RED));
+            return;
+        }
+        give(player, take(ingredient, want));
+    }
+
+    /** 접시 위 요리 꺼내기: 높은 등급부터. all 이면 가방에 들어가는 만큼, 아니면 한 묶음 */
+    void withdrawOutput(Player player, boolean all) {
+        if (outputSample == null || outputCount() == 0) {
+            return;
+        }
+        boolean any = false;
+        for (int g = 2; g >= 0; g--) {
+            if (outputs[g] == 0) {
+                continue;
+            }
+            ItemStack sample = graded(g);
+            int want = Math.min(outputs[g], all ? room(player, sample) : sample.getMaxStackSize());
+            if (want <= 0) {
+                continue;
+            }
+            outputs[g] -= want;
+            give(player, stacks(sample, want));
+            any = true;
+            if (!all) {
+                break;
+            }
+        }
+        if (!any) {
+            player.sendMessage(Component.text("가방에 빈자리가 없습니다.", NamedTextColor.RED));
+        }
+        if (outputCount() == 0) {
+            outputSample = null;
+        }
+    }
+
+    /**
+     * 불 버튼: 꺼져 있으면 켜고(만들던 1개는 이어서), 켜져 있으면 끈다.
+     */
+    void toggleFire(Player player) {
+        long now = System.currentTimeMillis();
+        settle(now);
+        if (startedAt >= 0) {
+            pausedProgress = now - startedAt;
+            startedAt = -1;
+            player.sendMessage(Component.text("조리를 멈췄습니다.", NamedTextColor.GRAY));
+        } else if (pinned == null) {
+            player.sendMessage(Component.text("먼저 레시피 책에서 만들 요리를 거세요.", NamedTextColor.RED));
+        } else if (batchesAvailable() == 0) {
+            player.sendMessage(Component.text("재료가 모자랍니다.", NamedTextColor.RED));
+        } else {
+            startedAt = now - pausedProgress;
+            pausedProgress = 0;
+            player.sendMessage(Component.text("조리를 시작했습니다.", NamedTextColor.GOLD));
+        }
+        machines.markDirty();
+    }
+
+    /** 접시 위 요리의 등급 g 아이템 (은별·금별 아이템이 없으면 일반) */
+    private ItemStack graded(int g) {
+        if (g == 0) {
+            return outputSample.clone();
+        }
+        String id = machines.itemProvider().idOf(outputSample);
+        try {
+            return machines.createResult(Grades.withGrade(Grades.base(id), g)).asOne();
+        } catch (IllegalStateException | NullPointerException exception) {
+            return outputSample.clone();
+        }
+    }
+
+    /** 접시 위 요리 전부 (등급별 아이템 묶음) */
+    private List<ItemStack> outputItems() {
+        List<ItemStack> all = new ArrayList<>();
+        if (outputSample != null) {
+            for (int g = 0; g < 3; g++) {
+                all.addAll(stacks(graded(g), outputs[g]));
+            }
+        }
+        return all;
+    }
+
+    void withdrawByproduct(Player player, int index) {
+        List<Material> kinds = new ArrayList<>(byproducts.keySet());
+        if (index >= kinds.size()) {
+            return;
+        }
+        Material material = kinds.get(index);
+        ItemStack sample = new ItemStack(material);
+        int want = Math.min(byproducts.get(material), room(player, sample));
+        if (want <= 0) {
+            player.sendMessage(Component.text("가방에 빈자리가 없습니다.", NamedTextColor.RED));
+            return;
+        }
+        byproducts.merge(material, -want, Integer::sum);
+        byproducts.remove(material, 0);
+        give(player, stacks(sample, want));
+    }
+
+    /**
+     * 만들 요리를 건다. 다른 요리로 바꾸면 남은 재료와 접시 위 요리를 player 에게 돌려준다.
+     */
+    void pin(Player player, CookingRecipes.Recipe recipe) {
+        long now = System.currentTimeMillis();
+        settle(now);
+        if (pinned != null && pinned.resultId().equals(recipe.resultId())) {
+            return;
+        }
+        List<ItemStack> back = new ArrayList<>();
+        for (Stock stock : stocks) {
+            back.addAll(stacks(stock.sample, stock.count));
+        }
+        stocks.clear();
+        back.addAll(outputItems());
+        outputSample = null;
+        java.util.Arrays.fill(outputs, 0);
+        give(player, back);
+        pinned = recipe;
+        startedAt = -1;
+        pausedProgress = 0;
+        machines.markDirty();
+    }
+
+    /** 부순 기계 자리에 떨어뜨릴 아이템 전부 */
+    List<ItemStack> contents() {
+        List<ItemStack> all = new ArrayList<>(legacy);
+        for (Stock stock : stocks) {
+            all.addAll(stacks(stock.sample, stock.count));
+        }
+        all.addAll(outputItems());
+        byproducts.forEach((material, count) -> all.addAll(stacks(new ItemStack(material), count)));
+        return all;
+    }
+
+    void addStock(ItemStack sample, int count) {
+        if (sample != null && count > 0) {
+            stocks.add(new Stock(sample, count));
+        }
+    }
+
+    // ── 그리기 ──
+
+    /** 재료 칸 index 에 놓이는 레시피 재료 (걸린 요리 재료 순서) */
+    String ingredientAt(int index) {
+        if (pinned == null) {
+            return null;
+        }
+        List<String> keys = new ArrayList<>(pinned.ingredients().keySet());
+        return index < keys.size() ? keys.get(index) : null;
+    }
+
+    void redraw(long now) {
+        List<String> keys = pinned == null ? List.of() : new ArrayList<>(pinned.ingredients().keySet());
+        for (int i = 0; i < INGREDIENT_SLOTS.length; i++) {
+            inventory.setItem(INGREDIENT_SLOTS[i], i < keys.size() ? ingredientIcon(keys.get(i)) : blank(Component.empty(), List.of()));
+        }
+        ItemStack plate = plateIcon(now);
+        ItemMeta plateMeta = plate.getItemMeta();                      // 2x2 나머지 칸도 같은 이름·설명 (그림은 안 보임)
+        ItemStack plateCover = blank(plateMeta.hasDisplayName() ? plateMeta.displayName() : Component.empty(),
+                plateMeta.hasLore() ? plateMeta.lore() : List.of());
+        for (int i = 0; i < PLATE_SLOTS.length; i++) {
+            inventory.setItem(PLATE_SLOTS[i], i == 0 ? plate : plateCover);
+        }
+        inventory.setItem(FIRE_SLOT, fireIcon(now));
+        ItemStack gauge = blank(Component.text("조리 진행", NamedTextColor.GOLD), gaugeLore(now));
+        for (int slot : GAUGE_SLOTS) {
+            inventory.setItem(slot, gauge);
+        }
+        ItemStack book = bookIcon();
+        for (int slot : BOOK_SLOTS) {
+            inventory.setItem(slot, book);
+        }
+        List<Material> kinds = new ArrayList<>(byproducts.keySet());
+        for (int i = 0; i < BYPRODUCT_SLOTS.length; i++) {
+            if (i < kinds.size()) {
+                int count = byproducts.get(kinds.get(i));
+                ItemStack item = new ItemStack(kinds.get(i), Math.max(1, Math.min(count, kinds.get(i).getMaxStackSize())));
+                inventory.setItem(BYPRODUCT_SLOTS[i], named(item, Component.text("남은 빈 그릇 " + count + "개", NamedTextColor.WHITE),
+                        List.of(Component.text("클릭: 가방으로 꺼내기", NamedTextColor.GRAY))));
+            } else {
+                inventory.setItem(BYPRODUCT_SLOTS[i], blank(Component.empty(), List.of()));
+            }
+        }
+        updateTitle(now, keys);
+    }
+
+    private ItemStack ingredientIcon(String ingredient) {
+        int count = stored(ingredient);
+        ItemStack icon = stocks.stream().filter(s -> matches(ingredient, s.sample)).max((a, b) -> Integer.compare(a.count, b.count))
+                .map(s -> s.sample.clone()).orElseGet(() -> machines.ingredientIcon(recipes(), ingredient));
+        if (texturedGui == null) {
+            icon.setAmount(Math.max(1, Math.min(count, icon.getMaxStackSize())));
+        }
+        int need = pinned.ingredients().get(ingredient);
+        List<Component> lore = new ArrayList<>();
+        lore.add(Component.text("보관 ", NamedTextColor.GRAY).append(Component.text(String.format("%,d개", count),
+                count >= need ? NamedTextColor.YELLOW : NamedTextColor.RED))
+                .append(Component.text(" · 한 번에 " + need + "개", NamedTextColor.GRAY)));
+        int[] grades = new int[3];
+        for (Stock stock : stocks) {
+            if (matches(ingredient, stock.sample)) {
+                grades[grade(stock.sample)] += stock.count;
+            }
+        }
+        if (grades[1] + grades[2] > 0) {
+            lore.add(Component.text(String.format("일반 %,d · 은별 %,d · 금별 %,d", grades[0], grades[1], grades[2]), NamedTextColor.GRAY));
+            lore.add(Component.text("싼 것부터 씁니다 (일반 → 은별 → 금별)", NamedTextColor.DARK_GRAY));
+        }
+        lore.add(Component.empty());
+        lore.add(Component.text("가방에서 Shift+클릭, 또는 들고 클릭: 넣기", NamedTextColor.DARK_GRAY));
+        lore.add(Component.text("클릭: 한 묶음 꺼내기 · Shift+클릭: 모두 꺼내기", NamedTextColor.DARK_GRAY));
+        return named(icon, machines.displayName(ingredient).colorIfAbsent(NamedTextColor.WHITE), lore);
+    }
+
+    private ItemStack plateIcon(long now) {
+        if (outputSample == null || outputCount() == 0) {
+            if (pinned == null) {
+                return blank(Component.text("접시", NamedTextColor.WHITE),
+                        List.of(Component.text("오른쪽 위 레시피 책에서 만들 요리를 거세요.", NamedTextColor.GRAY)));
+            }
+            return blank(Component.text("접시", NamedTextColor.WHITE), progressLore(now));
+        }
+        ItemMeta resultMeta = outputSample.getItemMeta();
+        ItemStack icon = texturedGui == null ? null : plateIcon();     // 접시 2x2 가운데에 2배 크기로 그리는 그림 아이템
+        if (icon == null) {
+            icon = outputSample.clone();
+            icon.setAmount(Math.max(1, Math.min(outputCount(), icon.getMaxStackSize())));
+        }
+        ItemMeta meta = icon.getItemMeta();
+        meta.displayName(resultMeta.hasDisplayName() ? resultMeta.displayName()
+                : Component.translatable(outputSample.translationKey()).decoration(TextDecoration.ITALIC, false));
+        List<Component> lore = new ArrayList<>(resultMeta.hasLore() ? resultMeta.lore() : List.of());
+        lore.add(Component.empty());
+        lore.add(Component.text("완성 " + String.format("%,d개", outputCount()), NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+        if (outputs[1] + outputs[2] > 0) {
+            lore.add(Component.text(String.format("일반 %,d · 은별 %,d · 금별 %,d", outputs[0], outputs[1], outputs[2]), NamedTextColor.GRAY)
+                    .decoration(TextDecoration.ITALIC, false));
+        }
+        for (Component line : progressLore(now)) {
+            lore.add(line.decoration(TextDecoration.ITALIC, false));
+        }
+        lore.add(Component.text("클릭: 한 묶음 꺼내기 · Shift+클릭: 모두 꺼내기 (높은 등급부터)", NamedTextColor.DARK_GRAY).decoration(TextDecoration.ITALIC, false));
+        meta.lore(lore);
+        icon.setItemMeta(meta);
+        return icon;
+    }
+
+    private List<Component> progressLore(long now) {
+        if (pinned == null) {
+            return List.of();
+        }
+        if (startedAt < 0) {
+            return List.of(Component.text(batchesAvailable() == 0 ? "재료가 모자랍니다" : "불이 꺼져 있습니다", NamedTextColor.GRAY));
+        }
+        long remaining = Math.max(0, pinned.seconds() * 1000L - (now - startedAt));
+        return List.of(Component.text("다음 완성까지 ", NamedTextColor.GRAY).append(Component.text((remaining + 999) / 1000 + "초", NamedTextColor.YELLOW)),
                 Component.text("남은 재료로 ", NamedTextColor.GRAY)
-                        .append(Component.text(match.batches() * match.recipe().amount() + "개", NamedTextColor.YELLOW))
-                        .append(Component.text(" 더 만듭니다.", NamedTextColor.GRAY)),
-                Component.empty(),
-                Component.text("창을 닫아도 계속 익습니다.", NamedTextColor.DARK_GRAY))));
+                        .append(Component.text(batchesAvailable() * pinned.amount() + "개", NamedTextColor.YELLOW))
+                        .append(Component.text(" 더 만듭니다.", NamedTextColor.GRAY)));
+    }
+
+    /** 접시 위 요리의 2배 크기 그림 아이템 (rustport:cook_plate_<요리>), 없으면 null */
+    private ItemStack plateIcon() {
+        String id = machines.itemProvider().idOf(outputSample);
+        if (id == null) {
+            return null;
+        }
+        try {
+            return machines.itemProvider().create("rustport:cook_plate_" + id.substring(id.indexOf(':') + 1));
+        } catch (IllegalStateException exception) {
+            return null;
+        }
+    }
+
+    /** 화덕 문 불 버튼: 켜짐(타오르는 불) · 꺼짐(회색 불) */
+    private ItemStack fireIcon(long now) {
+        boolean on = startedAt >= 0;
+        ItemStack icon;
+        try {
+            icon = machines.itemProvider().create(on ? "rustport:cook_fire_on" : "rustport:cook_fire_off");
+        } catch (IllegalStateException exception) {
+            icon = new ItemStack(on ? Material.CAMPFIRE : Material.SOUL_CAMPFIRE);
+        }
+        List<Component> lore = new ArrayList<>(gaugeLore(now));
+        lore.add(Component.empty());
+        lore.add(Component.text(on ? "클릭: 조리 멈추기" : "클릭: 조리 시작", NamedTextColor.YELLOW));
+        return named(icon, Component.text(on ? "불 켜짐 · 조리 중" : "불 꺼짐", on ? NamedTextColor.GOLD : NamedTextColor.GRAY), lore);
+    }
+
+    /** 게이지 설명: 다음 1개 완성까지 · 전부 완성까지 남은 시간 */
+    private List<Component> gaugeLore(long now) {
+        if (pinned == null) {
+            return List.of(Component.text("걸린 요리가 없습니다.", NamedTextColor.GRAY));
+        }
+        int batches = batchesAvailable();
+        if (batches == 0) {
+            return List.of(Component.text("재료가 모자랍니다.", NamedTextColor.GRAY));
+        }
+        long perBatch = pinned.seconds() * 1000L;
+        if (startedAt < 0) {
+            long all = perBatch - pausedProgress + (batches - 1) * perBatch;
+            return List.of(Component.text("불이 꺼져 있습니다. 화덕의 불 버튼을 눌러 시작하세요.", NamedTextColor.GRAY),
+                    Component.text("켜면 전부 완성까지 ", NamedTextColor.GRAY).append(Component.text(duration(all), NamedTextColor.YELLOW))
+                            .append(Component.text(" (" + String.format("%,d", batches * pinned.amount()) + "개)", NamedTextColor.GRAY)));
+        }
+        long next = Math.max(0, perBatch - (now - startedAt));
+        long all = next + (batches - 1) * perBatch;
+        return List.of(
+                Component.text("1개 완성까지 ", NamedTextColor.GRAY).append(Component.text(duration(next), NamedTextColor.YELLOW)),
+                Component.text("전부 완성까지 ", NamedTextColor.GRAY).append(Component.text(duration(all), NamedTextColor.YELLOW))
+                        .append(Component.text(" (" + String.format("%,d", batches * pinned.amount()) + "개)", NamedTextColor.GRAY)));
+    }
+
+    /** 남은 시간 글: 1시간 2분 3초 / 2분 3초 / 3초 (초는 올림) */
+    static String duration(long millis) {
+        long seconds = (millis + 999) / 1000;
+        long h = seconds / 3600;
+        long m = seconds % 3600 / 60;
+        long sec = seconds % 60;
+        StringBuilder out = new StringBuilder();
+        if (h > 0) {
+            out.append(h).append("시간 ");
+        }
+        if (h > 0 || m > 0) {
+            out.append(m).append("분 ");
+        }
+        return out.append(sec).append("초").toString();
+    }
+
+    private ItemStack bookIcon() {
+        List<Component> lore = new ArrayList<>();
+        if (pinned == null) {
+            lore.add(Component.text("걸린 요리 없음", NamedTextColor.GRAY));
+        } else {
+            lore.add(Component.text("걸린 요리: ", NamedTextColor.GRAY).append(machines.resultName(pinned.resultId()).colorIfAbsent(NamedTextColor.WHITE)));
+        }
+        lore.add(Component.text("클릭: 만들 요리 고르기", NamedTextColor.DARK_GRAY));
+        return blank(Component.text("레시피 책", NamedTextColor.YELLOW), lore);
+    }
+
+    private int gaugeLevel(long now) {
+        if (pinned == null) {
+            return 0;
+        }
+        long perBatch = pinned.seconds() * 1000L;
+        long progress = startedAt >= 0 ? now - startedAt : pausedProgress;
+        return (int) Math.min(CookGlyphs.GAUGE_STEPS, progress * CookGlyphs.GAUGE_STEPS / perBatch);
+    }
+
+    private void updateTitle(long now, List<String> keys) {
+        if (texturedGui == null) {
+            return;
+        }
+        CookGlyphs glyphs = machines.glyphs();
+        TitleCanvas canvas = new TitleCanvas(glyphs.glyph(background), CookGlyphs.BACKGROUND_ADVANCE);
+        glyphs.gauge(canvas, gaugeLevel(now));
+        StringBuilder state = new StringBuilder().append(gaugeLevel(now));
+        for (int i = 0; i < keys.size() && i < INGREDIENT_SLOTS.length; i++) {
+            String text = CookGlyphs.compact(stored(keys.get(i)));
+            glyphs.slotCount(canvas, "cnt", INGREDIENT_SLOTS[i], text);
+            state.append('|').append(text);
+        }
+        if (outputCount() > 0) {
+            String text = CookGlyphs.plate(outputCount());
+            glyphs.plateCount(canvas, text);
+            state.append('|').append(text);
+        }
+        String key = state.toString();
+        if (key.equals(shownTitle)) {
+            return;
+        }
+        shownTitle = key;
+        String title = canvas.build();
+        for (HumanEntity viewer : new ArrayList<>(inventory.getViewers())) {
+            InventoryView view = viewer.getOpenInventory();
+            if (view.getTopInventory() == inventory) {
+                view.setTitle(title);
+            }
+        }
+    }
+
+    // ── 도우미 ──
+
+    /** sample 을 count 개, 최대 묶음 크기로 나눈 아이템들 */
+    static List<ItemStack> stacks(ItemStack sample, int count) {
+        List<ItemStack> out = new ArrayList<>();
+        int max = sample.getMaxStackSize();
+        while (count > 0) {
+            ItemStack stack = sample.clone();
+            stack.setAmount(Math.min(max, count));
+            count -= stack.getAmount();
+            out.add(stack);
+        }
+        return out;
+    }
+
+    /** 가방에 sample 이 몇 개 더 들어가는지 */
+    private static int room(Player player, ItemStack sample) {
+        int room = 0;
+        for (ItemStack item : player.getInventory().getStorageContents()) {
+            if (item == null || item.getType().isAir()) {
+                room += sample.getMaxStackSize();
+            } else if (item.isSimilar(sample)) {
+                room += Math.max(0, item.getMaxStackSize() - item.getAmount());
+            }
+        }
+        return room;
+    }
+
+    /** 가방에 넣고, 못 넣은 것은 발밑에 떨어뜨린다 */
+    static void give(Player player, List<ItemStack> items) {
+        for (ItemStack item : items) {
+            for (ItemStack rest : player.getInventory().addItem(item).values()) {
+                player.getWorld().dropItemNaturally(player.getLocation(), rest);
+            }
+        }
+    }
+
+    private ItemStack blank(Component name, List<Component> lore) {
+        ItemStack item;
+        try {
+            item = machines.itemProvider().create(BLANK_ID);
+        } catch (IllegalStateException exception) {
+            item = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+        }
+        ItemStack out = named(item, name, lore);
+        return name.equals(Component.empty()) && lore.isEmpty() ? GuiItems.hideTooltip(out) : out;
     }
 
     static ItemStack named(ItemStack item, Component name, List<Component> lore) {

@@ -1,5 +1,6 @@
 package com.brassfield.market;
 
+import com.brassfield.common.Grades;
 import com.brassfield.common.BalanceBook;
 import com.brassfield.common.CommandSupport;
 import com.brassfield.common.ItemsAdderGuiBackground;
@@ -72,6 +73,7 @@ public final class FoodMarket {
     private final int orderHour;
     private final double orderBonus;
     private final List<OrderGroup> orderGroups;
+    private final double[] gradeMultipliers;                           // 일반 · 은별 · 금별 요리 매입가 배율
     private final List<String> orders = new ArrayList<>();
     private long orderStart;
     private DeliveryRobots robots;
@@ -86,7 +88,7 @@ public final class FoodMarket {
     private FoodMarket(JavaPlugin plugin, GoldWallet goldWallet, ItemsAdderItemProvider itemProvider,
                        ItemsAdderGuiBackground guiBackground, BalanceBook salesRecord,
                        Map<String, Long> basePrices, int windowHours, double maxChange,
-                       int orderHour, double orderBonus, List<OrderGroup> orderGroups) {
+                       int orderHour, double orderBonus, List<OrderGroup> orderGroups, double[] gradeMultipliers) {
         this.plugin = plugin;
         this.goldWallet = goldWallet;
         this.itemProvider = itemProvider;
@@ -98,6 +100,7 @@ public final class FoodMarket {
         this.orderHour = orderHour;
         this.orderBonus = orderBonus;
         this.orderGroups = orderGroups;
+        this.gradeMultipliers = gradeMultipliers;
         this.stateFile = new File(plugin.getDataFolder(), "food_market.yml");
     }
 
@@ -139,8 +142,10 @@ public final class FoodMarket {
         }
         int orderHour = Math.floorMod(section.getInt("daily-orders.hour", 6), 24);
         double orderBonus = Math.max(0, section.getDouble("daily-orders.bonus", 0.8));
+        double[] gradeMultipliers = {1, Math.max(1, section.getDouble("quality-multipliers.silver", 2)),
+                Math.max(1, section.getDouble("quality-multipliers.golden", 4))};
         FoodMarket market = new FoodMarket(plugin, goldWallet, itemProvider, guiBackground, salesRecord, base, hours, max,
-                orderHour, orderBonus, groups);
+                orderHour, orderBonus, groups, gradeMultipliers);
         market.loadState();
         logger.info("요리 판매(DL-7): 요리 " + base.size() + "종, " + hours + "시간마다 ±" + Math.round(max * 100) + "% 가격 변동");
         return market;
@@ -291,11 +296,12 @@ public final class FoodMarket {
      * 요리 1개의 지금 매입가. 매입하지 않는 아이템이면 0.
      */
     long priceOf(String id) {
-        Long base = id == null ? null : basePrices.get(id);
+        String baseId = id == null ? null : Grades.base(id);
+        Long base = baseId == null ? null : basePrices.get(baseId);
         if (base == null) {
             return 0;
         }
-        return Math.max(1, Math.round(base * (1 + changeOf(id))));
+        return Math.max(1, Math.round(base * gradeMultipliers[Grades.of(id)] * (1 + changeOf(baseId))));
     }
 
     /**
@@ -358,7 +364,7 @@ public final class FoodMarket {
             if (value <= 0) {
                 continue;
             }
-            String id = itemProvider.idOf(item);
+            String id = Grades.base(itemProvider.idOf(item));        // 판매 기록·가격 변동·주문은 등급 없이 요리별로
             total = Math.addExact(total, value);
             count += item.getAmount();
             soldById.merge(id, (long) item.getAmount(), Long::sum);

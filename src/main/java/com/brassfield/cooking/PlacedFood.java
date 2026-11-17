@@ -1,5 +1,6 @@
 package com.brassfield.cooking;
 
+import com.brassfield.common.Grades;
 import com.brassfield.common.ItemsAdderItemProvider;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -114,7 +115,7 @@ public final class PlacedFood implements Listener {
             return;
         }
         String id = itemProvider.idOf(hand);
-        if (id == null || !placeable.contains(id)) {
+        if (id == null || !placeable.contains(Grades.base(id))) {
             return;
         }
         event.setUseInteractedBlock(org.bukkit.event.Event.Result.DENY);

@@ -1,5 +1,6 @@
 package com.brassfield.cooking;
 
+import com.brassfield.common.ItemsAdderGuiBackground;
 import com.brassfield.common.ItemsAdderItemProvider;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
@@ -16,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -24,7 +26,8 @@ import java.util.Map;
  * <ul>
  *   <li>기계를 우클릭하면 그 위치의 조리칸을 연다 (처음이면 빈 조리칸을 만든다).</li>
  *   <li>보고 있는 사람이 있는 기계는 1초마다 진행을 갱신한다. 아무도 안 볼 때는 열 때 한꺼번에 계산한다.</li>
- *   <li>관리자가 기계를 부수면 안에 든 재료와 요리를 그 자리에 떨어뜨린다.</li>
+ *   <li>관리자가 기계를 부수면 안에 든 재료·요리·빈 그릇을 그 자리에 떨어뜨린다.</li>
+ *   <li>저장: 걸린 요리 · 진행 시작 시각 · 재료(아이템 + 개수) · 완성품(아이템 + 개수) · 빈 그릇 개수.</li>
  * </ul>
  */
 public final class CookingMachines {
@@ -35,6 +38,7 @@ public final class CookingMachines {
     private final JavaPlugin plugin;
     private final Map<String, CookingStation> stations;
     private final ItemsAdderItemProvider itemProvider;
+    private final CookGlyphs glyphs;
     private final File file;
     private final Map<String, CookingMachine> machines = new HashMap<>();
     private final Map<String, Component> resultNames = new HashMap<>();
@@ -42,10 +46,12 @@ public final class CookingMachines {
     private BukkitTask saveTask;
     private boolean dirty;
 
-    public CookingMachines(JavaPlugin plugin, Map<String, CookingStation> stations, ItemsAdderItemProvider itemProvider) {
+    public CookingMachines(JavaPlugin plugin, Map<String, CookingStation> stations, ItemsAdderItemProvider itemProvider,
+                           ItemsAdderGuiBackground guiBackground) {
         this.plugin = plugin;
         this.stations = stations;
         this.itemProvider = itemProvider;
+        this.glyphs = new CookGlyphs(guiBackground);
         this.file = new File(plugin.getDataFolder(), FILE_NAME);
     }
 
@@ -55,6 +61,14 @@ public final class CookingMachines {
 
     ItemsAdderItemProvider itemProvider() {
         return itemProvider;
+    }
+
+    CookGlyphs glyphs() {
+        return glyphs;
+    }
+
+    JavaPlugin plugin() {
+        return plugin;
     }
 
     public void start() {
@@ -110,12 +124,8 @@ public final class CookingMachines {
             viewer.closeInventory();
         }
         machine.update(System.currentTimeMillis());
-        for (int slot : CookingMachine.INGREDIENT_SLOTS) {
-            drop(location, machine.getInventory().getItem(slot));
-        }
-        drop(location, machine.getInventory().getItem(CookingMachine.OUTPUT_SLOT));
-        for (int slot : CookingMachine.BYPRODUCT_SLOTS) {
-            drop(location, machine.getInventory().getItem(slot));
+        for (ItemStack item : machine.contents()) {
+            drop(location, item);
         }
         save();
     }
@@ -126,6 +136,49 @@ public final class CookingMachines {
 
     ItemStack createResult(String resultId) {
         return itemProvider.create(resultId);
+    }
+
+    private final Map<String, Boolean> gradable = new HashMap<>();
+
+    /**
+     * 레시피 재료에 등급(은별·금별)이 있는지: 재료 ID(묶음이면 그 안 아무거나)의 금별 아이템이 있으면 등급 있는 재료.
+     * 요리 등급 평균에는 등급 있는 재료만 넣는다 (바닐라 재료는 빼고 센다).
+     */
+    boolean isGradable(String ingredient, CookingRecipes recipes) {
+        return gradable.computeIfAbsent(ingredient, key -> {
+            java.util.Collection<String> ids = key.startsWith("#") ? recipes.groupItems(key.substring(1)) : List.of(key);
+            for (String id : ids) {
+                if (id.startsWith("minecraft:")) {
+                    continue;
+                }
+                try {
+                    itemProvider.create(com.brassfield.common.Grades.withGrade(id, 2));
+                    return true;
+                } catch (IllegalStateException ignored) {
+                    // 금별 아이템 없음
+                }
+            }
+            return false;
+        });
+    }
+
+    /**
+     * 아직 넣지 않은 재료 칸에 보일 아이콘: 재료 ID(묶음이면 이름순 첫 아이템)로 만든 아이템, 못 만들면 종이
+     */
+    ItemStack ingredientIcon(CookingRecipes recipes, String ingredient) {
+        String id = ingredient;
+        if (ingredient.startsWith("#")) {
+            id = recipes.groupItems(ingredient.substring(1)).stream().sorted().findFirst().orElse("minecraft:paper");
+        }
+        if (id.startsWith("minecraft:")) {
+            org.bukkit.Material material = org.bukkit.Material.matchMaterial(id);
+            return new ItemStack(material == null || !material.isItem() ? org.bukkit.Material.PAPER : material);
+        }
+        try {
+            return itemProvider.create(id);
+        } catch (IllegalStateException exception) {
+            return new ItemStack(org.bukkit.Material.PAPER);
+        }
     }
 
     Component resultName(String resultId) {
@@ -205,11 +258,38 @@ public final class CookingMachines {
             CookingMachine machine = new CookingMachine(this, station, key);
             ConfigurationSection items = section.getConfigurationSection("items");
             if (items != null) {
+                // 예전 저장 형식(칸마다 아이템): 처음 여는 사람에게 돌려준다
                 for (String slot : items.getKeys(false)) {
-                    machine.getInventory().setItem(Integer.parseInt(slot), items.getItemStack(slot));
+                    ItemStack item = items.getItemStack(slot);
+                    if (item != null && !item.getType().isAir()) {
+                        machine.legacy().add(item);
+                    }
                 }
             }
-            machine.restore(section.getString("recipe"), section.getLong("started", -1));
+            for (Object raw : section.getList("legacy", List.of())) {
+                if (raw instanceof ItemStack item) {
+                    machine.legacy().add(item);
+                }
+            }
+            for (Map<?, ?> raw : section.getMapList("stocks")) {
+                if (raw.get("item") instanceof ItemStack item && raw.get("count") instanceof Number count) {
+                    machine.addStock(item, count.intValue());
+                }
+            }
+            ConfigurationSection byproducts = section.getConfigurationSection("byproducts");
+            if (byproducts != null) {
+                for (String material : byproducts.getKeys(false)) {
+                    org.bukkit.Material type = org.bukkit.Material.matchMaterial(material);
+                    if (type != null && byproducts.getInt(material) > 0) {
+                        machine.byproducts().put(type, byproducts.getInt(material));
+                    }
+                }
+            }
+            List<Integer> counts = section.getIntegerList("output.counts");
+            int[] outputs = counts.size() == 3 ? new int[]{counts.get(0), counts.get(1), counts.get(2)}
+                    : new int[]{section.getInt("output.count"), 0, 0};
+            machine.restore(section.getString("recipe"), section.getLong("started", -1), section.getLong("paused", 0),
+                    section.getItemStack("output.item"), outputs);
             machines.put(key, machine);
         }
         plugin.getLogger().info("요리 기계 " + machines.size() + "대의 조리 상태를 불러왔습니다.");
@@ -222,14 +302,22 @@ public final class CookingMachines {
             String path = "machines." + index++;
             data.set(path + ".location", machine.key());
             data.set(path + ".station", machine.station().key());
-            data.set(path + ".recipe", machine.recipeId());
+            data.set(path + ".recipe", machine.pinned() == null ? null : machine.pinned().resultId());
             data.set(path + ".started", machine.startedAt());
-            for (int slot : CookingMachine.INGREDIENT_SLOTS) {
-                saveItem(data, path, slot, machine.getInventory().getItem(slot));
+            data.set(path + ".paused", machine.pausedProgress());
+            List<Map<String, Object>> stocks = new ArrayList<>();
+            for (CookingMachine.Stock stock : machine.stocks()) {
+                stocks.add(Map.of("item", stock.sample, "count", stock.count));
             }
-            saveItem(data, path, CookingMachine.OUTPUT_SLOT, machine.getInventory().getItem(CookingMachine.OUTPUT_SLOT));
-            for (int slot : CookingMachine.BYPRODUCT_SLOTS) {
-                saveItem(data, path, slot, machine.getInventory().getItem(slot));
+            data.set(path + ".stocks", stocks);
+            if (machine.outputSample() != null && machine.outputCount() > 0) {
+                data.set(path + ".output.item", machine.outputSample());
+                int[] outputs = machine.outputs();
+                data.set(path + ".output.counts", List.of(outputs[0], outputs[1], outputs[2]));
+            }
+            machine.byproducts().forEach((material, count) -> data.set(path + ".byproducts." + material.name(), count));
+            if (!machine.legacy().isEmpty()) {
+                data.set(path + ".legacy", machine.legacy());
             }
         }
         try {
@@ -238,12 +326,6 @@ public final class CookingMachines {
             dirty = false;
         } catch (IOException exception) {
             plugin.getLogger().severe("요리 기계 상태를 저장하지 못했습니다: " + exception);
-        }
-    }
-
-    private static void saveItem(YamlConfiguration data, String path, int slot, ItemStack item) {
-        if (item != null && !item.getType().isAir()) {
-            data.set(path + ".items." + slot, item);
         }
     }
 }

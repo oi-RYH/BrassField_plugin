@@ -221,6 +221,7 @@ public final class EnhancementGui implements InventoryHolder {
         ItemStack filler = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
         ItemMeta meta = filler.getItemMeta();
         meta.displayName(Component.empty());
+        meta.setHideTooltip(true);
         filler.setItemMeta(meta);
 
         for (int slot = 0; slot < SIZE; slot++) {

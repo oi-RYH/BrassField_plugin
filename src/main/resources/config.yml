@@ -181,6 +181,10 @@ food-buffs:
 # 기본가 = 재료 난이도 점수 × 단계 배율 (1단계 점수×50, 2단계 점수×400×조리 시간 보너스). 노션 "요리 시스템 (구현 기준)" 참고.
 # 서버 전체 판매량을 window-hours 마다 집계: 변동 = max-change × (1 − 판매 비중 ÷ 기준 비중), ±max-change 로 제한.
 food-market:
+  # 요리 등급 매입가 배율. 요리 등급 = 등급 있는 재료(작물·등급 요리)의 등급 평균 (일반 0 · 은별 1 · 금별 2, 소수점 버림)
+  quality-multipliers:
+    silver: 2
+    golden: 4
   window-hours: 4
   max-change: 0.10
   # 일간 주문서: 매일 hour 시에 묶음마다 무작위로 count 개를 골라, 그날은 가격 변동 없이 +bonus 에 산다 (한도 없음)

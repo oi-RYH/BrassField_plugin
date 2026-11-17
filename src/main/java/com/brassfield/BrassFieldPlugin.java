@@ -141,7 +141,8 @@ public class BrassFieldPlugin extends JavaPlugin {
         });
 
         // 요리 기기 7종 (조리대 + 보조 도구 6, 개인 기기: 누구나 설치·회수, 빨간 표시 없음. 기기마다 조리칸 하나, 실제 시간 기준으로 익음)
-        cookingMachines = new CookingMachines(this, CookingRecipes.loadStations(getConfig(), itemProvider, getLogger()), itemProvider);
+        cookingMachines = new CookingMachines(this, CookingRecipes.loadStations(getConfig(), itemProvider, getLogger()), itemProvider,
+                guiBackground);
         for (CookingStation station : cookingMachines.stations()) {
             machines.onInteractAt(station.furnitureId(), (player, furniture) -> cookingMachines.open(player, furniture, station));
             machines.onBreak(station.furnitureId(), cookingMachines::destroy);

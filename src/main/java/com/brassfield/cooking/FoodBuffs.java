@@ -1,5 +1,6 @@
 package com.brassfield.cooking;
 
+import com.brassfield.common.Grades;
 import com.brassfield.common.ItemsAdderItemProvider;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -89,7 +90,7 @@ public final class FoodBuffs implements Listener {
      * id 가 버프 요리면 그 요리의 후보 중 하나를 무작위로 붙이고 액션바로 알린다.
      */
     public void apply(Player player, String id) {
-        Dish dish = id == null ? null : dishes.get(id);
+        Dish dish = id == null ? null : dishes.get(Grades.base(id));
         if (dish == null) {
             return;
         }
