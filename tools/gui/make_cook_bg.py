@@ -63,19 +63,20 @@ PLATE = [(206, 198, 182), (110, 92, 74), (238, 232, 218), (196, 188, 172)]   # �
 LABEL = [(214, 198, 166), (110, 80, 50)]                                     # 개수 명찰 바탕 · 테
 
 
-def food_center():
-    """완성 음식(2배 크기) 가운데 = 2x2 칸 가운데"""
-    x, y = slot_box(*PLATE_SLOT)
+def food_center(slot=None):
+    """완성 음식(2배 크기) 가운데 = 2x2 칸 가운데 (slot = 2x2 칸 왼쪽 위, 기본 솥 접시)"""
+    x, y = slot_box(*(slot or PLATE_SLOT))
     return x + 18, y + 18
 
 
-def plate_center():
-    cx, cy = food_center()
+def plate_center(slot=None):
+    cx, cy = food_center(slot)
     return cx, cy + 12
 
 
-def label_box():
-    cx, cy = plate_center()
+def label_box(slot=None):
+    """접시 아래 개수 명찰. 명찰 숫자 글꼴 그림(cook_plate_*)은 높이가 정해져 있어 접시는 어느 기기든 2·3줄에 둔다"""
+    cx, cy = plate_center(slot)
     return cx - 12, cy + 9, cx + 11, cy + 17
 
 
@@ -218,13 +219,15 @@ def draw_fire_button(win, slot=None, extend=0):
         d.point((rx, ry), (255, 236, 170))
 
 
-def draw_plate(win):
-    cx, cy = plate_center()
+def draw_plate(win, slot=None, label=True):
+    """2x2 접시 (label: 아래 개수 명찰 — 없으면 개수는 요리 오른쪽 위 칸 숫자)"""
+    cx, cy = plate_center(slot)
     d = win.d
     d.ellipse([cx - 23, cy - 7, cx + 22, cy + 7], fill=PLATE[0], outline=PLATE[1])
     d.ellipse([cx - 17, cy - 5, cx + 16, cy + 4], fill=PLATE[2])
     d.arc([cx - 17, cy - 5, cx + 16, cy + 4], 180, 360, fill=PLATE[3])
-    d.rectangle(label_box(), fill=LABEL[0], outline=LABEL[1])
+    if label:
+        d.rectangle(label_box(slot), fill=LABEL[0], outline=LABEL[1])
 
 
 def draw_book(win):
@@ -956,6 +959,129 @@ def fermenter_gauge(raw, level, steps):
     for (x, y), c in needle_pixels(level, steps, gauge_mask(center), center).items():
         p[x - x0, y - y0] = c
     bx0, by0, bx1, by1 = ferm_box(FERM_BAR)
+    fill = round((bx1 - bx0) * f)
+    if fill:
+        from PIL import ImageDraw
+        d = ImageDraw.Draw(img)
+        X, Y, H = bx0 - x0, by0 - y0, by1 - by0
+        d.rectangle([X, Y, X + fill - 1, Y + H - 1], fill=BAR_FILL[1])
+        d.line([(X, Y), (X + fill - 1, Y)], fill=BAR_FILL[0])
+        d.line([(X, Y + H - 1), (X + fill - 1, Y + H - 1)], fill=BAR_FILL[2])
+    return img, (x0, y0)
+
+
+# ── 훈연기 (art/smoker_concept.png + art/smoker_machine.png 훈연 캐비닛을 오른쪽에 줄여 얹음, 배치는 발효조와 같은 방식) ──
+# 칸 배치는 com.brassfield.cooking.CookLayout.SMOKER 와 맞춘다.
+SMK_ART, SMK_CONCEPT = "smoker_machine.png", "smoker_concept.png"
+SMK_BOX = (202, 183, 1018, 1263)               # 캐비닛 그림 (굴뚝 위 연기 · 받침 다리 제외)
+SMK_SMOKE_CUT = (600, 0, 1018, 240)            # 굴뚝 오른쪽 위 연기 끝자락은 비운다
+SMK_SCALE = 0.115
+SMK_AT = (73, 1)                               # 창 기준 왼쪽 위 (오른쪽으로 붙임). 재생 버튼은 작동 버튼 판(5줄 4열) 안
+SMK_WINDOW = (342, 575, 742, 983)              # 캐비닛 그림 기준 유리창 안쪽 (게이지: 연기 · 고기 색)
+SMK_MEAT = (370, 712, 690, 890)                # 창 안 고기 (갈고리 아래)
+SMK_DIAL = (913, 472)                          # 압력계 가운데 → 솥과 같은 계기판
+SMK_DIAL_R = 12.5                              # 원래 압력계(테 포함) 반지름 (창 기준) — 이만큼 황동 테로 덮는다
+SMK_BAR = (444, 1182, 776, 1215)               # 받침대 진행 막대 안쪽
+SMK_INGREDIENT = (1, 1)
+SMK_NOTE_CUTS = [(230, 390), (1256, 1284)]     # 머리 장식 아래 여백을 잘라 착즙기 주문서보다 낮게 (재료 칸 아래 여백은 남긴다)
+SMK_NOTE_AT = (12, 3)
+SMK_OUTPUT = (2, 1)                            # 주문서 아래 2x2 접시 (2~3줄 1~2열, 왼쪽 위 칸)
+SMK_BOOK_AT = (34, 108)                        # 접시 아래 4·5줄 1열
+SMK_COUNT = (2, 69)                            # 완성품 개수 숫자 (줄, 오른쪽 끝 x) — 2배 요리 그림 오른쪽 위 바깥 (CookLayout.SMOKER)
+SMK_START = (5, 4)                             # 받침대 재생 버튼 자리 작동 버튼
+SMK_DECOR = [((985, 160, 1050, 225), 0.17, (56, 104)),    # 시안 희미한 톱니 → 책 오른쪽
+             ((1010, 325, 1060, 410), 0.17, (62, 12))]    # 회로선 → 주문서 오른쪽 위 (완성품 개수 숫자 자리를 비운다)
+SMOKE = (118, 104, 96)                         # 게이지 8 단계 연기 색
+
+
+def smk_point(x, y):
+    return SMK_AT[0] + (x - SMK_BOX[0]) * SMK_SCALE, SMK_AT[1] + (y - SMK_BOX[1]) * SMK_SCALE
+
+
+def smk_box(box):
+    x0, y0 = smk_point(*box[:2])
+    x1, y1 = smk_point(*box[2:])
+    return round(x0), round(y0), round(x1), round(y1)
+
+
+def smk_dial():
+    x, y = smk_point(*SMK_DIAL)
+    return round(x), round(y)
+
+
+def build_smoker(enh, bake=True):
+    """훈연기: 왼쪽 작은 주문서(재료 1칸) · 그 아래 접시 위 완성품 · 그 아래 책, 오른쪽 스팀펑크 훈연 캐비닛(유리창 안 고기 ·
+    압력계 · 받침대 재생 버튼 자리 작동 버튼 · 진행 막대).
+    진행은 고기 색(생고기 → 짙은 훈제색) + 창 안 연기 짙어짐 + 계기판 바늘 + 받침대 막대 채움 (글꼴 그림 smoker_gauge)"""
+    win = Window(enh, ROWS, pad_top=0)
+    win.corner_gears(bottom_right=False, top_left=False)
+    concept_texture(win)
+    draw_plate(win, SMK_OUTPUT, label=False)       # 솥과 같은 2x2 접시 (2배 크기 요리, 개수는 요리 오른쪽 위)
+    out = win.finish()
+    for box, scale, at in SMK_DECOR:
+        out.alpha_composite(concept_piece(box, scale, art=SMK_CONCEPT), at)
+    cab = concept_piece(SMK_BOX, SMK_SCALE, clear=(SMK_SMOKE_CUT,), art=SMK_ART, is_bg=lambda c: c[3] < 128)
+    out.alpha_composite(cab, SMK_AT)
+    from PIL import ImageDraw
+    d = ImageDraw.Draw(out)
+    bx0, by0, bx1, by1 = smk_box(SMK_BAR)
+    d.rectangle([bx0, by0, bx1 - 1, by1 - 1], fill=BAR_EMPTY)
+    d.line([(bx0, by0), (bx1 - 1, by0)], fill=BAR_EMPTY_SHADE)
+    out.alpha_composite(note(SMK_NOTE_CUTS, scale=JUICER_NOTE_SCALE), SMK_NOTE_AT)
+    book = shrink_art(Image.open(os.path.join(ART, "recipe_book_icon.png")).convert("RGBA"), BOOK_ICON_BOX,
+                      COUNTER_BOOK_HEIGHT / (BOOK_ICON_BOX[3] - BOOK_ICON_BOX[1]))
+    book = outlined(book, BOOK_OUTLINE)
+    bx, by = SMK_BOOK_AT
+    out.alpha_composite(book, (bx - book.width // 2, by - book.height // 2))
+    top = Window.__new__(Window)
+    top.img, top.d = out, d
+    cx, cy = smk_dial()
+    for x, y in _disk(SMK_DIAL_R + 1, (cx, cy)):
+        out.putpixel((x, y), BRASS[3] + (255,))
+    for x, y in _disk(SMK_DIAL_R, (cx, cy)):
+        dx, dy = x - cx, y - cy
+        out.putpixel((x, y), BRASS[2 if dx + dy < -6 else 0 if dx + dy > 6 else 1] + (255,))
+    draw_gauge(top, (cx, cy))
+    draw_fire_button(top, SMK_START)
+    if bake:
+        g, at = smoker_gauge(out, 0, 8)
+        out.alpha_composite(g, at)
+    return out
+
+
+def smoker_gauge_box():
+    gx0, gy0, gx1, gy1 = smk_box(SMK_WINDOW)
+    bx0, by0, bx1, by1 = smk_box(SMK_BAR)
+    cx, cy = smk_dial()
+    r = int(GAUGE_FACE_R) + 1
+    return min(gx0, bx0), min(gy0, cy - r), max(gx1, bx1, cx + r + 1), by1
+
+
+def smoker_gauge(raw, level, steps):
+    """훈연기 게이지 한 단계: 창 안 고기가 생고기색 → 짙은 훈제색, 창 안 연기가 옅음 → 짙음,
+    계기판 바늘 7시 → 5시, 받침대 막대 빔 → 가득. raw = build_smoker(bake=False). 돌려주는 그림과 창 기준 왼쪽 위"""
+    x0, y0, x1, y1 = smoker_gauge_box()
+    img = raw.crop((x0, y0, x1, y1))
+    p = img.load()
+    rp = raw.load()
+    f = level / steps
+    gx0, gy0, gx1, gy1 = smk_box(SMK_WINDOW)
+    mx0, my0, mx1, my1 = smk_box(SMK_MEAT)
+    for y in range(gy0, gy1):
+        for x in range(gx0, gx1):
+            c = rp[x, y][:3]
+            r, g, b = c
+            if mx0 <= x < mx1 and my0 <= y < my1 and r > 120 and r - b > 50:     # 고기 (줄무늬 포함)
+                raw_c = (min(255, r + 18), round(g * 0.72), round(b * 0.78))
+                smoked = (round(r * 0.52), round(g * 0.40), round(b * 0.34))
+                p[x - x0, y - y0] = tuple(round(raw_c[i] * (1 - f) + smoked[i] * f) for i in range(3)) + (255,)
+            else:                                                                 # 창 안 연기
+                k = 0.55 * f
+                p[x - x0, y - y0] = tuple(round(c[i] * (1 - k) + SMOKE[i] * k) for i in range(3)) + (255,)
+    center = smk_dial()
+    for (x, y), c in needle_pixels(level, steps, gauge_mask(center), center).items():
+        p[x - x0, y - y0] = c
+    bx0, by0, bx1, by1 = smk_box(SMK_BAR)
     fill = round((bx1 - bx0) * f)
     if fill:
         from PIL import ImageDraw

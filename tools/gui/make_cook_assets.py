@@ -1,9 +1,9 @@
 """
 요리 기기 창 서버 자료 한 번에 만들기 (ItemsAdder rustport 콘텐츠 폴더에 쓴다).
-  배경      textures/gui/cook_kettle_bg.png · cook_generic_bg.png · cook_counter_bg.png · cook_juicer_bg.png · cook_oven_bg.png · cook_fermenter_bg.png
+  배경      textures/gui/cook_kettle_bg.png · cook_generic_bg.png · cook_counter_bg.png · cook_juicer_bg.png · cook_oven_bg.png · cook_fermenter_bg.png · cook_smoker_bg.png
             (make_cook_bg.py) · cook_book_bg.png (make_book_bg.py)
   글꼴 그림  textures/font/cook/*.png
-            cook_gauge_<기기>_<0..8> 게이지 (진행 0/8 ~ 8/8), 기기 = kettle(공통 포함) · counter · juicer · oven · fermenter
+            cook_gauge_<기기>_<0..8> 게이지 (진행 0/8 ~ 8/8), 기기 = kettle(공통 포함) · counter · juicer · oven · fermenter · smoker
             cook_cnt_r<0..5>_<k>     재료·완성품 개수 (짙은 갈색 + 연기색 테, 칸 오른쪽 위), 줄 0~5
             cook_plate_<k>           접시 아래 명찰 완성품 개수 (짙은 갈색)
             cook_need_r<3|4>_<k>     책 오른쪽 필요 재료 개수 (짙은 갈색 + 종이색 테)
@@ -170,6 +170,8 @@ def main(enh_path, content, config_path):
     cook.build_oven(enh).save(os.path.join(tex, "gui", "cook_oven_bg.png"))
     ferm_raw = cook.build_fermenter(enh, bake=False)            # 발효조 (게이지 단계 그림 원본)
     cook.build_fermenter(enh).save(os.path.join(tex, "gui", "cook_fermenter_bg.png"))
+    smk_raw = cook.build_smoker(enh, bake=False)                # 훈연기 (게이지 단계 그림 원본)
+    cook.build_smoker(enh).save(os.path.join(tex, "gui", "cook_smoker_bg.png"))
     for i in range(4):                                          # 예전 2배 조각 그림 정리
         stale = os.path.join(tex, "gui", "cook_juicer_bg_%d.png" % i)
         if os.path.exists(stale):
@@ -192,6 +194,8 @@ def main(enh_path, content, config_path):
         glyphs["cook_gauge_oven_%d" % level] = (width_pixel(img), top)
         img, (_, top) = cook.fermenter_gauge(ferm_raw, level, GAUGE_STEPS)    # 발효조: 탱크 내용물 + 계기판 + 받침대 막대
         glyphs["cook_gauge_fermenter_%d" % level] = (width_pixel(img), top)
+        img, (_, top) = cook.smoker_gauge(smk_raw, level, GAUGE_STEPS)        # 훈연기: 고기 색 · 연기 + 계기판 + 받침대 막대
+        glyphs["cook_gauge_smoker_%d" % level] = (width_pixel(img), top)
     for row in range(6):                                        # 재료·완성품 칸은 기기마다 줄이 달라 모든 줄
         top = slot_box(row, 0)[1]                               # 칸 오른쪽 위 (작물 별 표시가 오른쪽 아래라 피한다)
         for ch, key in CHARS:
@@ -248,7 +252,7 @@ def main(enh_path, content, config_path):
     lines += ["font_images:"]
     for bg, pad in (("cook_kettle_bg", cook.KETTLE_PAD), ("cook_generic_bg", cook.KETTLE_PAD), ("cook_counter_bg", 0),
                     ("cook_book_bg", 0), ("cook_juicer_bg", 0), ("cook_oven_bg", 0),
-                    ("cook_fermenter_bg", 0)):
+                    ("cook_fermenter_bg", 0), ("cook_smoker_bg", 0)):
         lines += ["  %s:" % bg, "    path: gui/%s" % bg, "    suggest_in_command: false", "    scale_ratio: 256",
                   "    y_position: %d" % (13 + pad)]
     for name, (img, top) in glyphs.items():

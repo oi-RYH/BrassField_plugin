@@ -751,12 +751,12 @@ public final class CookingMachine implements InventoryHolder {
         }
         if (outputCount() > 0) {
             String text;
-            if (layout.bigOutput()) {
+            if (layout.countRow() < 0) {                           // 솥: 접시 아래 명찰
                 text = CookGlyphs.plate(outputCount());
                 glyphs.plateCount(canvas, text);
             } else {
                 text = CookGlyphs.compact(outputCount());
-                glyphs.slotCount(canvas, "cnt", layout.outputSlots()[0], text);
+                glyphs.count(canvas, "cnt", layout.countRow(), layout.countRight(), text);
             }
             state.append('|').append(text);
         }

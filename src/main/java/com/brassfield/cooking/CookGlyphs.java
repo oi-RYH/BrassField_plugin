@@ -86,8 +86,11 @@ final class CookGlyphs {
      * 칸 오른쪽에 테 두른 개수 (재료 칸 줄 0·1 = "cnt" 은 위쪽, 책 필요 재료 줄 3·4 = "need" 는 아래쪽 — 높이는 글꼴 그림에 정해져 있다)
      */
     void slotCount(TitleCanvas canvas, String kind, int slot, String text) {
-        int row = slot / 9;
-        int right = 7 + (slot % 9) * 18 + 16;
+        count(canvas, kind, slot / 9, 7 + (slot % 9) * 18 + 16, text);
+    }
+
+    /** 테 두른 개수를 줄 row 높이에 오른쪽 끝 right 에 맞춰 (칸 밖 자리에도) */
+    void count(TitleCanvas canvas, String kind, int row, int right, String text) {
         int x = right - inkWidth(text) + 1;
         for (char ch : text.toCharArray()) {
             canvas.place(x - 1, glyph("rustport:cook_" + kind + "_r" + row + "_" + key(ch)), narrow(ch) ? 3 : 5);
