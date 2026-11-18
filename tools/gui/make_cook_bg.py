@@ -151,6 +151,30 @@ def gauge_mask(center=None):
     return _disk(GAUGE_FACE_R, center)
 
 
+NEEDLE_COLORS = dict(needle=(60, 30, 20, 255), tip=(190, 40, 30, 255), tick=(120, 90, 64, 255), hub=(30, 16, 10, 255))
+
+
+def needle_pixels(level, steps, mask, center):
+    """게이지 눈금판(mask)을 새로 칠할 색: 크림색 판 · 눈금 steps+1 개(지나온 눈금은 빨강) · 바늘(축에서 5칸, 끝 빨강).
+    7시(225도) → 5시(-45도) 시계 방향. {(x, y): 색}"""
+    import math
+    inside = set(mask)
+    out = {p: FACE + (255,) for p in mask}
+    cx, cy = center
+    for step in range(steps + 1):
+        a = math.radians(225 - 270 * step / steps)
+        p = (round(cx + 5 * math.cos(a)), round(cy - 5 * math.sin(a)))
+        if p in inside:
+            out[p] = NEEDLE_COLORS["tip"] if step <= level and level > 0 else NEEDLE_COLORS["tick"]
+    a = math.radians(225 - 270 * level / steps)
+    for i in range(5):
+        p = (round(cx + i * math.cos(a)), round(cy - i * math.sin(a)))
+        if p in inside:
+            out[p] = NEEDLE_COLORS["tip"] if i == 4 else NEEDLE_COLORS["needle"]
+    out[(cx, cy)] = NEEDLE_COLORS["hub"]
+    return out
+
+
 def draw_gauge(win, center=None):
     """칸 하나 크기 압력 게이지: 외곽선 · 황동 테(왼쪽 위 밝고 오른쪽 아래 그늘) · 크림색 눈금판"""
     center = center or gauge_center()
@@ -177,17 +201,17 @@ def fire_icon(state):
     return img
 
 
-def draw_fire_button(win, slot=None):
+def draw_fire_button(win, slot=None, extend=0):
     """화덕 문 자리에 튀어나온 정사각형 황동 버튼 판 (칸 둘레 사방 FIRE_BORDER 같은 두께):
     외곽선 · 위왼쪽 밝고 아래오른쪽 어두운 테 · 네 귀 리벳 · 가운데 움푹한 짙은 판"""
     d = win.d
     sx, sy = slot_box(*(slot or FIRE_SLOT))
-    x0, y0, x1, y1 = sx - FIRE_BORDER, sy - FIRE_BORDER, sx + 17 + FIRE_BORDER, sy + 17 + FIRE_BORDER
+    x0, y0, x1, y1 = sx - FIRE_BORDER, sy - FIRE_BORDER, sx + 17 + FIRE_BORDER, sy + 17 + FIRE_BORDER + extend
     d.rounded_rectangle([x0, y0, x1, y1], radius=3, fill=BRASS[3])
     d.rounded_rectangle([x0 + 1, y0 + 1, x1 - 1, y1 - 1], radius=2, fill=BRASS[0])
     d.rounded_rectangle([x0 + 1, y0 + 1, x1 - 2, y1 - 2], radius=2, fill=BRASS[2])
     d.rectangle([x0 + 2, y0 + 2, x1 - 2, y1 - 2], fill=BRASS[1])
-    d.rectangle([sx, sy, sx + 17, sy + 17], fill=(52, 28, 20))               # 움푹한 판 (칸 18x18, 아이콘 자리)
+    d.rectangle([sx, sy, sx + 17, sy + 17 + extend], fill=(52, 28, 20))      # 움푹한 판 (칸 18x18, 아이콘 자리 · extend 만큼 아래로 길게)
     d.line([(sx, sy), (sx + 17, sy)], fill=(30, 16, 10))
     d.line([(sx, sy), (sx, sy + 17)], fill=(30, 16, 10))
     for rx, ry in ((x0 + 2, y0 + 2), (x1 - 2, y0 + 2), (x0 + 2, y1 - 2), (x1 - 2, y1 - 2)):
@@ -405,14 +429,14 @@ def _concept_bg(c):
     return a < 128 or max(r, g, b) < 100
 
 
-def concept_piece(box, scale, clear=None, fill=0.3):
+def concept_piece(box, scale, clear=None, fill=0.3, art=JUICER_ART, is_bg=None):
     """시안의 box 를 잘라 바깥 바탕을 지우고 scale 로 줄인다. clear: 따로 얹는 그림 자리(시안 좌표)는 비운다"""
     from gui_kit import cut_outside
-    src = Image.open(os.path.join(ART, JUICER_ART)).convert("RGBA")
+    src = Image.open(os.path.join(ART, art)).convert("RGBA")
     for box_ in clear or ():
         src.paste((0, 0, 0, 0), box_)
     src = src.crop(box)
-    src = cut_outside(src, _concept_bg, step=6, close=3, keep=3)
+    src = cut_outside(src, is_bg or _concept_bg, step=6, close=3, keep=3)
     return shrink_art(src, (0, 0) + src.size, scale, fill)
 
 
@@ -477,13 +501,13 @@ CONCEPT_BG_PATCHES = [(170, 440, 280, 490), (500, 110, 540, 140), (920, 520, 980
 CONCEPT_BG_BLEND = 0.7                         # 시안 색을 가운데 색 쪽으로 당기는 정도 (클수록 매끈)
 
 
-def concept_texture(win, seed=23):
+def concept_texture(win, seed=23, art=JUICER_ART, patches=None):
     """바탕 판(PANEL · 잔점 색) 칸을 시안 바탕 색감으로 바꾼다: 시안의 깨끗한 바탕 조각들에서 색을 무작위로 뽑되
     가운데(중앙값) 색 쪽으로 CONCEPT_BG_BLEND 만큼 당겨 잔점을 옅게 한다"""
     import random
     from gui_kit import PANEL, SPECKS
-    src = Image.open(os.path.join(ART, JUICER_ART)).convert("RGB")
-    pool = [c for box in CONCEPT_BG_PATCHES for c in src.crop(box).getdata() if sum(c) < 200]
+    src = Image.open(os.path.join(ART, art)).convert("RGB")
+    pool = [c for box in patches or CONCEPT_BG_PATCHES for c in src.crop(box).getdata() if sum(c) < 200]
     mid = tuple(sorted(c[i] for c in pool)[len(pool) // 2] for i in range(3))
     k = CONCEPT_BG_BLEND
     pool = [tuple(round(mid[i] * k + c[i] * (1 - k)) for i in range(3)) for c in pool]
@@ -639,6 +663,141 @@ def build_juicer(enh, k=JUICER_K, bake=True):
     if bake:                                       # 쉬는 동안은 유리통 가득 (bake=False: 시안 주스 그대로 — 단계 그림 원본)
         out.paste(barrel_frame(out, 1.0, k), BARRELS[k]["box"][:2])
     return out
+
+
+# ── 제빵 오븐 (art/oven_concept.png 배치 + art/oven_machine.png 오븐을 가운데에 줄여 얹음) ──
+# 칸 배치는 com.brassfield.cooking.CookLayout.OVEN 과 맞춘다.
+OVEN_ART, OVEN_CONCEPT = "oven_machine.png", "oven_concept.png"
+OVEN_BOX = (178, 168, 962, 1262)               # 오븐 그림 (굴뚝 위 연기 · 받침 다리 제외 — 다리가 가방 칸 위 황동 띠에 걸리지 않게)
+OVEN_SCALE = 0.1
+OVEN_AT = (87, 14)                             # 창 기준 오븐 왼쪽 위 (오른쪽 끝). 시작 버튼 칸(4줄 6열)은 화실 문보다 5px 아래
+OVEN_WINDOW = (263, 415, 765, 737)             # 오븐 그림 기준 굽는 칸 창 (황동 테 포함)
+OVEN_PIE = (395, 555, 648, 662)                # 창 안 파이 (게이지: 굽는 정도)
+OVEN_DIAL = (842, 575, 70)                     # 오븐 그림 온도계 가운데 · 반지름 → 그 자리에 솥과 같은 계기판을 덮어 그린다
+OVEN_INGREDIENTS = [(1, 1), (1, 2)]            # 주문서 위 가로 두 칸
+OVEN_NOTE_SCALE = 0.0635                       # 재료 두 칸이 가로로 들어가는 폭
+OVEN_NOTE_CUTS = [(560, 1000), (1256, 1284)]   # 본문 가운데를 잘라 키를 줄인다 (재료 한 줄)
+OVEN_NOTE_AT = (14, 3)
+OVEN_BOOK_AT = (34, 110)                       # 탁자 아래 4·5줄 1열
+OVEN_START = (4, 6)                            # 화실 문
+OVEN_START_EXTEND = 0                          # 버튼 판을 아래로 늘리는 만큼 (정사각형)
+OVEN_OUTPUT = (3, 1)                           # 주문서 아래 탁자 위 (재료 칸 바로 아래)
+OVEN_BYPRODUCT = (3, 2)                        # 탁자 위 완성품 오른쪽 빈 병 칸
+TABLE = (16, 88, 70, 94)                       # 주문서와 책 사이 나무 탁자 (x0, y0, x1, y1 — 상판 4px + 양끝 다리)
+                      # 식힘망 (x0, y0, x1, y1)
+OVEN_DECOR = [((359, 157, 421, 220), 0.17, (58, 106)),    # 시안 희미한 톱니 → 책 오른쪽
+              ((1009, 157, 1046, 264), 0.17, (75, 100)),  # 회로선 → 톱니 오른쪽
+              ((984, 451, 1027, 489), 0.17, (17, 70))]    # 탁자 위 반짝임
+
+
+def _black_bg(c):
+    r, g, b, a = c
+    return a < 128 or max(r, g, b) < 28
+
+
+def oven_point(x, y):
+    """오븐 그림 좌표 → 창 좌표"""
+    return OVEN_AT[0] + (x - OVEN_BOX[0]) * OVEN_SCALE, OVEN_AT[1] + (y - OVEN_BOX[1]) * OVEN_SCALE
+
+
+def oven_box(box):
+    x0, y0 = oven_point(*box[:2])
+    x1, y1 = oven_point(*box[2:])
+    return round(x0), round(y0), round(x1), round(y1)
+
+
+def draw_table(win):
+    """주문서 아래 나무 탁자: 상판(시안 나무 판을 늘림, 위 밝은 줄) + 양 끝 다리, 짙은 외곽선"""
+    x0, y0, x1, y1 = TABLE
+    src = Image.open(os.path.join(ART, JUICER_ART)).convert("RGBA").crop(STAND_PLANK_BOX)
+    top = src.resize((x1 - x0 + 1, 4), Image.BOX)
+    d = win.d
+    for lx in (x0 + 3, x1 - 5):
+        d.rectangle([lx - 1, y0 + 4, lx + 3, y1], fill=STAND_OUTLINE)
+        d.rectangle([lx, y0 + 5, lx + 2, y1 - 1], fill=(120, 66, 30))
+        d.line([(lx, y0 + 5), (lx, y1 - 1)], fill=(160, 96, 46))
+    d.rectangle([x0 - 1, y0 - 1, x1 + 1, y0 + 4], fill=STAND_OUTLINE)
+    win.img.alpha_composite(top, (x0, y0))
+    d.line([(x0, y0), (x1, y0)], fill=(214, 150, 84))
+
+
+def oven_dial():
+    """창 기준 온도계 가운데 · 바늘이 지나는 눈금판 칸들 (밝은 크림색 칸만)"""
+    cx, cy, r = OVEN_DIAL
+    x, y = oven_point(cx, cy)
+    return (round(x), round(y)), r * OVEN_SCALE
+
+
+def build_oven(enh, bake=True):
+    """제빵 오븐: 왼쪽 주문서(재료 2칸) · 그 아래 책, 가운데 스팀펑크 2단 오븐(위 굽는 칸 창 · 옆 온도계 · 아래 화실 문 = 시작 버튼),
+    오른쪽 식힘망(완성품) · 빈 병 칸. 진행은 온도계 바늘 + 창 안 파이가 노릇해지고 불빛이 밝아짐 (글꼴 그림 oven_gauge)"""
+    win = Window(enh, ROWS, pad_top=0)
+    win.corner_gears(bottom_right=False, top_left=False)
+    concept_texture(win)
+    draw_table(win)                                                # 완성품 · 빈 병은 칸 테 없이 탁자 위에 그대로
+    out = win.finish()
+    for box, scale, at in OVEN_DECOR:
+        out.alpha_composite(concept_piece(box, scale, art=OVEN_CONCEPT), at)
+    oven = concept_piece(OVEN_BOX, OVEN_SCALE, art=OVEN_ART, is_bg=_black_bg)
+    out.alpha_composite(oven, OVEN_AT)
+    out.alpha_composite(note(OVEN_NOTE_CUTS, scale=OVEN_NOTE_SCALE), OVEN_NOTE_AT)
+    book = shrink_art(Image.open(os.path.join(ART, "recipe_book_icon.png")).convert("RGBA"), BOOK_ICON_BOX,
+                      COUNTER_BOOK_HEIGHT / (BOOK_ICON_BOX[3] - BOOK_ICON_BOX[1]))
+    book = outlined(book, BOOK_OUTLINE)
+    bx, by = OVEN_BOOK_AT
+    out.alpha_composite(book, (bx - book.width // 2, by - book.height // 2))
+    top = Window.__new__(Window)
+    top.img = out
+    from PIL import ImageDraw
+    top.d = ImageDraw.Draw(out)
+    draw_fire_button(top, OVEN_START, OVEN_START_EXTEND)
+    draw_gauge(top, oven_dial()[0])                # 솥 · 조리대와 같은 계기판을 오븐 온도계 자리에 덮어 그린다
+    if bake:
+        g, at = oven_gauge(out, 0, 8)
+        out.alpha_composite(g, at)
+    return out
+
+
+DOUGH = (236, 214, 170)
+OVEN_DARK = (84, 44, 26)
+
+
+def oven_gauge_box():
+    wx0, wy0, wx1, wy1 = oven_box(OVEN_WINDOW)
+    (cx, cy), _ = oven_dial()
+    r = int(GAUGE_FACE_R) + 1
+    return wx0, min(wy0, cy - r), max(wx1, cx + r + 1), max(wy1, cy + r + 1)
+
+
+def oven_gauge(raw, level, steps):
+    """오븐 게이지 한 단계: 창 안 파이가 반죽색 → 원래 노릇한 색, 창 불빛이 어두움 → 밝음, 계기판 바늘 7시 → 5시 (솥과 같은 바늘).
+    raw = build_oven(bake=False). 돌려주는 그림과 창 기준 왼쪽 위"""
+    x0, y0, x1, y1 = oven_gauge_box()
+    img = raw.crop((x0, y0, x1, y1))
+    p = img.load()
+    f = level / steps
+    wx0, wy0, wx1, wy1 = oven_box(OVEN_WINDOW)
+    px0, py0, px1, py1 = oven_box(OVEN_PIE)
+    rp = raw.load()
+    glow = 0.55 + 0.45 * f                        # 불빛: 어두운 갈색 쪽으로 당긴다 (곱하면 노란 등이 풀색이 된다)
+    for y in range(wy0 + 3, wy1 - 2):
+        bgc = rp[px0 - 1, y]
+        for x in range(wx0 + 3, wx1 - 2):
+            c = rp[x, y]
+            r, g, b = c[:3]
+            if not (r > 150 and r > b + 60):          # 창 안 따뜻한 칸만 (테 · 쟁반 회색은 그대로)
+                continue
+            if px0 <= x < px1 and py0 <= y < py1 and sum(abs(c[i] - bgc[i]) for i in range(3)) > 60:
+                lum = (r + g + b) / 3 / 200
+                dough = tuple(min(255, round(DOUGH[i] * (0.75 + 0.3 * lum))) for i in range(3))
+                p[x - x0, y - y0] = tuple(round(dough[i] * (1 - f) + c[i] * f) for i in range(3)) + (255,)
+            else:
+                p[x - x0, y - y0] = tuple(round(c[i] * glow + OVEN_DARK[i] * (1 - glow)) for i in range(3)) + (255,)
+    center = oven_dial()[0]
+    for (x, y), c in needle_pixels(level, steps, gauge_mask(center), center).items():
+        p[x - x0, y - y0] = c
+    return img, (x0, y0)
+
 
 if __name__ == "__main__":
     enh = Image.open(sys.argv[1]).convert("RGBA")

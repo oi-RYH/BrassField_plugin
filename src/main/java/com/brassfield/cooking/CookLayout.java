@@ -33,10 +33,17 @@ record CookLayout(int[] ingredientSlots, int[] outputSlots, boolean bigOutput, i
     static final CookLayout JUICER = new CookLayout(new int[]{10}, new int[]{39, 30}, false,
             new int[]{28, 37}, new int[]{}, 41, new int[]{46, 47, 48, 49, 50, 51, 52, 14, 23}, "juicer", 28, 123, "gear");
 
+    /** 제빵 오븐: 재료는 가로로 긴 주문서 위 (1줄 1·2열), 그 아래 나무 탁자 위에 완성품 (3줄 1열) · 빈 병 (3줄 2열),
+     *  책은 탁자 아래 (4·5줄 1열), 불 버튼은 오른쪽 오븐 화실 문 (4줄 6열).
+     *  게이지는 굽는 칸 창 (파이가 노릇해지고 불빛이 밝아짐) + 솥과 같은 계기판 (한 그림): 1·2줄 5~8열 */
+    static final CookLayout OVEN = new CookLayout(new int[]{10, 11}, new int[]{28}, false,
+            new int[]{37, 46}, new int[]{29}, 42, new int[]{14, 15, 16, 17, 23, 24, 25, 26}, "oven", 96, 65, "fire");
+
     static CookLayout of(String stationKey) {
         return switch (stationKey) {
             case "counter" -> COUNTER;
             case "juicer" -> JUICER;
+            case "oven" -> OVEN;
             default -> KETTLE;
         };
     }

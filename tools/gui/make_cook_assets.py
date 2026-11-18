@@ -1,8 +1,9 @@
 """
 요리 기기 창 서버 자료 한 번에 만들기 (ItemsAdder rustport 콘텐츠 폴더에 쓴다).
-  배경      textures/gui/cook_kettle_bg.png · cook_generic_bg.png · cook_counter_bg.png (make_cook_bg.py) · cook_book_bg.png (make_book_bg.py)
+  배경      textures/gui/cook_kettle_bg.png · cook_generic_bg.png · cook_counter_bg.png · cook_juicer_bg.png · cook_oven_bg.png
+            (make_cook_bg.py) · cook_book_bg.png (make_book_bg.py)
   글꼴 그림  textures/font/cook/*.png
-            cook_gauge_<기기>_<0..8> 게이지 눈금판 + 바늘 (진행 0/8 ~ 8/8), 기기 = kettle(공통 포함) · counter
+            cook_gauge_<기기>_<0..8> 게이지 (진행 0/8 ~ 8/8), 기기 = kettle(공통 포함) · counter · juicer · oven
             cook_cnt_r<0..5>_<k>     재료·완성품 개수 (짙은 갈색 + 연기색 테, 칸 오른쪽 위), 줄 0~5
             cook_plate_<k>           접시 아래 명찰 완성품 개수 (짙은 갈색)
             cook_need_r<3|4>_<k>     책 오른쪽 필요 재료 개수 (짙은 갈색 + 종이색 테)
@@ -70,26 +71,12 @@ def digit(ch, halo=None):
 
 
 def gauge(level, mask, center):
-    """게이지 눈금판(mask)을 새로 칠하고 눈금 · 바늘(축에서 5칸, 끝 빨강)을 그린다. 7시(225도) → 5시(-45도) 시계 방향.
-    눈금 9개 중 지나온 눈금은 빨갛게."""
+    """게이지 눈금판(mask)을 새로 칠한 바늘 그림 (make_cook_bg.needle_pixels — 오븐 게이지와 같은 바늘)"""
     xs, ys = [p[0] for p in mask], [p[1] for p in mask]
     x0, y0 = min(xs), min(ys)
     img = Image.new("RGBA", (max(xs) - x0 + 1, max(ys) - y0 + 1), (0, 0, 0, 0))
-    inside = mask_set(mask)
-    for x, y in mask:
-        img.putpixel((x - x0, y - y0), cook.FACE + (255,))
-    cx, cy = center
-    for step in range(GAUGE_STEPS + 1):
-        a = math.radians(225 - 270 * step / GAUGE_STEPS)
-        px, py = round(cx + 5 * math.cos(a)), round(cy - 5 * math.sin(a))
-        if (px, py) in inside:
-            img.putpixel((px - x0, py - y0), NEEDLE_TIP if step <= level and level > 0 else TICK)
-    a = math.radians(225 - 270 * level / GAUGE_STEPS)
-    for i in range(0, 5):
-        px, py = round(cx + i * math.cos(a)), round(cy - i * math.sin(a))
-        if (px, py) in inside:
-            img.putpixel((px - x0, py - y0), NEEDLE_TIP if i == 4 else NEEDLE)
-    img.putpixel((cx - x0, cy - y0), (30, 16, 10, 255))
+    for (x, y), c in cook.needle_pixels(level, GAUGE_STEPS, mask, center).items():
+        img.putpixel((x - x0, y - y0), c)
     return width_pixel(img), (x0, y0)
 
 
@@ -179,6 +166,8 @@ def main(enh_path, content, config_path):
     book.build(enh).save(os.path.join(tex, "gui", "cook_book_bg.png"))
     juicer_raw = cook.build_juicer(enh, bake=False)                # 착즙기 (시안 주스 그대로 — 게이지 단계 그림 원본)
     cook.build_juicer(enh).save(os.path.join(tex, "gui", "cook_juicer_bg.png"))
+    oven_raw = cook.build_oven(enh, bake=False)                 # 제빵 오븐 (게이지 단계 그림 원본)
+    cook.build_oven(enh).save(os.path.join(tex, "gui", "cook_oven_bg.png"))
     for i in range(4):                                          # 예전 2배 조각 그림 정리
         stale = os.path.join(tex, "gui", "cook_juicer_bg_%d.png" % i)
         if os.path.exists(stale):
@@ -196,6 +185,9 @@ def main(enh_path, content, config_path):
     for level in range(GAUGE_STEPS + 1):
         hi["cook_gauge_juicer_%d" % level] = (width_pixel(cook.juicer_gauge(juicer_raw, level, GAUGE_STEPS)),
                                               cook.JUICER_GAUGE_TOP)
+    for level in range(GAUGE_STEPS + 1):                        # 오븐: 굽는 칸 창 + 계기판 바늘 (한 그림)
+        img, (_, top) = cook.oven_gauge(oven_raw, level, GAUGE_STEPS)
+        glyphs["cook_gauge_oven_%d" % level] = (width_pixel(img), top)
     for row in range(6):                                        # 재료·완성품 칸은 기기마다 줄이 달라 모든 줄
         top = slot_box(row, 0)[1]                               # 칸 오른쪽 위 (작물 별 표시가 오른쪽 아래라 피한다)
         for ch, key in CHARS:
@@ -251,7 +243,7 @@ def main(enh_path, content, config_path):
                       "      generate: true", "      textures:", "        - item/gui/cook_%s_%s" % (kind, state)]
     lines += ["font_images:"]
     for bg, pad in (("cook_kettle_bg", cook.KETTLE_PAD), ("cook_generic_bg", cook.KETTLE_PAD), ("cook_counter_bg", 0),
-                    ("cook_book_bg", 0), ("cook_juicer_bg", 0)):
+                    ("cook_book_bg", 0), ("cook_juicer_bg", 0), ("cook_oven_bg", 0)):
         lines += ["  %s:" % bg, "    path: gui/%s" % bg, "    suggest_in_command: false", "    scale_ratio: 256",
                   "    y_position: %d" % (13 + pad)]
     for name, (img, top) in glyphs.items():
