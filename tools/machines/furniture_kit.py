@@ -142,6 +142,7 @@ def add_framed_palette(name, edge, edge_dark, corner, line, body, low, grain):
     FRAMED_PALETTES[name] = (edge, edge_dark, corner, line, body, low, grain)
 FRAMED_TEX = {}                       # 크기별로 만든 테두리 텍스처 (이름 → 32x32 그림)
 EXTERNAL = {}                         # 다른 텍스처를 그대로 가리키는 이름 (이름 → "minecraft:item/beef" 같은 경로)
+ANIMATED = {}                         # 애니메이션 텍스처 (이름 → 장면 하나에 머무는 틱): 그림은 16x16 장면을 세로로 이어 붙인 것
 
 
 def _framed_img(name, w, h):
@@ -347,6 +348,9 @@ class Model:
                 textures[name] = EXTERNAL[name]
             elif name in custom:
                 png.write(os.path.join(tex_dir, name + ".png"), custom[name])
+                if name in ANIMATED:                                         # 장면을 이어 붙인 그림 + .mcmeta (바닐라 불처럼 움직임)
+                    with open(os.path.join(tex_dir, name + ".png.mcmeta"), "w") as f:
+                        json.dump({"animation": {"frametime": ANIMATED[name], "interpolate": False}}, f)
                 textures[name] = "rustport:%s/%s/%s" % (folder, self.name, name)
             else:
                 textures[name] = "minecraft:block/" + name

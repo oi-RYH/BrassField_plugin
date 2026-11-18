@@ -11,7 +11,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from furniture_kit import Model, CUSTOM, EXTERNAL, BRASS, BRASS_MID, IRON, IRON_EDGE, IRON_BOLT, rgb, noisy, picture, add_framed_palette  # noqa: E402
+from furniture_kit import Model, CUSTOM, EXTERNAL, ANIMATED, BRASS, BRASS_MID, IRON, IRON_EDGE, IRON_BOLT, rgb, noisy, picture, add_framed_palette  # noqa: E402
 
 FOLDER = "machine/cooking"
 
@@ -39,6 +39,152 @@ S_HI, S_GOLD, S_FIRE, S_SMOKE = rgb(0xF2, 0xC5, 0x5C), rgb(0xFF, 0xB2, 0x3D), rg
 SMOKER_MEATS = ("beef", "porkchop", "salmon")                                          # 훈연기 레시피 재료 (훈제 소고기 · 베이컨 · 훈제 연어)
 EXTERNAL.update({"meat_" + n: "minecraft:item/" + n for n in SMOKER_MEATS})            # 매다는 바닐라 고기 아이템 그림
 add_framed_palette("s_brass", S_EDGE, S_EDGE, S_EDGE, S_HI, S_BRASS, S_BRASS, S_BRASS)
+# 제분기: 레퍼런스 "제분기(밀가루 분쇄기)" 팔레트 (몸체 #6B4A37 · #3B2B23, 테 #8B5A2B, 황동 #C99644 · #FFB23D, 크림 #FFF4E0).
+# 맷돌은 회색 돌 (방사형 홈 · 세로 홈). 깔때기 · 수납칸은 넣은 재료 (밀 · 옥수수 · 소고기) 에 따라 다르다
+M_DARK, M_BODY, M_EDGE, M_BRASS = rgb(0x3B, 0x2B, 0x23), rgb(0x6B, 0x4A, 0x37), rgb(0x8B, 0x5A, 0x2B), rgb(0xC9, 0x96, 0x44)
+M_GOLD, M_CREAM = rgb(0xFF, 0xB2, 0x3D), rgb(0xFF, 0xF4, 0xE0)
+MILL_INGREDIENTS = {      # 재료 → (깔때기 낟알: 하이라이트 · 몸통 · 그늘 · 틈, 수납칸 결과물 바탕 · 점)
+    "wheat": ((rgb(0xFF, 0xE2, 0x9A), M_GOLD, M_BRASS, M_EDGE), (M_CREAM, rgb(0xF2, 0xE6, 0xCC))),
+    "corn": ((M_CREAM, rgb(0xFF, 0xD8, 0x6A), M_GOLD, M_BRASS), (rgb(0xFF, 0xD8, 0x6A), M_GOLD)),
+    "beef": ((rgb(0xF0, 0x9A, 0x88), rgb(0xC8, 0x48, 0x3A), rgb(0x8E, 0x2C, 0x24), rgb(0x5A, 0x1E, 0x18)),
+             (rgb(0x9A, 0x4A, 0x36), rgb(0xC8, 0x6A, 0x50))),
+}
+GRAIN_TILE = ["hbbg", "bbsg", "gggg"]     # 낟알 하나 (3x2 타원, 위왼쪽 하이라이트 · 아래오른쪽 그늘) + 틈, 줄마다 2칸 엇갈림
+CHUNK_TILE = ["hhbbg", "hbbsg", "bbssg", "ggggg"]   # 고기 조각 (4x3)
+
+
+def kernel_img(colors):
+    """낟알 하나 (16x16, 면에 늘여 붙임): 둥근 모서리 · 위왼쪽 하이라이트 · 가운데 몸통 · 아래오른쪽 그늘"""
+    h, b, sh, g = colors
+    img = []
+    for y in range(16):
+        row = []
+        for x in range(16):
+            d = x + y
+            if (x in (0, 15) and y in (0, 1, 14, 15)) or (y in (0, 15) and x in (0, 1, 14, 15)):
+                c = sh                                                          # 깎인 모서리
+            elif d < 9 and x < 9 and y < 9:
+                c = h
+            elif d > 21:
+                c = sh
+            else:
+                c = b
+            row.append(c)
+        img.append(row)
+    return img
+
+
+STONE = [rgb(0xC8, 0xC4, 0xBC), rgb(0xA8, 0xA4, 0x9C), rgb(0x84, 0x80, 0x7A), rgb(0x5E, 0x5A, 0x55)]   # 맷돌 (밝음 → 어둠)
+
+
+def stone_side(k, shift=0):
+    """맷돌 옆면 (16x16, 면에 늘여 붙임): 둥근 명암 단계 k (0 = 앞으로 가장 나온 가운데 · 밝음, 2 = 양옆 · 어둠),
+    위 깎인 가장자리 밝은 줄 · 아래 그늘 줄 · 성긴 옅은 세로 홈"""
+    body = (STONE[0], STONE[1], STONE[2])[k]
+    groove = (STONE[1], STONE[2], STONE[3])[k]
+    img = []
+    for y in range(16):
+        row = []
+        for x in range(16):
+            if y < 2:
+                c = STONE[0] if k < 2 else STONE[1]
+            elif y > 13:
+                c = STONE[3]
+            elif (x + shift) % 8 == 4 and 3 < y < 13:
+                c = groove
+            else:
+                c = body
+            row.append(c)
+        img.append(row)
+    return img
+
+
+def stone_top(turn=0.0):
+    """맷돌 윗면 (16x16): 가장자리 밝은 테 · 가운데 구멍 · 8 방향 방사형 홈"""
+    import math
+    img = []
+    for y in range(16):
+        row = []
+        for x in range(16):
+            dx, dy = x - 7.5, y - 7.5
+            r = math.hypot(dx, dy)
+            ang = (math.degrees(math.atan2(dy, dx)) - turn) % 45
+            if r < 1.8:
+                c = STONE[3]                                                    # 가운데 구멍
+            elif r < 2.8:
+                c = STONE[2]
+            elif x in (0, 15) or y in (0, 15):
+                c = STONE[0]                                                    # 가장자리 테
+            elif ang < 6:
+                c = STONE[2]                                                    # 방사형 홈
+            else:
+                c = STONE[1]
+            row.append(c)
+        img.append(row)
+    return img
+
+
+def grain_img(colors, tile):
+    h, b, sh, g = colors
+    pal = {"h": h, "b": b, "s": sh, "g": g}
+    th, tw = len(tile), len(tile[0])
+    return [[pal[tile[y % th][(x + (tw // 2 if (y // th) % 2 else 0)) % tw]] for x in range(16)] for y in range(16)]
+add_framed_palette("m_brass", M_EDGE, M_EDGE, M_EDGE, M_GOLD, M_BRASS, M_EDGE, M_GOLD)     # 기둥 · 테: 사선 하이라이트 결
+
+
+def _lerp(c1, c2, k):
+    return tuple(int(round(c1[i] + (c2[i] - c1[i]) * k)) for i in range(3)) + (255,)
+
+
+def _shade(pal, v):
+    """0(하이라이트) ~ 4(어둠) 실수 단계 → 색 (machine_kit.shade 와 같음)"""
+    v = max(0.0, min(4.0, v))
+    i = min(3, int(v))
+    return _lerp(pal[i], pal[i + 1], v - i)
+
+
+def metal_plate(pal, brushed="h"):
+    """매끄러운 금속 판 (machine_kit.plate_fn 과 같은 방식): 위 밝고 아래로 살짝 어두운 명암 · 아주 옅은 결 · 사선 반사띠 ·
+    위왼쪽 가장자리 반사 · 아래오른쪽 그늘. 면 하나에 한 장을 늘여 붙인다"""
+    img = []
+    for y in range(16):
+        row = []
+        for x in range(16):
+            if y == 0 or x == 0:
+                v = 0.6
+            elif y == 15 or x == 15:
+                v = 3.4
+            else:
+                v = 1.7 + 0.9 * y / 16
+                v += 0.12 if (((y * 7) % 5 == 0) if brushed == "h" else ((x * 7) % 5 == 0)) else 0.0
+                if abs((x + y) - 13) <= 1:
+                    v -= 0.45
+            row.append(_shade(pal, v))
+        img.append(row)
+    return img
+
+
+def metal_rod(pal, vertical):
+    """원통 명암 (machine_kit.rod_fn): 어둠 → 밝음 → 하이라이트 → 밝음 → 어둠 (16칸으로 늘림)"""
+    profile = [3.2, 2.2, 1.2, 0.3, 0.9, 1.7, 2.4, 3.3]
+    return [[_shade(pal, profile[(x if vertical else y) // 2]) for x in range(16)] for y in range(16)]
+
+
+ANIMATED.update({"m_stone_spin_0": 2, "m_stone_spin_1": 2, "m_stone_spin_2": 2, "m_stone_top_spin": 2})   # 0.1 초마다 한 장면
+
+# 제분기 금속 명암 (밝음 → 어둠): 레퍼런스 팔레트 사이를 섞은 5 단계
+MILL_BRASS_PAL = [_lerp(M_GOLD, M_CREAM, 0.45), M_GOLD, M_BRASS, _lerp(M_BRASS, M_EDGE, 0.6), M_EDGE]
+MILL_BODY_PAL = [M_EDGE, _lerp(M_EDGE, M_BODY, 0.5), M_BODY, _lerp(M_BODY, M_DARK, 0.5), M_DARK]
+
+
+def metal_block(edge, corner, line, body, low, shine):
+    """노이즈 없는 금속 판 (16x16): 테 · 모서리(볼트) · 위왼쪽 밝은 줄 · 아래오른쪽 어두운 줄 + 대각선 반사 띠 두 줄"""
+    img = clean_block(edge, corner, line, body, low)
+    for y in range(2, 14):
+        for x in range(2, 14):
+            if x + y in (8, 9, 16):
+                img[y][x] = shine
+    return img
 add_framed_palette("k_brass_framed", K_EDGE, K_EDGE, K_EDGE, K_BRASS_HI, K_BRASS, K_BRASS, K_BRASS)   # 결 없이 깔끔하게
 
 
@@ -76,6 +222,9 @@ ART.update({
     "milk_soup": noisy([rgb(246, 236, 210), rgb(232, 218, 186), rgb(252, 248, 232)], [4, 3, 2], 39),
     "bread": noisy([rgb(222, 150, 70), rgb(196, 120, 50), rgb(240, 186, 110)], [4, 3, 2], 40),
     # 대형 솥: 노이즈 없이. 몸체는 산업용 철 블록(형식·색), 황동·불은 레퍼런스 "스팀 조리기" 팔레트 (테 #8B5A2B, 황동 #C99644 · #F2C55C, 불 #FF9A00 · #FFF4E0)
+    **{"mt_%s_%s" % (n, k): f for n, pal in (("brass", MILL_BRASS_PAL), ("body", MILL_BODY_PAL))
+       for k, f in (("plate", metal_plate(pal)), ("rod_v", metal_rod(pal, True)), ("rod_h", metal_rod(pal, False)))},
+    "m_body": metal_block(M_DARK, M_BRASS, M_EDGE, M_BODY, M_DARK, M_EDGE),             # 제분기 몸체 (갈색 금속 판 · 황동 볼트 · 반사 띠)
     "s_body": clean_block(S_DARK, S_DARK, S_EDGE, S_BODY, S_BODY),                      # 훈연기 몸체 (짙은 갈색 판, 결 없음)
     "c_copper": clean_block(F_COPPER_D, F_COPPER_D, F_BRASS, F_COPPER, F_COPPER),            # 구리 판 (테 · 밝은 줄, 결 없음)
     "c_iron": clean_block(IRON_EDGE, IRON_BOLT, IRON[0], IRON[1], IRON[2]),
@@ -104,6 +253,27 @@ ART.update({
     "f_rivet": noisy([F_COPPER_D], [1], 61),
     "f_band": noisy([F_BRASS], [1], 64),
     "s_band": noisy([S_BRASS], [1], 71),
+    "m_band": metal_block(M_EDGE, M_EDGE, M_GOLD, M_BRASS, M_EDGE, M_GOLD),             # 황동 띠 · 깔때기 (금속 판 · 반사 띠)
+    "m_inner": noisy([M_DARK], [1], 82),
+    "m_pane": [[rgb(255, 255, 255, 110) if (x + y) % 16 in (3, 4, 10) else rgb(0xFF, 0xF4, 0xE0, 40)
+                for x in range(16)] for y in range(16)],
+    **{"m_stone_side_%d" % k: stone_side(k) for k in range(3)},                       # 맷돌 옆면 (0 가운데 밝음 → 2 양옆 어둠)
+    **{"m_stone_spin_%d" % k: [row for f in range(8) for row in stone_side(k, f)] for k in range(3)},   # 도는 윗돌 옆면 (홈이 흘러감, 8 장면)
+    "m_stone_top_spin": [row for f in range(8) for row in stone_top(f * 45 / 8)],      # 도는 윗돌 윗면 (방사형 홈이 돎, 8 장면)
+    "m_stone_top": stone_top(),                                                         # 맷돌 윗면 (방사형 홈 · 가운데 구멍)
+    "m_emblem": picture(["bbbbbb", "bkgkkb", "bkggkb", "bggkkb", "bkgkkb", "bbbbbb"], {"b": M_BRASS, "k": M_DARK, "g": M_GOLD}),
+    "m_wheel": picture(["...bbbb...", ".bb.bb.bb.", ".b..bb..b.", "b...bb...b", "bbbbkkbbbb", "bbbbkkbbbb",
+                        "b...bb...b", ".b..bb..b.", ".bb.bb.bb.", "...bbbb..."], {"b": M_BRASS, "k": M_EDGE}),
+    "m_play_off": picture([".bb.", "bkbb", "bkkb", ".bb."], {"b": M_BRASS, "k": M_DARK}),
+    "m_play_on": picture([".bb.", "bgbb", "bggb", ".bb."], {"b": M_BRASS, "g": M_GOLD}),
+    "m_bar_off": picture(["bbbbbbbb", "bkkkkkkb", "bbbbbbbb"], {"b": M_BRASS, "k": M_DARK}),
+    "m_bar_on": picture(["bbbbbbbb", "bggggkkb", "bbbbbbbb"], {"b": M_BRASS, "k": M_DARK, "g": M_GOLD}),
+    **{"m_grain_" + n: grain_img(c, CHUNK_TILE if n == "beef" else GRAIN_TILE)
+       for n, (c, _) in MILL_INGREDIENTS.items()},                                     # 깔때기 속 재료 (낟알 · 고기 조각 무늬)
+    **{"m_kernel_" + n: kernel_img(c) for n, (c, _) in MILL_INGREDIENTS.items()},   # 낟알 · 고기 조각 하나 (면마다 늘여 붙임)
+    **{"m_gap_" + n: noisy([c[3]], [1], 90) for n, (c, _) in MILL_INGREDIENTS.items()},  # 더미 바닥 (낟알 사이 틈)
+    **{"m_pile_" + n: [[c[1] if (x + y * 3) % 6 == 0 else c[0] for x in range(16)] for y in range(16)]
+       for n, (_, c) in MILL_INGREDIENTS.items()},                                     # 수납칸 결과물 더미
     "s_rivet": noisy([S_EDGE], [1], 72),
     "s_inner": noisy([S_DARK], [1], 73),
     "s_pane": [[rgb(255, 255, 255, 110) if (x + y) % 16 in (3, 4, 10) else rgb(0xFF, 0xF4, 0xE0, 40)
@@ -146,24 +316,124 @@ def ring(m, x0, x1, y0, y1, z0, z1, tex):  # noqa: E302
     m.box([x1 - 1, y0, z0 + 1], [x1, y1, z1 - 1], tex)
 
 
-# ═════════════ 제분기: 리벳 쇠 몸통 + 큰 톱니, 위 깔때기(곡식), 앞 구리 배출구와 밀가루 자루 ═════════════
-def mill():
-    m = Model("mill")
-    legs(m, 4)
-    m.box([0, 4, 0], [16, 5, 16], "brass")                                      # 받침판
-    m.box([1, 5, 2], [15, 17, 14], "iron_plate")                                # 몸통
-    m.plate("gear", 8, 8, 4, 8, 1)                                              # 큰 톱니
-    m.box([1, 17, 2], [15, 18, 14], "brass")                                    # 몸통 위 테
-    m.box([6, 18, 6], [10, 20, 10], "brass")                                    # 깔때기 목
-    ring(m, 4, 12, 20, 22, 4, 12, "brass")                                      # 깔때기 (위로 넓어짐, 속이 빔)
-    ring(m, 3, 13, 22, 24, 3, 13, "brass")
-    ring(m, 2, 14, 24, 26, 2, 14, "brass")
-    ring(m, 1, 15, 26, 27, 1, 15, "brass")
-    m.box([3, 24, 3], [13, 25, 13], {"all": "hay_block_side", "top": "hay_block_top"})   # 곡식
-    m.box([8, 6, 0], [11, 9, 2], "cut_copper")                                  # 배출구
-    m.box([9, 5, 0], [10, 6, 1], "cut_copper")
-    m.box([5, 0, 0], [12, 5, 5], "sack")                                        # 밀가루 자루
-    m.box([7, 5, 1], [10, 6, 3], "sack")                                        # 묶은 목
+# ═════════════ 제분기 (1x1x2): 레퍼런스 "제분기(밀가루 분쇄기)" — 갈색 몸체 · 황동 테 프레임, 위 큰 깔때기, 앞 유리창 안 맷돌 두 짝 ·
+# 아래 수납칸, 위 밀 문장, 오른쪽 큰 황동 바퀴, 왼쪽 배관 · 유리관, 받침대 재생 버튼 · 진행 막대.
+# 재료가 없으면 빈 깔때기(mill), 재료를 넣으면 깔때기에 그 재료(mill_<재료>), 제분 중이면 수납칸 결과물 더미 · 버튼 · 막대 빛(mill_<재료>_on) ═════════════
+def mill(ingredient=None, lit=False):
+    m = Model("mill" + ("_" + ingredient if ingredient else "") + ("_on" if lit else ""))
+
+    def b(u0, y0, w0, u1, y1, w1, tex, light=0, faces=None):
+        if tex in ("brass", "body"):                                                   # 금속: 자판기 · 공작대 · 거래기와 같은 명암
+            dx, dy, dz = u1 - u0, y1 - y0, w1 - w0
+            dims = sorted((dx, dy, dz))
+            rod = dims[1] <= 2 and dims[2] >= 3 * dims[1]
+            out = {}
+            for view, (fw, fh) in (("front", (dx, dy)), ("back", (dx, dy)), ("left", (dz, dy)), ("right", (dz, dy)),
+                                   ("top", (dx, dz)), ("bottom", (dx, dz))):
+                kind = "rod_v" if rod and fh >= 2 * fw else "rod_h" if rod and fw >= 2 * fh else "plate"
+                out[view] = ("mt_%s_%s" % (tex, kind), [0, 0, 16, 16])
+            out.update(faces or {})
+            m.box([u0, y0, w0], [u1, y1, w1], "mt_%s_plate" % tex, light=light, faces=out)
+            return
+        m.box([u0, y0, w0], [u1, y1, w1], tex, light=light, faces=faces)
+
+    def ring(u0, u1, y0, y1, w0, w1, tex):
+        """속이 빈 네모 테 (두께 1)"""
+        b(u0, y0, w0, u1, y1, w0 + 1, tex)
+        b(u0, y0, w1 - 1, u1, y1, w1, tex)
+        b(u0, y0, w0 + 1, u0 + 1, y1, w1 - 1, tex)
+        b(u1 - 1, y0, w0 + 1, u1, y1, w1 - 1, tex)
+
+    def plate(name, w, h, u0, y0, w0, light=0):
+        b(u0, y0, w0, u0 + w, y0 + h, w0 + 0.5, "brass", light=light, faces={"front": (name, [0, 0, w, h])})
+
+    for u, w in ((1, 2), (13, 2), (1, 12), (13, 12)):                                  # 다리
+        b(u, 0, w, u + 2, 1, w + 2, "body")
+    b(0.5, 1, 1, 15.5, 4.5, 15, "body")                                              # 받침대
+    b(0.5, 4.5, 1, 15.5, 5, 15, "brass")                                              # 받침대 위 황동 띠 (받침대와 겹치지 않게)
+    plate("m_play_on" if lit else "m_play_off", 4, 4, 1.5, 0.5, 0.5, light=10 if lit else 0)   # 재생 버튼
+    plate("m_bar_on" if lit else "m_bar_off", 8, 3, 6.5, 1, 0.5, light=6 if lit else 0)        # 진행 막대
+    # 몸체: 앞 창 (u 3~13, y 6~19) 을 w 9 까지 파낸다
+    b(1, 5, 2, 3, 21, 14, "body")
+    b(13, 5, 2, 15, 21, 14, "body")
+    b(3, 5, 2, 13, 6, 14, "body")
+    b(3, 19, 2, 13, 21, 14, "body")
+    b(3, 6, 9, 13, 19, 14, "body")
+    b(3, 6, 8.5, 13, 19, 9, "m_inner")                                                 # 창 안쪽 벽
+    b(3, 6, 2, 3.5, 19, 8.5, {"all": "m_inner", "left": "mt_body_plate"})
+    b(12.5, 6, 2, 13, 19, 8.5, {"all": "m_inner", "right": "mt_body_plate"})
+    b(3.5, 18.5, 2, 12.5, 19, 8.5, "m_inner")
+    b(3.5, 6, 2, 12.5, 6.5, 8.5, "m_inner")
+    b(7, 17.75, 4.25, 9, 18.5, 6.25, "brass")                                          # 맷돌 위 깔때기 목 (창 위 천장)
+    def millstone(y0, y1, r, spin=False):
+        """둥근 맷돌 (가운데 u 8 · w 5.25, 반지름 r, 앞뒤는 창 깊이 안으로 눌림): 모서리를 두 번 깎은 세 큐브를 겹친다.
+        앞뒤로 가장 나온 가운데 큐브 면은 밝게, 양옆으로 물러난 큐브 면은 어둡게 (원기둥처럼 휘어 보이게)"""
+        k = min(1.0, 3.0 / r)                                                          # 앞뒤 반지름 비율 (창 안 깊이 w 2.25~8.25)
+        side_name = "m_stone_spin_%d" if spin else "m_stone_side_%d"                    # spin: 도는 장면 그림 (제분 중 윗돌)
+        for shade, (hu, hw) in ((2, (r, r * 0.45)), (1, (r * 0.82, r * 0.82)), (0, (r * 0.45, r))):
+            side = (side_name % shade, [0, 0, 16, 16])
+            stone = {v: side for v in ("front", "back")}
+            stone.update({v: (side_name % 2, [0, 0, 16, 16]) for v in ("left", "right")})
+            stone.update({"top": ("m_stone_top_spin" if spin else "m_stone_top", [0, 0, 16, 16]),
+                          "bottom": ("m_stone_side_2", [0, 0, 16, 16])})
+            b(8 - hu, y0, 5.25 - hw * k, 8 + hu, y1, 5.25 + hw * k, "m_inner", faces=stone)
+
+    millstone(13.4, 15.2, 4.0)                                                          # 아래 바닥돌 (고정, 두툼)
+    millstone(15.7, 17.3, 3.7, spin=bool(ingredient and lit))                           # 위 윗돌 (제분 중이면 홈이 흘러 도는 것처럼) · 사이 틈
+    b(7.5, 17.3, 4.75, 8.5, 18.5, 5.75, "brass")                                        # 깔때기 목 → 윗돌 축
+    b(3.5, 12.75, 2.5, 12.5, 13.25, 8.5, "brass")                                     # 맷돌 아래 칸막이
+    if ingredient and lit:                                                             # 수납칸 결과물 더미 (가운데 높게)
+        pile = "m_pile_" + ingredient
+        b(4, 6.5, 3, 12, 8, 8, pile, light=4)
+        b(5.5, 8, 4, 10.5, 9.5, 7.5, pile, light=4)
+        b(7, 9.5, 5, 9, 10.5, 6.5, pile, light=4)
+    b(3, 6, 1.9, 13, 19, 2, {"all": None, "front": "m_pane"})                          # 반투명 유리
+    for y0, y1, u0, u1 in ((19, 20, 2, 14), (5, 6, 2, 14), (6, 19, 2, 3), (6, 19, 13, 14), (12.5, 13.5, 3, 13)):  # 창 황동 테 · 가운데 띠
+        b(u0, y0, 1.5, u1, y1, 2, "brass")
+    for u0 in (0.5, 14):                                                               # 네 모서리 황동 기둥
+        for w0 in (1.5, 12.5):
+            b(u0, 5, w0, u0 + 1.5, 21, w0 + 2, "brass")
+    b(0.5, 21, 1.5, 15.5, 22.5, 14.5, "brass")                                        # 윗판 황동 띠
+    plate("m_emblem", 4, 4, 6, 19.5, 1)                                                # 밀 문장
+    # 깔때기: 목 · 아래로 좁고 위로 넓은 속 빈 단
+    b(6, 22.5, 6, 10, 24, 10, "body")
+    ring(5, 11, 24, 26, 5, 11, "brass")
+    ring(3.5, 12.5, 26, 28, 3.5, 12.5, "brass")
+    ring(2, 14, 28, 30, 2, 14, "brass")
+    ring(1.5, 14.5, 30, 31, 1.5, 14.5, "brass")
+    b(6, 24, 6, 10, 24.5, 10, "m_inner")                                               # 깔때기 바닥 (벽 안쪽에만)
+    if ingredient:                                                                     # 깔때기 속 재료: 낟알(고기 조각)을 하나씩 쌓은 더미
+        kernel = "m_kernel_" + ingredient
+        b(4.5, 26, 4.5, 11.5, 28, 11.5, "m_gap_" + ingredient)                         # 깔때기 목 쪽 채움 · 더미 바닥 (틈 색)
+        b(3, 28, 3, 13, 28.5, 13, "m_gap_" + ingredient)
+        import random
+        rnd = random.Random("mill-" + ingredient)                                      # 재료마다 정해진 무작위 (넣을 때마다 같은 모양)
+        tex = {"uv": [0, 0, 16, 16], "texture": "#" + kernel}
+        faces = {f: tex for f in ("north", "south", "east", "west", "up")}
+        big = ingredient == "beef"
+        for lo, hi, y, n in ((3.2, 12.8, 28.5, 22 if big else 40), (4.2, 11.8, 29.2, 14 if big else 26),
+                             (5.5, 10.5, 29.9, 7 if big else 13), (6.8, 9.2, 30.1, 2 if big else 4)):
+            for _ in range(n):
+                sx = rnd.uniform(1.8, 2.5) if big else rnd.uniform(1.1, 1.6)            # 크기도 조금씩 다르게
+                sz = rnd.uniform(1.6, 2.3) if big else rnd.uniform(0.8, 1.2)
+                sy = rnd.uniform(0.9, 1.3) if big else rnd.uniform(0.7, 1.0)
+                cu = rnd.uniform(lo + sx / 2, hi - sx / 2)
+                cw = rnd.uniform(lo + sx / 2, hi - sx / 2)
+                cy = min(y + rnd.uniform(0, 0.35), 31 - sy)                            # 깔때기 테(31) 위로 넘지 않게
+                axis = rnd.choices(("y", "x", "z"), (6, 2, 2))[0]                       # 대부분 수평으로 돌리고 일부는 기울임
+                angle = rnd.choice((-45, -22.5, 22.5, 45)) if axis == "y" else rnd.choice((-22.5, 22.5))
+                x = 16 - cu                                                            # 정면 기준 u → 모델 x
+                m.raw([x - sx / 2, cy, cw - sz / 2], [x + sx / 2, cy + sy, cw + sz / 2], faces,
+                      rotation={"origin": [x, cy + sy / 2, cw], "axis": axis, "angle": angle})
+    # 오른쪽 큰 황동 바퀴: 바깥 면만 있는 그림 판을 몸체 밖으로 띄운다 (몸체 면과 겹치면 지직거림) · 가운데 입체 축
+    b(15.75, 7, 3, 16.25, 17, 13, {"all": None}, faces={"right": ("m_wheel", [0, 0, 10, 10])})
+    b(16.25, 11, 7, 17, 13, 9, "brass")
+    b(15, 11.25, 7.25, 15.75, 12.75, 8.75, "brass")
+    # 왼쪽 배관 · 유리관
+    b(0, 17, 6, 1.5, 18, 10, "brass")                                                # 유리관 위 테
+    b(0, 9, 6, 1.5, 10, 10, "brass")                                                 # 유리관 아래 테
+    b(0.25, 10, 6.5, 1.25, 17, 9.5, "m_pane")
+    b(0.25, 18, 7.5, 1.25, 24, 8.5, "brass")                                         # 위로 올라가는 배관
     return m
 
 
@@ -546,7 +816,8 @@ def oven(lit=False):
     return m
 
 
-TOOLS = {"mill": mill, "juicer": juicer, "fermenter": fermenter, "smoker": smoker, "kettle": kettle,
+TOOLS = {"mill": mill, **{"mill_%s%s" % (n, "_on" if on else ""): (lambda n=n, on=on: mill(n, on))
+                         for n in MILL_INGREDIENTS for on in (False, True)}, "juicer": juicer, "fermenter": fermenter, "smoker": smoker, "kettle": kettle,
          "kettle_on": lambda: kettle(lit=True), "oven": oven, "oven_on": lambda: oven(lit=True),
          "fermenter_on": lambda: fermenter(lit=True), **{"smoker_%s%s" % (n, "_on" if on else ""): (lambda n=n, on=on: smoker(n, on))
             for n in SMOKER_MEATS for on in (False, True)}}

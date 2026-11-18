@@ -51,8 +51,13 @@ public final class CookingMachines {
      */
     private static final Map<String, String> LIT_MODELS = Map.of("kettle", "rustport:kettle_on", "oven", "rustport:oven_on",
             "fermenter", "rustport:fermenter_on");
-    /** 넣은 고기를 갈고리에 거는 훈연기: rustport:smoker_<고기> (조리 중이면 _on). 이 고기들만 모델이 있다 */
-    private static final java.util.Set<String> SMOKER_MEATS = java.util.Set.of("beef", "porkchop", "salmon");
+    /**
+     * 넣은 재료가 보이는 기기: rustport:<기기>_<재료> (조리 중이면 _on), 재료가 없으면 가구 기본 모양. 이 재료들만 모델이 있다.
+     * 훈연기는 갈고리에 고기를 걸고, 제분기는 깔때기에 재료를 채운다
+     */
+    private static final Map<String, java.util.Set<String>> INGREDIENT_MODELS = Map.of(
+            "smoker", java.util.Set.of("beef", "porkchop", "salmon"),
+            "mill", java.util.Set.of("wheat", "corn", "beef"));
     /** 조리 중이면 굴뚝 위로 모닥불 연기를 피우는 기기 → 굴뚝 꼭대기 높이 (블록 바닥 기준, 블록) */
     private static final Map<String, Double> CHIMNEY_SMOKE = Map.of("smoker", 2.0);
     private final Map<String, ItemMeta> modelSources = new HashMap<>();       // 모델을 빌려 올 아이템 (custom model data · item_model)
@@ -255,20 +260,21 @@ public final class CookingMachines {
 
     private static boolean hasStateModel(CookingMachine machine) {
         String station = machine.station().key();
-        return LIT_MODELS.containsKey(station) || "smoker".equals(station);
+        return LIT_MODELS.containsKey(station) || INGREDIENT_MODELS.containsKey(station);
     }
 
     /** 지금 상태에 맞는 가구 모양 아이템 ID (모양이 하나뿐인 기기는 null) */
     private static String modelId(CookingMachine machine) {
         String station = machine.station().key();
         String furniture = machine.station().furnitureId();
-        if ("smoker".equals(station)) {                                // 넣은 고기를 걸고, 조리 중이면 _on
-            String meat = machine.hangingIngredient();
-            if (meat == null) {
+        java.util.Set<String> shown = INGREDIENT_MODELS.get(station);
+        if (shown != null) {                                           // 넣은 재료를 보여 주고, 조리 중이면 _on
+            String ingredient = machine.hangingIngredient();
+            if (ingredient == null) {
                 return furniture;
             }
-            meat = meat.substring(meat.indexOf(':') + 1);
-            return SMOKER_MEATS.contains(meat) ? "rustport:smoker_" + meat + (machine.running() ? "_on" : "") : furniture;
+            ingredient = ingredient.substring(ingredient.indexOf(':') + 1);
+            return shown.contains(ingredient) ? "rustport:" + station + "_" + ingredient + (machine.running() ? "_on" : "") : furniture;
         }
         String lit = LIT_MODELS.get(station);
         return lit == null ? null : machine.running() ? lit : furniture;
