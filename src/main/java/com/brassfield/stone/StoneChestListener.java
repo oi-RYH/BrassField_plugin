@@ -57,7 +57,8 @@ public final class StoneChestListener implements Listener {
             return;
         }
 
-        StoneGrade grade = CHEST_GRADES.get(itemProvider.idOf(item));
+        String id = itemProvider.idOf(item);                           // 바닐라 아이템은 null (Map.of 는 null 로 찾으면 예외)
+        StoneGrade grade = id == null ? null : CHEST_GRADES.get(id);
         if (grade == null) {
             return;
         }
