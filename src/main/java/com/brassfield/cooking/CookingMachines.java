@@ -49,7 +49,8 @@ public final class CookingMachines {
      * 조리 중이면 가구 모양을 바꾸는 기기: 기기 → 켜짐 모델 아이템 (ItemsAdder 모델 전용 아이템, 설치 불가).
      * 가구 표시 아이템의 item_model 만 그 아이템 것으로 바꾼다 (가구 ID 는 그대로라 부수기·회수·우클릭은 그대로).
      */
-    private static final Map<String, String> LIT_MODELS = Map.of("kettle", "rustport:kettle_on", "oven", "rustport:oven_on");
+    private static final Map<String, String> LIT_MODELS = Map.of("kettle", "rustport:kettle_on", "oven", "rustport:oven_on",
+            "fermenter", "rustport:fermenter_on");
     private final Map<String, ItemMeta> modelSources = new HashMap<>();       // 모델을 빌려 올 아이템 (custom model data · item_model)
     private final Map<String, Boolean> shownLit = new HashMap<>();
     private final java.util.Set<String> missingDisplays = new java.util.HashSet<>();             // 기기 → 지금 가구에 보이는 모양 (켜짐?)

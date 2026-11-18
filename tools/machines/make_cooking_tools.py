@@ -26,6 +26,12 @@ O_DARK, O_MID, O_EDGE, O_BRASS = rgb(0x4A, 0x32, 0x24), rgb(0x6B, 0x4A, 0x37), r
 O_HI, O_GOLD, O_FIRE, O_HOT = rgb(0xF2, 0xC5, 0x5C), rgb(0xFF, 0xB2, 0x3D), rgb(0xFF, 0x8A, 0x00), rgb(0xFF, 0xE9, 0xC8)
 add_framed_palette("o_brass", O_EDGE, O_EDGE, O_EDGE, O_HI, O_BRASS, O_BRASS, O_BRASS)
 add_framed_palette("o_copper", O_DARK, O_DARK, O_DARK, O_BRASS, O_EDGE, O_EDGE, O_EDGE)
+# 발효조: 레퍼런스 "발효조(양조 탱크)" 팔레트 (구리 #A86A3A · #6B4532, 받침 #3B2B22, 황동 #D9A23A · #F2C55C,
+# 발효액 #FFB23D · #FF8A00 · 거품 #FFF3D9)
+F_DARK, F_COPPER_D, F_COPPER, F_BRASS = rgb(0x3B, 0x2B, 0x22), rgb(0x6B, 0x45, 0x32), rgb(0xA8, 0x6A, 0x3A), rgb(0xD9, 0xA2, 0x3A)
+F_HI, F_GOLD, F_FIRE, F_FOAM = rgb(0xF2, 0xC5, 0x5C), rgb(0xFF, 0xB2, 0x3D), rgb(0xFF, 0x8A, 0x00), rgb(0xFF, 0xF3, 0xD9)
+add_framed_palette("f_brass", F_COPPER_D, F_COPPER_D, F_COPPER_D, F_HI, F_BRASS, F_BRASS, F_BRASS)
+add_framed_palette("f_base", F_DARK, F_DARK, F_DARK, F_COPPER, F_COPPER_D, F_COPPER_D, F_COPPER_D)
 add_framed_palette("k_brass_framed", K_EDGE, K_EDGE, K_EDGE, K_BRASS_HI, K_BRASS, K_BRASS, K_BRASS)   # 결 없이 깔끔하게
 
 
@@ -63,6 +69,8 @@ ART.update({
     "milk_soup": noisy([rgb(246, 236, 210), rgb(232, 218, 186), rgb(252, 248, 232)], [4, 3, 2], 39),
     "bread": noisy([rgb(222, 150, 70), rgb(196, 120, 50), rgb(240, 186, 110)], [4, 3, 2], 40),
     # 대형 솥: 노이즈 없이. 몸체는 산업용 철 블록(형식·색), 황동·불은 레퍼런스 "스팀 조리기" 팔레트 (테 #8B5A2B, 황동 #C99644 · #F2C55C, 불 #FF9A00 · #FFF4E0)
+    "c_copper": clean_block(F_COPPER_D, F_COPPER_D, F_BRASS, F_COPPER, F_COPPER),            # 구리 판 (테 · 밝은 줄, 결 없음)
+    "c_iron": clean_block(IRON_EDGE, IRON_BOLT, IRON[0], IRON[1], IRON[2]),
     "k_iron": clean_block(IRON_EDGE, IRON_BOLT, IRON[0], IRON[1], IRON[2]),            # 산업용 철 블록 (형식 · 색 그대로, 결 없음)
     "k_iron_dark": clean_block(IRON[3], IRON[2], IRON[2], IRON[3], IRON[3]),           # 솥 안쪽 (산업용 철, 한 단계 어둡게)
     "k_brass": clean_block(K_EDGE, K_EDGE, K_BRASS_HI, K_BRASS, K_BRASS),              # Create 황동 블록 형식 · 팔레트 색 (결 없음)
@@ -85,6 +93,19 @@ ART.update({
     "o_pie_side": noisy([O_BRASS], [1], 54),
     "o_dial": picture(["..bbbb..", ".bhhhhb.", "bhhhhfhb", "bhhhfhhb", "bhhkhhhb", "bhkhhhhb", ".bhhhhb.", "..bbbb.."],
                       {"b": O_BRASS, "h": O_HOT, "k": O_DARK, "f": O_FIRE}),
+    "f_rivet": noisy([F_COPPER_D], [1], 61),
+    "f_band": noisy([F_BRASS], [1], 64),
+    "f_inner": noisy([F_COPPER_D], [1], 65),                                            # 창 안쪽 벽 (짙은 구리)
+    "f_pane": [[rgb(255, 255, 255, 110) if (x + y) % 16 in (3, 4, 10) else rgb(0xFF, 0xF3, 0xD9, 40)
+                for x in range(16)] for y in range(16)],                               # 반투명 유리 (옅은 크림빛 + 대각선 반사)
+    "f_liquid": [[F_HI if (x * 7 + y * 5) % 23 == 0 else F_GOLD for x in range(16)] for y in range(16)],   # 발효액 (기포 점)
+    "f_foam": [[F_HI if (x + 2 * (y // 2)) % 5 == 0 else F_FOAM for x in range(16)] for y in range(16)],   # 거품                                                  # 황동 띠 · 테 (한 색)
+    "f_dial": picture(["..bbbb..", ".bhhhhb.", "bhhhhfhb", "bhhhfhhb", "bhhkhhhb", "bhkhhhhb", ".bhhhhb.", "..bbbb.."],
+                      {"b": F_BRASS, "h": F_FOAM, "k": F_DARK, "f": F_FIRE}),
+    "f_power_off": picture([".bb.", "bkkb", "bkkb", ".bb."], {"b": F_BRASS, "k": F_COPPER_D}),
+    "f_power_on": picture([".bb.", "bffb", "bffb", ".bb."], {"b": F_BRASS, "f": F_FIRE}),
+    "f_bar_off": picture(["bbbbbbbb", "bddddddb", "bbbbbbbb"], {"b": F_BRASS, "d": F_DARK}),
+    "f_bar_on": picture(["bbbbbbbb", "bggggddb", "bbbbbbbb"], {"b": F_BRASS, "d": F_DARK, "g": F_GOLD}),
     "k_dial": picture(["..bbbb..", ".bwwwwb.", "bwwwkwwb", "bwwkwwwb", "bwkwwwwb", "bwwwwwwb", ".bwwwwb.", "..bbbb.."],
                       {"b": K_BRASS, "w": K_HOT, "k": K_IRON_DARK}),
 })
@@ -147,29 +168,6 @@ def juicer():
     return m
 
 
-# ═════════════ 발효조: 배럴 몸통(쇠테 셋), 빛나는 둥근 창, 구리 뚜껑과 꼭지 밸브, 옆 구리 관과 아래 꼭지 ═════════════
-def fermenter():
-    m = Model("fermenter")
-    for x in (2, 12):
-        for z in (2, 12):
-            m.box([x, 0, z], [x + 2, 2, z + 2], "brass")                        # 짧은 발
-    body = {"all": "barrel_side", "top": "barrel_top", "bottom": "barrel_top"}
-    m.box([1, 2, 3], [15, 20, 13], body)                                        # 배럴 (십자로 겹쳐 둥글게)
-    m.box([3, 2, 1], [13, 20, 15], body)
-    for y in (4, 11, 17):
-        m.box([0, y, 3], [16, y + 1, 13], "iron")                               # 쇠테
-        m.box([3, y, 0], [13, y + 1, 16], "iron")
-    m.plate("porthole", 6, 6, 5, 6, 0, light=8)                                 # 빛나는 둥근 창 (쇠테 사이)
-    m.box([3, 20, 3], [13, 22, 13], "copper_block")                             # 구리 뚜껑
-    m.box([5, 22, 5], [11, 23, 11], "copper_block")
-    m.box([7, 23, 7], [9, 25, 9], "brass")                                      # 꼭지 밸브
-    m.box([6, 25, 7], [10, 26, 9], "brass")
-    m.box([11, 22, 7], [16, 24, 9], "cut_copper")                               # 옆 구리 관
-    m.box([14, 6, 7], [16, 22, 9], "cut_copper")
-    m.box([11, 2, 0], [13, 4, 1], "brass")                                      # 아래 꼭지
-    return m
-
-
 # ═════════════ 훈연기: 리벳 쇠 찬장, 황동 테 유리문 너머 매달린 햄 두 개와 빛나는 숯, 뒤 굴뚝과 연기 ═════════════
 def smoker():
     m = Model("smoker")
@@ -195,6 +193,76 @@ def smoker():
     m.box([11, 24, 10], [14, 30, 13], "iron")                                   # 굴뚝
     m.box([10, 30, 9], [15, 31, 14], "brass")
     m.box([11, 31, 10], [13, 32, 12], "steam")                                  # 연기
+    return m
+
+
+# ═════════════ 발효조 (1x1x2): 레퍼런스 "발효조(양조 탱크)" — 팔각 구리 탱크, 위아래 황동 테 · 리벳 · 세로 띠, 앞 큰 유리창,
+# 돔 뚜껑 · 꼭대기 배관, 오른쪽 계기판 배관 · 유리관, 앞 밸브 바퀴, 구리 다리, 받침대 앞 전원 버튼 · 진행 막대.
+# 쉬는 동안(fermenter)은 빈 유리, 발효 중(fermenter_on)은 노란 발효액 · 거품, 유리관 · 전원 버튼 빛, 진행 막대 참 ═════════════
+def fermenter(lit=False):
+    m = Model("fermenter_on" if lit else "fermenter")
+
+    def b(u0, y0, w0, u1, y1, w1, tex, light=0, faces=None):
+        m.box([u0, y0, w0], [u1, y1, w1], tex, light=light, faces=faces)
+
+    def octa(y0, y1, inset, cut, tex, light=0):
+        """팔각 기둥 (16 칸 안, 모서리 cut 칸 깎음)"""
+        b(inset + cut, y0, inset, 16 - inset - cut, y1, 16 - inset, tex, light)
+        b(inset, y0, inset + cut, inset + cut, y1, 16 - inset - cut, tex, light)
+        b(16 - inset - cut, y0, inset + cut, 16 - inset, y1, 16 - inset - cut, tex, light)
+
+    def plate(name, w, h, u0, y0, w0, light=0):
+        b(u0, y0, w0, u0 + w, y0 + h, w0 + 1, "f_brass", light=light, faces={"front": (name, [0, 0, w, h])})
+
+    for u, w in ((1, 2), (13, 2), (1, 12), (13, 12)):                                  # 받침 다리
+        b(u, 0, w, u + 2, 1, w + 2, "f_base")
+    b(0, 1, 1, 16, 5, 15, "f_base")                                                    # 받침대
+    plate("f_power_on" if lit else "f_power_off", 4, 4, 1.5, 1, 0, light=10 if lit else 0)   # 전원 버튼
+    plate("f_bar_on" if lit else "f_bar_off", 8, 3, 6.5, 1.5, 0, light=6 if lit else 0)       # 진행 막대
+    for u, w in ((2, 3), (12, 3), (2, 11), (12, 11)):                                  # 구리 다리 (받침 → 탱크)
+        b(u, 5, w, u + 2, 8, w + 2, "f_brass")
+    # 구리 탱크 (팔각): 앞 가운데 판을 창 높이에서 w 7 까지 파낸다 (유리 너머 안이 보이게)
+    b(2, 8, 5, 5, 23, 11, "c_copper")
+    b(11, 8, 5, 14, 23, 11, "c_copper")
+    b(5, 8, 2, 11, 11, 14, "c_copper")
+    b(5, 21, 2, 11, 23, 14, "c_copper")
+    b(5, 11, 7, 11, 21, 14, "c_copper")
+    b(5, 11, 6.5, 11, 21, 7, "f_inner")                                                # 창 안쪽 벽 (뒤 · 옆 · 위 · 아래)
+    b(5, 11, 2, 5.5, 21, 6.5, {"all": "f_inner", "left": "c_copper"})                 # 바깥 면은 구리 (모서리 틈으로 보임)
+    b(10.5, 11, 2, 11, 21, 6.5, {"all": "f_inner", "right": "c_copper"})
+    b(5.5, 20.5, 2, 10.5, 21, 6.5, "f_inner")
+    b(5.5, 11, 2, 10.5, 11.5, 6.5, "f_inner")
+    if lit:                                                                            # 발효액 (빛남) + 거품
+        b(5.5, 11.5, 2.5, 10.5, 16.5, 6.5, "f_liquid", light=9)
+        b(5.5, 16.5, 2.5, 10.5, 18, 6.5, "f_foam", light=9)
+    b(5, 11, 1.9, 11, 21, 2, {"all": None, "front": "f_pane"})                         # 반투명 유리 (앞면만)
+    b(4, 10, 1.5, 12, 11, 2, "f_brass")                                                # 창 아래 테
+    for y0 in (8, 21):                                                                 # 위아래 황동 테 (1픽셀 튀어나옴)
+        octa(y0, y0 + 2, 1, 4, "f_band")
+    for k in (5, 8, 11):                                                               # 테 리벳 (앞 · 뒤 · 옆)
+        for y in (8.5, 21.5):
+            for u0, w0, u1, w1 in ((k, 0.5, k + 1, 1), (k, 15, k + 1, 15.5), (0.5, k, 1, k + 1), (15, k, 15.5, k + 1)):
+                b(u0, y, w0, u1, y + 1, w1, "f_rivet")
+    for u in (4, 11):                                                                  # 앞 세로 황동 띠 (창 양옆)
+        b(u, 10, 1.5, u + 1, 21, 2, "f_brass")
+    for u0, y0, u1, y1 in ((6.5, 8, 9.5, 8.5), (6.5, 11.5, 9.5, 12), (6, 8.5, 6.5, 11.5), (9.5, 8.5, 10, 11.5),
+                           (7.75, 8.5, 8.25, 11.5), (6.5, 9.75, 9.5, 10.25)):           # 앞 밸브 바퀴
+        b(u0, y0, 0.5, u1, y1, 1, "f_brass")
+    octa(23, 25, 3, 3, "c_copper")                                                     # 돔 뚜껑
+    octa(25, 27, 4, 3, "c_copper")
+    b(6, 27, 6, 10, 28, 10, "f_band")                                                  # 꼭대기 테
+    b(7, 28, 7, 9, 31, 9, "c_iron")                                                    # 꼭대기 배관
+    b(6.5, 31, 6.5, 9.5, 32, 9.5, "f_brass")
+    b(9, 28, 7.5, 13, 29.5, 8.5, "f_brass")                                            # 계기판 배관 (위 → 오른쪽)
+    b(12, 23, 7.5, 13.5, 29.5, 8.5, "f_brass")
+    plate("f_dial", 5, 5, 11, 23, 6.5)                                                 # 계기판 (오른쪽 위)
+    b(14, 12, 6.5, 16, 13, 9.5, "f_brass")                                             # 오른쪽 유리관 (아래 · 위 테)
+    b(14, 20, 6.5, 16, 21, 9.5, "f_brass")
+    if lit:                                                                            # 유리관 안 발효액 기둥
+        b(14.5, 13, 7.25, 15.5, 18, 8.75, "f_liquid", light=9)
+        b(14.5, 18, 7.25, 15.5, 19, 8.75, "f_foam", light=9)
+    b(14.25, 13, 7, 15.75, 20, 9, "f_pane")                                            # 반투명 유리관
+    b(14, 21, 7.5, 15, 23, 8.5, "f_brass")                                             # 유리관 → 계기판 배관
     return m
 
 
@@ -424,7 +492,8 @@ def oven(lit=False):
 
 
 TOOLS = {"mill": mill, "juicer": juicer, "fermenter": fermenter, "smoker": smoker, "kettle": kettle,
-         "kettle_on": lambda: kettle(lit=True), "oven": oven, "oven_on": lambda: oven(lit=True)}
+         "kettle_on": lambda: kettle(lit=True), "oven": oven, "oven_on": lambda: oven(lit=True),
+         "fermenter_on": lambda: fermenter(lit=True)}
 
 if __name__ == "__main__":
     assets = sys.argv[1]
