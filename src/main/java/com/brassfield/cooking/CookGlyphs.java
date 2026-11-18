@@ -21,8 +21,6 @@ final class CookGlyphs {
     static final String GENERIC_BACKGROUND = "rustport:cook_generic_bg";
     static final int BACKGROUND_ADVANCE = 176;
     static final int GAUGE_STEPS = 8;
-    private static final int GAUGE_X = 71;
-    private static final int GAUGE_ADVANCE = 13;
     private static final int PLATE_RIGHT_X = 141;                  // 접시 아래 명찰 숫자 오른쪽 끝
     private static final int TIMES_X = 142;                        // 책 큰 요리 오른쪽 "×"
     private static final int PICK_ADVANCE = 20;
@@ -47,8 +45,41 @@ final class CookGlyphs {
         return "rustport:cook_" + stationKey + "_bg";
     }
 
-    void gauge(TitleCanvas canvas, int level) {
-        canvas.place(GAUGE_X, glyph("rustport:cook_gauge_" + Math.max(0, Math.min(GAUGE_STEPS, level))), GAUGE_ADVANCE);
+    /*
+     * 2배 해상도 배경은 조각 4장 (<이름>_0 왼쪽 위 · _1 오른쪽 위 · _2 왼쪽 아래 · _3 오른쪽 아래, 창 128px 에서 나눔).
+     * 마인크래프트 글꼴 판이 256x256 이라 그보다 큰 글꼴 그림은 네모(□)로 나오기 때문.
+     */
+    private static final int TILE = 128;
+    private static final int TILE_RIGHT_ADVANCE = BACKGROUND_ADVANCE - TILE;
+
+    private boolean tiled(String background) {
+        return glyph(background).isEmpty() && !glyph(background + "_0").isEmpty();
+    }
+
+    boolean hasBackground(String background) {
+        return !glyph(background).isEmpty() || tiled(background);
+    }
+
+    /** 창을 처음 열 때 ItemsAdder 에 넘기는 배경 (조각 배경이면 왼쪽 위 조각 — 열자마자 제목을 다시 그려 나머지를 채운다) */
+    String openingBackground(String background) {
+        return tiled(background) ? background + "_0" : background;
+    }
+
+    TitleCanvas backgroundCanvas(String background) {
+        if (!tiled(background)) {
+            return new TitleCanvas(glyph(background), BACKGROUND_ADVANCE);
+        }
+        TitleCanvas canvas = new TitleCanvas("", 0);
+        canvas.place(0, glyph(background + "_0"), TILE);
+        canvas.place(TILE, glyph(background + "_1"), TILE_RIGHT_ADVANCE);
+        canvas.place(0, glyph(background + "_2"), TILE);
+        canvas.place(TILE, glyph(background + "_3"), TILE_RIGHT_ADVANCE);
+        return canvas;
+    }
+
+    void gauge(TitleCanvas canvas, CookLayout layout, int level) {
+        canvas.place(layout.gaugeX(), glyph("rustport:cook_gauge_" + layout.gaugeGlyph() + "_" + Math.max(0, Math.min(GAUGE_STEPS, level))),
+                layout.gaugeAdvance());
     }
 
     /**

@@ -1,9 +1,9 @@
 """
 요리 기기 창 서버 자료 한 번에 만들기 (ItemsAdder rustport 콘텐츠 폴더에 쓴다).
-  배경      textures/gui/cook_kettle_bg.png · cook_generic_bg.png (make_cook_bg.py) · cook_book_bg.png (make_book_bg.py)
+  배경      textures/gui/cook_kettle_bg.png · cook_generic_bg.png · cook_counter_bg.png (make_cook_bg.py) · cook_book_bg.png (make_book_bg.py)
   글꼴 그림  textures/font/cook/*.png
-            cook_gauge_<0..8>        솥 게이지 눈금판 + 바늘 (진행 0/8 ~ 8/8)
-            cook_cnt_r<0|1>_<k>      구름 위 재료 개수 (짙은 갈색 + 연기색 테, 칸 오른쪽 위), 줄 0 · 1
+            cook_gauge_<기기>_<0..8> 게이지 눈금판 + 바늘 (진행 0/8 ~ 8/8), 기기 = kettle(공통 포함) · counter
+            cook_cnt_r<0..5>_<k>     재료·완성품 개수 (짙은 갈색 + 연기색 테, 칸 오른쪽 위), 줄 0~5
             cook_plate_<k>           접시 아래 명찰 완성품 개수 (짙은 갈색)
             cook_need_r<3|4>_<k>     책 오른쪽 필요 재료 개수 (짙은 갈색 + 종이색 테)
             cook_times_<k|x>         책 큰 요리 오른쪽 "×N" (한 번에 나오는 개수)
@@ -69,7 +69,7 @@ def digit(ch, halo=None):
     return width_pixel(img)
 
 
-def gauge(level, mask):
+def gauge(level, mask, center):
     """게이지 눈금판(mask)을 새로 칠하고 눈금 · 바늘(축에서 5칸, 끝 빨강)을 그린다. 7시(225도) → 5시(-45도) 시계 방향.
     눈금 9개 중 지나온 눈금은 빨갛게."""
     xs, ys = [p[0] for p in mask], [p[1] for p in mask]
@@ -78,7 +78,7 @@ def gauge(level, mask):
     inside = mask_set(mask)
     for x, y in mask:
         img.putpixel((x - x0, y - y0), cook.FACE + (255,))
-    cx, cy = cook.gauge_center()
+    cx, cy = center
     for step in range(GAUGE_STEPS + 1):
         a = math.radians(225 - 270 * step / GAUGE_STEPS)
         px, py = round(cx + 5 * math.cos(a)), round(cy - 5 * math.sin(a))
@@ -175,14 +175,28 @@ def main(enh_path, content, config_path):
     enh = Image.open(enh_path).convert("RGBA")
     cook.build_kettle(enh).save(os.path.join(tex, "gui", "cook_kettle_bg.png"))
     cook.build_generic(enh).save(os.path.join(tex, "gui", "cook_generic_bg.png"))
+    cook.build_counter(enh).save(os.path.join(tex, "gui", "cook_counter_bg.png"))
     book.build(enh).save(os.path.join(tex, "gui", "cook_book_bg.png"))
+    juicer_raw = cook.build_juicer(enh, bake=False)                # 착즙기 (시안 주스 그대로 — 게이지 단계 그림 원본)
+    cook.build_juicer(enh).save(os.path.join(tex, "gui", "cook_juicer_bg.png"))
+    for i in range(4):                                          # 예전 2배 조각 그림 정리
+        stale = os.path.join(tex, "gui", "cook_juicer_bg_%d.png" % i)
+        if os.path.exists(stale):
+            os.remove(stale)
 
     glyphs = {}                                                 # 이름 → (그림, 윗줄 y)
-    mask = cook.gauge_mask()
+    gauge_xs = {}
+    for name, center in (("kettle", cook.gauge_center()), ("counter", cook.counter_gauge_center())):
+        mask = cook.gauge_mask(center)
+        gauge_xs[name] = min(m[0] for m in mask)
+        for level in range(GAUGE_STEPS + 1):
+            img, (_, top) = gauge(level, mask, center)
+            glyphs["cook_gauge_%s_%d" % (name, level)] = (img, top)
+    hi = {}                                                     # JUICER_K 배 글꼴 그림: 이름 → (그림, 윗줄 y) — scale_ratio = 높이 / JUICER_K
     for level in range(GAUGE_STEPS + 1):
-        img, (_, top) = gauge(level, mask)
-        glyphs["cook_gauge_%d" % level] = (img, top)
-    for row in (0, 1):
+        hi["cook_gauge_juicer_%d" % level] = (width_pixel(cook.juicer_gauge(juicer_raw, level, GAUGE_STEPS)),
+                                              cook.JUICER_GAUGE_TOP)
+    for row in range(6):                                        # 재료·완성품 칸은 기기마다 줄이 달라 모든 줄
         top = slot_box(row, 0)[1]                               # 칸 오른쪽 위 (작물 별 표시가 오른쪽 아래라 피한다)
         for ch, key in CHARS:
             glyphs["cook_cnt_r%d_%s" % (row, key)] = (digit(ch, SMOKE_HALO), top)
@@ -205,12 +219,13 @@ def main(enh_path, content, config_path):
         y = slot_box(row, 0)[1]
         glyphs["cook_pick_r%d" % row] = (pick_frame(), y - 1)
         glyphs["cook_pin_r%d" % row] = (pin(), y - 2)
-    for name, (img, _) in glyphs.items():
+    for name, (img, _) in list(glyphs.items()) + list(hi.items()):
         img.save(os.path.join(tex, "font", "cook", name + ".png"))
 
     os.makedirs(os.path.join(tex, "item", "gui"), exist_ok=True)
     for state in ("on", "off"):
         cook.fire_icon(state).save(os.path.join(tex, "item", "gui", "cook_fire_%s.png" % state))
+        cook.gear_icon(state).save(os.path.join(tex, "item", "gui", "cook_gear_%s.png" % state))
     items = []
     for result in recipe_results(config_path):
         ns, name = result.split(":", 1)
@@ -231,19 +246,23 @@ def main(enh_path, content, config_path):
             lines += ["  cook_%s_%s:" % (kind, name), '    display_name: " "', "    resource:", "      material: PAPER",
                       "      generate: false", "      model_path: item/gui/cook_%s/%s" % (kind, name)]
     for state in ("on", "off"):
-        lines += ["  cook_fire_%s:" % state, '    display_name: " "', "    resource:", "      material: PAPER",
-                  "      generate: true", "      textures:", "        - item/gui/cook_fire_%s" % state]
+        for kind in ("fire", "gear"):
+            lines += ["  cook_%s_%s:" % (kind, state), '    display_name: " "', "    resource:", "      material: PAPER",
+                      "      generate: true", "      textures:", "        - item/gui/cook_%s_%s" % (kind, state)]
     lines += ["font_images:"]
-    for bg in ("cook_kettle_bg", "cook_generic_bg", "cook_book_bg"):
+    for bg, pad in (("cook_kettle_bg", cook.KETTLE_PAD), ("cook_generic_bg", cook.KETTLE_PAD), ("cook_counter_bg", 0),
+                    ("cook_book_bg", 0), ("cook_juicer_bg", 0)):
         lines += ["  %s:" % bg, "    path: gui/%s" % bg, "    suggest_in_command: false", "    scale_ratio: 256",
-                  "    y_position: 13"]
+                  "    y_position: %d" % (13 + pad)]
     for name, (img, top) in glyphs.items():
         lines += ["  %s:" % name, "    path: font/cook/%s" % name, "    suggest_in_command: false",
                   "    scale_ratio: %d" % img.height, "    y_position: %d" % (13 - top)]
+    for name, (img, top) in hi.items():
+        lines += ["  %s:" % name, "    path: font/cook/%s" % name, "    suggest_in_command: false",
+                  "    scale_ratio: %d" % (img.height // cook.JUICER_K), "    y_position: %d" % (13 - top)]
     with open(os.path.join(content, "configs", "cook_gui.yml"), "w") as f:
         f.write("\n".join(lines) + "\n")
-    gx = min(m[0] for m in mask)
-    print("big items", len(items), "glyphs", len(glyphs), "gauge x", gx, "gauge width", glyphs["cook_gauge_0"][0].width,
+    print("big items", len(items), "glyphs", len(glyphs), "gauge x", gauge_xs, "gauge width", glyphs["cook_gauge_kettle_0"][0].width,
           "label", cook.label_box(), "plate shift", plate_shift, "dish", book.dish_center())
 
 

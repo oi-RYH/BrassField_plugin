@@ -42,12 +42,6 @@ import java.util.Map;
 public final class CookingMachine implements InventoryHolder {
 
     static final int SIZE = 54;
-    static final int[] INGREDIENT_SLOTS = {1, 2, 3, 10, 11};        // 구름 위 (0줄 1~3열, 1줄 1·2열)
-    static final int[] PLATE_SLOTS = {24, 25, 33, 34};             // 접시 2x2 (2~3줄 6~7열), 음식 그림은 첫 칸에 2배 크기 모델
-    static final int[] BOOK_SLOTS = {6, 7, 15, 16};                // 레시피 책 그림 2x2 (0~1줄 6~7열, 배경 그림)
-    static final int[] BYPRODUCT_SLOTS = {52, 53};
-    static final int FIRE_SLOT = 38;                              // 불 버튼 (4줄 2열, 화덕 문 자리)
-    static final int[] GAUGE_SLOTS = {30, 31};                     // 솥 게이지가 걸친 두 칸 (3줄 3·4열): 마우스를 올리면 남은 시간
     static final int STOCK_LIMIT = 1728;                          // 재료 하나당 최대 보관 (27묶음)
     private static final String BLANK_ID = "rustport:gui_blank";
     /** 다 쓰고 그릇이 남는 재료 → 남는 그릇 */
@@ -72,6 +66,7 @@ public final class CookingMachine implements InventoryHolder {
     private final CookingStation station;
     private final String key;
     private final ItemsAdderGuiBackground.TexturedGui texturedGui;
+    private final CookLayout layout;                               // 칸 배치 (기기 그림마다 다름, 공통 그림이면 솥 배치)
     private final Inventory inventory;
     private final List<Stock> stocks = new ArrayList<>();
     private final Map<Material, Integer> byproducts = new EnumMap<>(Material.class);
@@ -90,8 +85,9 @@ public final class CookingMachine implements InventoryHolder {
         this.key = key;
         ItemsAdderGuiBackground gui = machines.glyphs().background();
         String wanted = CookGlyphs.machineBackground(station.key());
-        background = machines.glyphs().glyph(wanted).isEmpty() ? CookGlyphs.GENERIC_BACKGROUND : wanted;   // 그림 없는 기기는 공통 그림
-        ItemsAdderGuiBackground.TexturedGui built = gui.build(this, SIZE, "", background, 0, -8);
+        background = machines.glyphs().hasBackground(wanted) ? wanted : CookGlyphs.GENERIC_BACKGROUND;   // 그림 없는 기기는 공통 그림
+        layout = background.equals(wanted) ? CookLayout.of(station.key()) : CookLayout.KETTLE;
+        ItemsAdderGuiBackground.TexturedGui built = gui.build(this, SIZE, "", machines.glyphs().openingBackground(background), 0, -8);
         this.texturedGui = built;
         this.inventory = built != null ? built.inventory() : Bukkit.createInventory(this, SIZE, Component.text(station.title()));
         ItemStack filler = blank(Component.empty(), List.of());
@@ -192,29 +188,8 @@ public final class CookingMachine implements InventoryHolder {
         }
     }
 
-    static boolean isIngredientSlot(int slot) {
-        return indexOf(INGREDIENT_SLOTS, slot) >= 0;
-    }
-
-    static boolean isPlateSlot(int slot) {
-        return indexOf(PLATE_SLOTS, slot) >= 0;
-    }
-
-    static boolean isBookSlot(int slot) {
-        return indexOf(BOOK_SLOTS, slot) >= 0;
-    }
-
-    static boolean isByproductSlot(int slot) {
-        return indexOf(BYPRODUCT_SLOTS, slot) >= 0;
-    }
-
-    private static int indexOf(int[] slots, int slot) {
-        for (int i = 0; i < slots.length; i++) {
-            if (slots[i] == slot) {
-                return i;
-            }
-        }
-        return -1;
+    CookLayout layout() {
+        return layout;
     }
 
     // ── 조리 ──
@@ -466,12 +441,19 @@ public final class CookingMachine implements InventoryHolder {
         return all;
     }
 
+    /** 빈 그릇 칸 index 를 꺼낸다. 빈 그릇 칸이 하나뿐인 배치면 모든 그릇을 꺼낸다 */
     void withdrawByproduct(Player player, int index) {
         List<Material> kinds = new ArrayList<>(byproducts.keySet());
-        if (index >= kinds.size()) {
-            return;
+        if (layout.byproductSlots().length == 1) {
+            for (int i = 0; i < kinds.size(); i++) {
+                withdrawKind(player, kinds.get(i));
+            }
+        } else if (index < kinds.size()) {
+            withdrawKind(player, kinds.get(index));
         }
-        Material material = kinds.get(index);
+    }
+
+    private void withdrawKind(Player player, Material material) {
         ItemStack sample = new ItemStack(material);
         int want = Math.min(byproducts.get(material), room(player, sample));
         if (want <= 0) {
@@ -537,34 +519,39 @@ public final class CookingMachine implements InventoryHolder {
 
     void redraw(long now) {
         List<String> keys = pinned == null ? List.of() : new ArrayList<>(pinned.ingredients().keySet());
-        for (int i = 0; i < INGREDIENT_SLOTS.length; i++) {
-            inventory.setItem(INGREDIENT_SLOTS[i], i < keys.size() ? ingredientIcon(keys.get(i)) : blank(Component.empty(), List.of()));
+        int[] ingredientSlots = layout.ingredientSlots();
+        for (int i = 0; i < ingredientSlots.length; i++) {
+            inventory.setItem(ingredientSlots[i], i < keys.size() ? ingredientIcon(keys.get(i)) : blank(Component.empty(), List.of()));
         }
         ItemStack plate = plateIcon(now);
         ItemMeta plateMeta = plate.getItemMeta();                      // 2x2 나머지 칸도 같은 이름·설명 (그림은 안 보임)
         ItemStack plateCover = blank(plateMeta.hasDisplayName() ? plateMeta.displayName() : Component.empty(),
                 plateMeta.hasLore() ? plateMeta.lore() : List.of());
-        for (int i = 0; i < PLATE_SLOTS.length; i++) {
-            inventory.setItem(PLATE_SLOTS[i], i == 0 ? plate : plateCover);
+        int[] outputSlots = layout.outputSlots();
+        for (int i = 0; i < outputSlots.length; i++) {
+            inventory.setItem(outputSlots[i], i == 0 ? plate : plateCover);
         }
-        inventory.setItem(FIRE_SLOT, fireIcon(now));
+        inventory.setItem(layout.fireSlot(), fireIcon(now));
         ItemStack gauge = blank(Component.text("조리 진행", NamedTextColor.GOLD), gaugeLore(now));
-        for (int slot : GAUGE_SLOTS) {
+        for (int slot : layout.gaugeSlots()) {
             inventory.setItem(slot, gauge);
         }
         ItemStack book = bookIcon();
-        for (int slot : BOOK_SLOTS) {
+        for (int slot : layout.bookSlots()) {
             inventory.setItem(slot, book);
         }
         List<Material> kinds = new ArrayList<>(byproducts.keySet());
-        for (int i = 0; i < BYPRODUCT_SLOTS.length; i++) {
-            if (i < kinds.size()) {
+        int[] byproductSlots = layout.byproductSlots();
+        for (int i = 0; i < byproductSlots.length; i++) {
+            if (byproductSlots.length == 1 && !kinds.isEmpty()) {
+                inventory.setItem(byproductSlots[i], allByproductsIcon(kinds));
+            } else if (i < kinds.size()) {
                 int count = byproducts.get(kinds.get(i));
                 ItemStack item = new ItemStack(kinds.get(i), Math.max(1, Math.min(count, kinds.get(i).getMaxStackSize())));
-                inventory.setItem(BYPRODUCT_SLOTS[i], named(item, Component.text("남은 빈 그릇 " + count + "개", NamedTextColor.WHITE),
+                inventory.setItem(byproductSlots[i], named(item, Component.text("남은 빈 그릇 " + count + "개", NamedTextColor.WHITE),
                         List.of(Component.text("클릭: 가방으로 꺼내기", NamedTextColor.GRAY))));
             } else {
-                inventory.setItem(BYPRODUCT_SLOTS[i], blank(Component.empty(), List.of()));
+                inventory.setItem(byproductSlots[i], blank(Component.empty(), List.of()));
             }
         }
         updateTitle(now, keys);
@@ -607,10 +594,10 @@ public final class CookingMachine implements InventoryHolder {
             return blank(Component.text("접시", NamedTextColor.WHITE), progressLore(now));
         }
         ItemMeta resultMeta = outputSample.getItemMeta();
-        ItemStack icon = texturedGui == null ? null : plateIcon();     // 접시 2x2 가운데에 2배 크기로 그리는 그림 아이템
+        ItemStack icon = texturedGui == null || !layout.bigOutput() ? null : plateIcon();   // 접시 2x2 가운데에 2배 크기 그림 아이템
         if (icon == null) {
             icon = outputSample.clone();
-            icon.setAmount(Math.max(1, Math.min(outputCount(), icon.getMaxStackSize())));
+            icon.setAmount(texturedGui == null ? Math.max(1, Math.min(outputCount(), icon.getMaxStackSize())) : 1);
         }
         ItemMeta meta = icon.getItemMeta();
         meta.displayName(resultMeta.hasDisplayName() ? resultMeta.displayName()
@@ -658,19 +645,34 @@ public final class CookingMachine implements InventoryHolder {
         }
     }
 
-    /** 화덕 문 불 버튼: 켜짐(타오르는 불) · 꺼짐(회색 불) */
+    /** 빈 그릇 한 칸에 모든 그릇: 가장 많은 그릇 아이콘 + 설명에 그릇마다 개수 */
+    private ItemStack allByproductsIcon(List<Material> kinds) {
+        Material most = kinds.stream().max((a, b) -> Integer.compare(byproducts.get(a), byproducts.get(b))).orElseThrow();
+        List<Component> lore = new ArrayList<>();
+        for (Material kind : kinds) {
+            lore.add(Component.translatable(kind.translationKey()).color(NamedTextColor.WHITE)
+                    .append(Component.text(" " + String.format("%,d개", byproducts.get(kind)), NamedTextColor.GRAY)));
+        }
+        lore.add(Component.text("클릭: 모두 가방으로 꺼내기", NamedTextColor.GRAY));
+        ItemStack item = new ItemStack(most, Math.max(1, Math.min(byproducts.get(most), most.getMaxStackSize())));
+        return named(item, Component.text("남은 빈 그릇", NamedTextColor.WHITE), lore);
+    }
+
+    /** 시작 버튼: 불(화덕 문 — 켜짐 타오르는 불 · 꺼짐 회색 불) 또는 톱니(착즙기 — 작동 황동 · 멈춤 회색) */
     private ItemStack fireIcon(long now) {
         boolean on = startedAt >= 0;
+        boolean fire = "fire".equals(layout.startIcon());
         ItemStack icon;
         try {
-            icon = machines.itemProvider().create(on ? "rustport:cook_fire_on" : "rustport:cook_fire_off");
+            icon = machines.itemProvider().create("rustport:cook_" + layout.startIcon() + (on ? "_on" : "_off"));
         } catch (IllegalStateException exception) {
             icon = new ItemStack(on ? Material.CAMPFIRE : Material.SOUL_CAMPFIRE);
         }
         List<Component> lore = new ArrayList<>(gaugeLore(now));
         lore.add(Component.empty());
         lore.add(Component.text(on ? "클릭: 조리 멈추기" : "클릭: 조리 시작", NamedTextColor.YELLOW));
-        return named(icon, Component.text(on ? "불 켜짐 · 조리 중" : "불 꺼짐", on ? NamedTextColor.GOLD : NamedTextColor.GRAY), lore);
+        String name = fire ? (on ? "불 켜짐 · 조리 중" : "불 꺼짐") : (on ? "작동 중" : "멈춤");
+        return named(icon, Component.text(name, on ? NamedTextColor.GOLD : NamedTextColor.GRAY), lore);
     }
 
     /** 게이지 설명: 다음 1개 완성까지 · 전부 완성까지 남은 시간 */
@@ -738,17 +740,24 @@ public final class CookingMachine implements InventoryHolder {
             return;
         }
         CookGlyphs glyphs = machines.glyphs();
-        TitleCanvas canvas = new TitleCanvas(glyphs.glyph(background), CookGlyphs.BACKGROUND_ADVANCE);
-        glyphs.gauge(canvas, gaugeLevel(now));
+        TitleCanvas canvas = glyphs.backgroundCanvas(background);
+        glyphs.gauge(canvas, layout, gaugeLevel(now));
         StringBuilder state = new StringBuilder().append(gaugeLevel(now));
-        for (int i = 0; i < keys.size() && i < INGREDIENT_SLOTS.length; i++) {
+        int[] ingredientSlots = layout.ingredientSlots();
+        for (int i = 0; i < keys.size() && i < ingredientSlots.length; i++) {
             String text = CookGlyphs.compact(stored(keys.get(i)));
-            glyphs.slotCount(canvas, "cnt", INGREDIENT_SLOTS[i], text);
+            glyphs.slotCount(canvas, "cnt", ingredientSlots[i], text);
             state.append('|').append(text);
         }
         if (outputCount() > 0) {
-            String text = CookGlyphs.plate(outputCount());
-            glyphs.plateCount(canvas, text);
+            String text;
+            if (layout.bigOutput()) {
+                text = CookGlyphs.plate(outputCount());
+                glyphs.plateCount(canvas, text);
+            } else {
+                text = CookGlyphs.compact(outputCount());
+                glyphs.slotCount(canvas, "cnt", layout.outputSlots()[0], text);
+            }
             state.append('|').append(text);
         }
         String key = state.toString();

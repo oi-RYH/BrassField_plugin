@@ -65,14 +65,14 @@ public final class CookingListener implements Listener {
         event.setCancelled(true);
         int slot = event.getRawSlot();
         long now = System.currentTimeMillis();
-        if (CookingMachine.isBookSlot(slot)) {
+        if (machine.layout().isBook(slot)) {
             plugin.getServer().getScheduler().runTask(plugin, () -> new RecipeBookGui(machine).open(player));
             return;
         }
         machine.update(now);
-        if (slot == CookingMachine.FIRE_SLOT) {
+        if (slot == machine.layout().fireSlot()) {
             machine.toggleFire(player);
-        } else if (CookingMachine.isIngredientSlot(slot)) {
+        } else if (machine.layout().isIngredient(slot)) {
             ItemStack cursor = event.getCursor();
             if (cursor != null && !cursor.getType().isAir()) {
                 ItemStack rest = deposit(player, machine, cursor);
@@ -80,15 +80,15 @@ public final class CookingListener implements Listener {
                     player.setItemOnCursor(rest);
                 }
             } else if (event.getClick() == ClickType.LEFT || event.getClick() == ClickType.RIGHT || event.isShiftClick()) {
-                int index = indexOf(CookingMachine.INGREDIENT_SLOTS, slot);
+                int index = CookLayout.indexOf(machine.layout().ingredientSlots(), slot);
                 machine.withdrawIngredient(player, index, event.isShiftClick());
             }
-        } else if (CookingMachine.isPlateSlot(slot)) {
+        } else if (machine.layout().isOutput(slot)) {
             if (event.getClick() == ClickType.LEFT || event.getClick() == ClickType.RIGHT || event.isShiftClick()) {
                 machine.withdrawOutput(player, event.isShiftClick());
             }
-        } else if (CookingMachine.isByproductSlot(slot)) {
-            machine.withdrawByproduct(player, indexOf(CookingMachine.BYPRODUCT_SLOTS, slot));
+        } else if (machine.layout().isByproduct(slot)) {
+            machine.withdrawByproduct(player, CookLayout.indexOf(machine.layout().byproductSlots(), slot));
         } else {
             return;
         }
@@ -114,15 +114,6 @@ public final class CookingListener implements Listener {
             return item;
         }
         return rest;
-    }
-
-    private static int indexOf(int[] slots, int slot) {
-        for (int i = 0; i < slots.length; i++) {
-            if (slots[i] == slot) {
-                return i;
-            }
-        }
-        return -1;
     }
 
     @EventHandler

@@ -100,8 +100,9 @@ def cut_outside(img, is_bg, step=6, close=5, keep=3):
     return img
 
 
-def shrink_art(img, box, scale):
-    """시안 그림의 box 범위를 scale 배로 줄인다 (칸마다 가운데 70% 의 불투명 픽셀 밝기 중앙값, 절반 넘게 비면 투명)"""
+def shrink_art(img, box, scale, fill=0.5):
+    """시안 그림의 box 범위를 scale 배로 줄인다 (칸마다 가운데 70% 의 불투명 픽셀 밝기 중앙값, fill 비율 이상 차지 않으면 투명.
+    가는 선이 많은 그림은 fill 을 낮춰 선이 끊기지 않게 한다)"""
     x0, y0, x1, y1 = box
     c = 1 / scale
     tw, th = round((x1 - x0) * scale), round((y1 - y0) * scale)
@@ -112,7 +113,7 @@ def shrink_art(img, box, scale):
             pts = [sp[min(x1 - 1, int(x0 + (gx + 0.15 + 0.7 * i / 4) * c)), min(y1 - 1, int(y0 + (gy + 0.15 + 0.7 * j / 4) * c))]
                    for i in range(5) for j in range(5)]
             solid = sorted((q for q in pts if q[3] > 128), key=lambda q: sum(q[:3]))
-            if len(solid) * 2 > len(pts):
+            if len(solid) > len(pts) * fill:
                 out.putpixel((gx, gy), solid[len(solid) // 2][:3] + (255,))
     return out
 
