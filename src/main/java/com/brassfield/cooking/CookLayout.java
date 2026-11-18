@@ -39,11 +39,18 @@ record CookLayout(int[] ingredientSlots, int[] outputSlots, boolean bigOutput, i
     static final CookLayout OVEN = new CookLayout(new int[]{10, 11}, new int[]{28}, false,
             new int[]{37, 46}, new int[]{29}, 42, new int[]{14, 15, 16, 17, 23, 24, 25, 26}, "oven", 96, 65, "fire");
 
+    /** 발효조: 재료는 2x2 주문서 위 (1줄 1·2열, 2줄 1열), 그 아래 나무 탁자 위에 완성품 (3줄 1열) · 빈 그릇 (3줄 2열),
+     *  책은 탁자 아래 (4·5줄 1열), 톱니 작동 버튼은 탱크 받침대 전원 버튼 자리 (5줄 4열).
+     *  게이지는 탱크 내용물 (색 · 거품 · 기포) + 솥과 같은 계기판 + 받침대 진행 막대 (한 그림): 탱크 칸 · 계기판 칸 · 막대 칸 */
+    static final CookLayout FERMENTER = new CookLayout(new int[]{10, 11, 19}, new int[]{28}, false,
+            new int[]{37, 46}, new int[]{29}, 49, new int[]{23, 24, 32, 33, 8, 50, 51}, "fermenter", 94, 67, "gear");
+
     static CookLayout of(String stationKey) {
         return switch (stationKey) {
             case "counter" -> COUNTER;
             case "juicer" -> JUICER;
             case "oven" -> OVEN;
+            case "fermenter" -> FERMENTER;
             default -> KETTLE;
         };
     }

@@ -799,6 +799,174 @@ def oven_gauge(raw, level, steps):
     return img, (x0, y0)
 
 
+# ── 발효조 (art/fermenter_concept.png 배치 + art/fermenter_machine.png 발효 탱크를 가운데에 줄여 얹음) ──
+# 칸 배치는 com.brassfield.cooking.CookLayout.FERMENTER 와 맞춘다.
+FERM_ART, FERM_CONCEPT = "fermenter_machine.png", "fermenter_concept.png"
+FERM_BOX = (132, 37, 1012, 1240)               # 탱크 그림 (받침 다리 제외 — 가방 칸 위 황동 띠에 걸리지 않게)
+FERM_SCALE = 0.1
+FERM_AT = (77, 5)                              # 창 기준 왼쪽 위 (오른쪽으로 붙임 — 압력계가 창 테에 닿기 직전). 전원 버튼은 시작 버튼 판(5줄 4열) 안
+FERM_GLASS = (297, 447, 717, 875)              # 탱크 그림 기준 유리창 안쪽 (게이지: 내용물 색)
+FERM_DIAL = (892, 225)                         # 압력계 가운데 → 솥과 같은 계기판을 덮어 그린다
+FERM_DIAL_R = 10.5                             # 원래 압력계 반지름 (창 기준) — 이만큼 황동 테로 덮는다
+FERM_BAR = (408, 1133, 770, 1173)              # 받침대 진행 막대 안쪽 (게이지: 채움)
+FERM_INGREDIENTS = [(1, 1), (1, 2), (2, 1)]    # 2x2 주문서 위 (1줄 1·2열, 2줄 1열)
+FERM_NOTE_CUTS = [(650, 892), (1256, 1284)]    # 본문 가운데를 잘라 재료 두 줄 높이로
+FERM_NOTE_SCALE = 0.0635                       # 재료 두 칸 폭 (오븐 주문서와 같은 폭)
+FERM_NOTE_AT = (14, 3)
+FERM_BOOK_AT = (34, 110)                       # 주문서 아래 4·5줄 1열
+FERM_START = (5, 4)                            # 받침대 전원 버튼 자리 작동 버튼 (착즙기와 같은 톱니)
+FERM_OUTPUT = (3, 1)                           # 주문서 아래 탁자 위
+FERM_BYPRODUCT = (3, 2)                        # 탁자 위 완성품 오른쪽 빈 그릇
+FERM_DECOR = [((355, 120, 410, 180), 0.17, (78, 8)),      # 시안 희미한 별 톱니 → 탱크 왼쪽 위
+              ((975, 170, 1030, 260), 0.17, (56, 100))]   # 회로선 → 책 오른쪽
+MILK = (226, 210, 168)                         # 게이지 0 단계 내용물 색 (발효 전)
+
+
+def ferm_point(x, y):
+    return FERM_AT[0] + (x - FERM_BOX[0]) * FERM_SCALE, FERM_AT[1] + (y - FERM_BOX[1]) * FERM_SCALE
+
+
+def ferm_box(box):
+    x0, y0 = ferm_point(*box[:2])
+    x1, y1 = ferm_point(*box[2:])
+    return round(x0), round(y0), round(x1), round(y1)
+
+
+def ferm_dial():
+    x, y = ferm_point(*FERM_DIAL)
+    return round(x), round(y)
+
+
+def build_fermenter(enh, bake=True):
+    """발효조: 왼쪽 2x2 주문서(재료 3칸) · 그 아래 탁자 위 완성품 · 빈 그릇 · 그 아래 책, 오른쪽 구리 발효 탱크(유리창 · 압력계 ·
+    받침대 전원 버튼 자리 톱니 작동 버튼 · 진행 막대).
+    진행은 탱크 내용물 색(우유색 → 노란 발효액) + 계기판 바늘 + 받침대 막대 채움 (글꼴 그림 fermenter_gauge)"""
+    win = Window(enh, ROWS, pad_top=0)
+    win.corner_gears(bottom_right=False, top_left=False)
+    concept_texture(win)
+    draw_table(win)                                # 오븐과 같은 탁자 (완성품 · 빈 그릇은 칸 테 없이)
+    out = win.finish()
+    for box, scale, at in FERM_DECOR:
+        out.alpha_composite(concept_piece(box, scale, art=FERM_CONCEPT), at)
+    tank = concept_piece(FERM_BOX, FERM_SCALE, art=FERM_ART, is_bg=lambda c: c[3] < 128)
+    out.alpha_composite(tank, FERM_AT)
+    from PIL import ImageDraw
+    d = ImageDraw.Draw(out)
+    bx0, by0, bx1, by1 = ferm_box(FERM_BAR)
+    d.rectangle([bx0, by0, bx1 - 1, by1 - 1], fill=BAR_EMPTY)          # 시안 막대 채움을 비운다 (글꼴 그림이 채움)
+    d.line([(bx0, by0), (bx1 - 1, by0)], fill=BAR_EMPTY_SHADE)
+    out.alpha_composite(note(FERM_NOTE_CUTS, scale=FERM_NOTE_SCALE), FERM_NOTE_AT)
+    book = shrink_art(Image.open(os.path.join(ART, "recipe_book_icon.png")).convert("RGBA"), BOOK_ICON_BOX,
+                      COUNTER_BOOK_HEIGHT / (BOOK_ICON_BOX[3] - BOOK_ICON_BOX[1]))
+    book = outlined(book, BOOK_OUTLINE)
+    bx, by = FERM_BOOK_AT
+    out.alpha_composite(book, (bx - book.width // 2, by - book.height // 2))
+    top = Window.__new__(Window)
+    top.img, top.d = out, d
+    cx, cy = ferm_dial()                           # 원래 압력계(솥 계기판보다 큼)를 넓은 황동 테로 덮고 그 위에 솥과 같은 계기판
+    for x, y in _disk(FERM_DIAL_R + 1, (cx, cy)):
+        out.putpixel((x, y), BRASS[3] + (255,))
+    for x, y in _disk(FERM_DIAL_R, (cx, cy)):
+        dx, dy = x - cx, y - cy
+        out.putpixel((x, y), BRASS[2 if dx + dy < -6 else 0 if dx + dy > 6 else 1] + (255,))
+    draw_gauge(top, (cx, cy))
+    draw_fire_button(top, FERM_START)
+    if bake:
+        g, at = fermenter_gauge(out, 0, 8)
+        out.alpha_composite(g, at)
+    return out
+
+
+FOAM_MIN, FOAM_GROW = 2, 5                     # 거품층 두께: 0 단계 2px → 8 단계 원래 두께 + 5px
+BUBBLES = 22                                   # 8 단계 발효액 속 기포 수 (단계마다 앞에서부터 늘어난다)
+BUBBLE = [(255, 240, 180), (250, 214, 120)]    # 기포 빛 · 테
+
+
+def _is_foam(c):
+    r, g, b = c[:3]
+    return min(r, g, b) > 175 and max(r, g, b) - min(r, g, b) < 70
+
+
+def ferm_foam(p, rp, origin, f):
+    """탱크 유리 안 거품층을 진행(f)만큼 두껍게: 칸마다 원래 거품 위 끝(F0) · 아래 끝(S)을 찾아, 아래 끝은 두고
+    위 끝을 새 두께로 올리거나 내린다 (빈 유리 줄 · 거품 줄을 그 높이로 늘이거나 줄임). 발효액 속 기포도 f 만큼."""
+    import random
+    x0, y0 = origin
+    gx0, gy0, gx1, gy1 = ferm_box(FERM_GLASS)
+    bottoms = []
+    for x in range(gx0, gx1):
+        col = [p[x - x0, y - y0] for y in range(gy0, gy1)]
+        foam = [y for y in range(gy0 + 3, gy1) if _is_foam(rp[x, y])]
+        if not foam:
+            continue
+        top = foam[0]
+        bottom = top
+        while bottom + 1 < gy1 and _is_foam(rp[x, bottom + 1]):
+            bottom += 1
+        bottom += 1                                   # 거품 아래 끝 (제외)
+        bottoms.append(bottom)
+        t0 = bottom - top
+        t = round(FOAM_MIN + (t0 + FOAM_GROW - FOAM_MIN) * f)
+        new_top = max(gy0 + 2, bottom - t)
+        for y in range(gy0, bottom):
+            if y < new_top:
+                sy = gy0 + (y - gy0) * (top - gy0) // max(1, new_top - gy0)
+            else:
+                sy = top + (y - new_top) * (bottom - top) // max(1, bottom - new_top)
+            p[x - x0, y - y0] = col[sy - gy0]
+    if not bottoms:
+        return
+    rnd = random.Random(7)
+    lo = max(bottoms) + 2
+    spots = [(rnd.randrange(gx0 + 2, gx1 - 2), rnd.randrange(lo, gy1 - 2)) for _ in range(BUBBLES)]
+    for i, (bx, by) in enumerate(spots[:round(BUBBLES * f)]):
+        if i % 4 == 0:                                # 큰 기포 (2x2: 빛 한 점 + 테)
+            for dx, dy in ((1, 0), (0, 1), (1, 1)):
+                p[bx + dx - x0, by + dy - y0] = BUBBLE[1] + (255,)
+        p[bx - x0, by - y0] = BUBBLE[0] + (255,)
+
+
+def fermenter_gauge_box():
+    gx0, gy0, gx1, gy1 = ferm_box(FERM_GLASS)
+    bx0, by0, bx1, by1 = ferm_box(FERM_BAR)
+    cx, cy = ferm_dial()
+    r = int(GAUGE_FACE_R) + 1
+    return min(gx0, bx0), cy - r, max(gx1, bx1, cx + r + 1), by1
+
+
+def fermenter_gauge(raw, level, steps):
+    """발효조 게이지 한 단계: 탱크 노란 발효액이 우유색 → 원래 색 · 거품층이 얇음 → 두껍게 · 기포가 늘어남,
+    계기판 바늘 7시 → 5시, 받침대 막대 빔 → 가득.
+    raw = build_fermenter(bake=False). 돌려주는 그림과 창 기준 왼쪽 위"""
+    x0, y0, x1, y1 = fermenter_gauge_box()
+    img = raw.crop((x0, y0, x1, y1))
+    p = img.load()
+    rp = raw.load()
+    f = level / steps
+    gx0, gy0, gx1, gy1 = ferm_box(FERM_GLASS)
+    for y in range(gy0, gy1):
+        for x in range(gx0, gx1):
+            r, g, b = rp[x, y][:3]
+            if r > 180 and g > 110 and r - b > 90:      # 노란 발효액 (거품 · 유리 빛은 그대로)
+                lum = (r + g + b) / 3 / 170
+                milk = tuple(min(255, round(MILK[i] * (0.8 + 0.2 * lum))) for i in range(3))
+                p[x - x0, y - y0] = tuple(round(milk[i] * (1 - f) + rp[x, y][i] * f) for i in range(3)) + (255,)
+    ferm_foam(p, rp, (x0, y0), f)
+    center = ferm_dial()
+    for (x, y), c in needle_pixels(level, steps, gauge_mask(center), center).items():
+        p[x - x0, y - y0] = c
+    bx0, by0, bx1, by1 = ferm_box(FERM_BAR)
+    fill = round((bx1 - bx0) * f)
+    if fill:
+        from PIL import ImageDraw
+        d = ImageDraw.Draw(img)
+        X, Y, H = bx0 - x0, by0 - y0, by1 - by0
+        d.rectangle([X, Y, X + fill - 1, Y + H - 1], fill=BAR_FILL[1])
+        d.line([(X, Y), (X + fill - 1, Y)], fill=BAR_FILL[0])
+        d.line([(X, Y + H - 1), (X + fill - 1, Y + H - 1)], fill=BAR_FILL[2])
+    return img, (x0, y0)
+
+
 if __name__ == "__main__":
     enh = Image.open(sys.argv[1]).convert("RGBA")
     out_dir = sys.argv[2]
