@@ -20,6 +20,12 @@ K_IRON_DARK, K_IRON, K_EDGE = rgb(0x3B, 0x2B, 0x23), rgb(0x5A, 0x3E, 0x32), rgb(
 K_BRASS, K_BRASS_HI, K_FIRE, K_HOT = rgb(0xC9, 0x96, 0x44), rgb(0xF2, 0xC5, 0x5C), rgb(0xFF, 0x9A, 0x00), rgb(0xFF, 0xF4, 0xE0)
 
 
+# 제빵 오븐: 레퍼런스 "제빵 오븐(베이커리 오븐)" 팔레트 (황동 #C9913D · #F2C55C · 테 #8B5A2B, 받침 #8B5A2B · #4A3224,
+# 불 #FF8A00 · #FFB23D · #FFE9C8). 몸체는 솥과 같은 산업용 철
+O_DARK, O_MID, O_EDGE, O_BRASS = rgb(0x4A, 0x32, 0x24), rgb(0x6B, 0x4A, 0x37), rgb(0x8B, 0x5A, 0x2B), rgb(0xC9, 0x91, 0x3D)
+O_HI, O_GOLD, O_FIRE, O_HOT = rgb(0xF2, 0xC5, 0x5C), rgb(0xFF, 0xB2, 0x3D), rgb(0xFF, 0x8A, 0x00), rgb(0xFF, 0xE9, 0xC8)
+add_framed_palette("o_brass", O_EDGE, O_EDGE, O_EDGE, O_HI, O_BRASS, O_BRASS, O_BRASS)
+add_framed_palette("o_copper", O_DARK, O_DARK, O_DARK, O_BRASS, O_EDGE, O_EDGE, O_EDGE)
 add_framed_palette("k_brass_framed", K_EDGE, K_EDGE, K_EDGE, K_BRASS_HI, K_BRASS, K_BRASS, K_BRASS)   # 결 없이 깔끔하게
 
 
@@ -70,6 +76,15 @@ ART.update({
                        "sssssssssssbssbs", "ssssssssssssbbss", "ssssssssssssssss", "ssbbssssssssssss", "sbssbsssssssssss",
                        "sbssbssssssbbsss", "ssbbsssssssbbsss", "ssssssssssssssss", "sssssssbbsssssss", "ssssssbssbssssss",
                        "sssssssbbsssssss"], {"s": K_EDGE, "b": K_BRASS}),                     # 끓는 스튜 (한 색 + 거품 고리)
+    "o_glow": noisy([O_GOLD], [1], 51),
+    "o_fire": noisy([O_FIRE], [1], 52),
+    "o_rivet": noisy([O_EDGE], [1], 53),
+    "o_pie_top": picture(["..eeeeeeeeeeee..", ".egggggggggggge.", "egglggglggglgge", "eggglglglglglgge"[:16], "egglggglggglgge",
+                          "eggglglglglglgge"[:16], "egglggglggglgge", ".egggggggggggge.", "..eeeeeeeeeeee.."],
+                         {"e": O_EDGE, "g": O_GOLD, "l": O_BRASS}),
+    "o_pie_side": noisy([O_BRASS], [1], 54),
+    "o_dial": picture(["..bbbb..", ".bhhhhb.", "bhhhhfhb", "bhhhfhhb", "bhhkhhhb", "bhkhhhhb", ".bhhhhb.", "..bbbb.."],
+                      {"b": O_BRASS, "h": O_HOT, "k": O_DARK, "f": O_FIRE}),
     "k_dial": picture(["..bbbb..", ".bwwwwb.", "bwwwkwwb", "bwwkwwwb", "bwkwwwwb", "bwwwwwwb", ".bwwwwb.", "..bbbb.."],
                       {"b": K_BRASS, "w": K_HOT, "k": K_IRON_DARK}),
 })
@@ -309,34 +324,107 @@ def kettle(lit=False):
     return m
 
 
-# ═════════════ 제빵 오븐: 석재 벽돌 받침, 벽돌 돔(계단식), 아치 구멍 속 불과 빵, 위 굴뚝 ═════════════
-def oven():
-    m = Model("oven")
-    m.box([0, 0, 1], [16, 6, 16], "stone_bricks")                               # 받침
-    m.box([0, 6, 0], [16, 7, 16], {"all": "smooth_stone_slab_side", "top": "smooth_stone"})   # 받침 판
-    m.box([1, 7, 2], [5, 11, 15], "bricks")                                     # 1단 (가운데 아치 구멍)
-    m.box([11, 7, 2], [15, 11, 15], "bricks")
-    m.box([5, 7, 10], [11, 11, 15], "bricks")
-    m.box([5, 7, 9], [11, 12, 10], "polished_blackstone")                       # 그을린 안벽
-    m.box([2, 11, 3], [5, 14, 14], "bricks")                                    # 2단
-    m.box([11, 11, 3], [14, 14, 14], "bricks")
-    m.box([5, 12, 3], [11, 14, 14], "bricks")                                   # 아치 위
-    m.box([5, 11, 3], [6, 12, 9], "bricks")                                     # 아치 모서리
-    m.box([10, 11, 3], [11, 12, 9], "bricks")
-    m.box([5, 11, 9], [11, 12, 14], "bricks")
-    m.box([4, 14, 4], [12, 16, 13], "bricks")                                   # 3단
-    m.box([6, 16, 6], [10, 17, 11], "bricks")                                   # 4단
-    m.logs(6, 10, 7, (7,))                                                      # 안쪽 불
-    m.fire(6, 10, 8, 11, 8)
-    m.box([6, 7, 3], [8, 9, 6], "bread", light=6)                               # 빵 두 덩이
-    m.box([8, 7, 4], [10, 9, 7], "bread", light=6)
-    m.box([6, 17, 8], [10, 21, 12], "bricks")                                   # 굴뚝
-    m.box([5, 21, 7], [11, 22, 13], "brass")
+# ═════════════ 제빵 오븐 (1x1x2): 레퍼런스 "제빵 오븐(베이커리 오븐)" — 산업용 철 캐비닛, 황동 띠 · 리벳,
+# 위 굽는 칸 창(황동 테) · 오른쪽 계기판, 아래 화구(창살), 왼쪽 석탄 · 오른쪽 삽, 위 굴뚝 · 밸브 바퀴 배관, 구리 받침.
+# 쉬는 동안(oven)은 굽는 칸 · 화구 안이 어둡고, 굽는 중(oven_on)은 굽는 칸이 빛나며 쟁반 위 파이, 화구 안 바닐라 불 · 장작 ═════════════
+OVEN_FIRE = (3, 11, 5, 13, 8)          # 화구 구멍: u0, u1, y0, y1, 앞에서 w 까지
+OVEN_WINDOW = (2, 11, 16, 23, 6)       # 굽는 칸 구멍
+
+
+def oven(lit=False):
+    m = Model("oven_on" if lit else "oven")
+
+    def b(u0, y0, w0, u1, y1, w1, tex, light=0, faces=None):
+        m.box([u0, y0, w0], [u1, y1, w1], tex, light=light, faces=faces)
+
+    def body(u0, u1, y0, y1, w0, w1, holes, tex):
+        """속이 찬 상자에서 앞쪽 구멍들을 뺀 큐브들 (w 구간마다 u · y 면을 줄 단위로 나눠 묶음)"""
+        cuts = sorted({w0, w1, *[h[4] for h in holes if w0 < h[4] < w1]})
+        for wa, wb in zip(cuts, cuts[1:]):
+            active = [h for h in holes if wa < h[4]]
+            ys = sorted({y0, y1, *[v for h in active for v in (h[2], h[3]) if y0 < v < y1]})
+            for ya, yb in zip(ys, ys[1:]):
+                spans, u = [], u0
+                for h in sorted((h for h in active if h[2] <= ya and yb <= h[3]), key=lambda h: h[0]):
+                    if h[0] > u:
+                        spans.append((u, h[0]))
+                    u = max(u, h[1])
+                if u < u1:
+                    spans.append((u, u1))
+                for sa, sb in spans:
+                    b(sa, ya, wa, sb, yb, wb, tex)
+
+    m.display = None
+    for u, w in ((1, 2), (13, 2), (1, 12), (13, 12)):                                  # 구리 받침 다리
+        b(u, 0, w, u + 2, 1, w + 2, "o_copper")
+    b(0, 1, 1, 16, 4, 15, "o_copper")                                                  # 구리 받침 판
+    body(1, 15, 4, 25, 2, 14, [OVEN_FIRE, OVEN_WINDOW], "k_iron")                       # 산업용 철 캐비닛 (화구 · 굽는 칸 구멍)
+    for y in (4, 14, 24):                                                              # 황동 띠 (아래 · 가운데 · 위)
+        b(0.5, y, 1, 15.5, y + 1 + (y == 14), 14.5, "o_brass")
+    for u in (2, 5, 8, 11, 14):                                                        # 가운데 띠 리벳
+        b(u, 14.5, 0.5, u + 1, 15.5, 1, "o_rivet")
+    for u0 in (0, 14.5):                                                               # 네 모서리 황동 기둥
+        for w0 in (1, 13.5):
+            b(u0, 4, w0, u0 + 1.5, 25, w0 + 1.5, "o_brass")
+    b(1, 25, 2, 15, 26, 14, "k_iron")                                                  # 윗판
+
+    # 아래 화구: 깊은 구멍 · 어두운 안벽 · 황동 테 · 창살 (+ 불 · 장작)
+    fu0, fu1, fy0, fy1, fw = OVEN_FIRE
+    b(fu0, fy0, fw - 1, fu1, fy1, fw, "k_iron_dark")
+    b(fu0, fy0, 2, fu0 + 1, fy1, fw - 1, "k_iron_dark")
+    b(fu1 - 1, fy0, 2, fu1, fy1, fw - 1, "k_iron_dark")
+    b(fu0, fy1 - 1, 2, fu1, fy1, fw - 1, "k_iron_dark")
+    b(fu0, fy0, 2, fu1, fy0 + 1, fw - 1, "k_iron_dark")
+    for y0, y1, u0, u1 in ((fy1 - 1, fy1, fu0, fu1), (fy0, fy0 + 1, fu0, fu1), (fy0 + 1, fy1 - 1, fu0, fu0 + 1),
+                           (fy0 + 1, fy1 - 1, fu1 - 1, fu1)):
+        b(u0, y0, 1, u1, y1, 2, "o_brass")
+    for u in (5, 7, 9):                                                                # 창살
+        b(u, fy0 + 1, 1.5, u + 1, fy1 - 1, 2, "o_brass")
+    if lit:
+        m.logs(fu0 + 1, fu1 - 1, fy0 + 1, (3,))                                        # 모닥불 장작
+        m.fire(fu0 + 1, fu1 - 1, fy0 + 2, fy1 - 1, 5)                                  # 바닐라 불
+
+    # 위 굽는 칸: 구멍 · 안벽(굽는 중이면 빛남) · 황동 테 · 쟁반 (+ 파이)
+    wu0, wu1, wy0, wy1, ww = OVEN_WINDOW
+    inner = "o_fire" if lit else "k_iron_dark"                                         # 굽는 중: 진한 불빛 (파이 금색과 구분)
+    glow = 10 if lit else 0
+    b(wu0, wy0, ww - 1, wu1, wy1, ww, inner, light=glow)
+    b(wu0, wy0, 2, wu0 + 1, wy1, ww - 1, inner, light=glow)
+    b(wu1 - 1, wy0, 2, wu1, wy1, ww - 1, inner, light=glow)
+    b(wu0, wy1 - 1, 2, wu1, wy1, ww - 1, inner, light=glow)
+    b(wu0, wy0, 2, wu1, wy0 + 1, ww - 1, "k_iron_dark")
+    for y0, y1, u0, u1 in ((wy1 - 1, wy1, wu0, wu1), (wy0, wy0 + 1, wu0, wu1), (wy0 + 1, wy1 - 1, wu0, wu0 + 1),
+                           (wy0 + 1, wy1 - 1, wu1 - 1, wu1)):
+        b(u0, y0, 1, u1, y1, 2, "o_brass")
+    b(wu0 + 2, wy1 - 0.5, 0.5, wu1 - 2, wy1 + 0.5, 1, "o_brass")                       # 창 위 손잡이
+    b(wu0 + 1, wy0 + 1, 2, wu1 - 1, wy0 + 1.5, ww - 1, "k_iron")                       # 쟁반
+    if lit:
+        b(wu0 + 1.5, wy0 + 1.5, 2.5, wu1 - 1.5, wy0 + 3.5, ww - 1.5, {"all": "o_pie_side", "top": "o_pie_top"}, light=8)   # 파이
+
+    # 오른쪽 계기판 (창 오른쪽, 몸통 밖으로 살짝) · 세로 배관
+    b(11, 16, 0, 16, 21, 1, "o_brass", faces={"front": ("o_dial", [0, 0, 8, 8])})
+    b(13.5, 21, 3, 15, 27, 4.5, "o_brass")                                             # 계기판 → 위 배관
+    b(13.5, 21, 0.5, 15, 22, 3, "o_brass")
+
+    # 아래 장식: 왼쪽 석탄 더미 · 오른쪽 삽
+    b(0.5, 4, 0, 4.5, 5.5, 2, "k_iron_dark")
+    b(1, 5.5, 0.5, 3.5, 6.5, 1.5, "k_iron_dark")
+    b(12.5, 4, 0, 14.5, 7, 0.5, "k_iron")                                              # 삽 날
+    b(13, 7, 0, 14, 13, 0.5, "o_brass")                                                # 삽 자루
+    b(12.5, 13, 0, 14.5, 14, 0.5, "o_brass")
+
+    # 위: 굴뚝 (왼쪽) · 밸브 바퀴 배관
+    b(2, 26, 5, 6, 30, 9, {"all": "k_iron", "top": "k_iron_dark"})
+    b(1.5, 29, 4.5, 6.5, 30.5, 9.5, "o_brass")
+    b(7, 26, 6, 15, 28, 8, "o_brass")                                                  # 가로 배관
+    for u0, y0, u1, y1 in ((8.5, 30, 12.5, 31), (8.5, 26.5, 12.5, 27.5), (8, 27, 9, 30.5), (12, 27, 13, 30.5),
+                           (10, 27, 11, 30.5), (8.5, 28.5, 12.5, 29)):                 # 밸브 바퀴 (테 · 살)
+        b(u0, y0, 5, u1, y1, 5.5, "o_brass")
     return m
 
 
 TOOLS = {"mill": mill, "juicer": juicer, "fermenter": fermenter, "smoker": smoker, "kettle": kettle,
-         "kettle_on": lambda: kettle(lit=True), "oven": oven}
+         "kettle_on": lambda: kettle(lit=True), "oven": oven, "oven_on": lambda: oven(lit=True)}
 
 if __name__ == "__main__":
     assets = sys.argv[1]

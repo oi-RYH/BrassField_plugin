@@ -4,7 +4,6 @@ import com.brassfield.common.ItemsAdderGuiBackground;
 import com.brassfield.common.ItemsAdderItemProvider;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -50,9 +49,10 @@ public final class CookingMachines {
      * 조리 중이면 가구 모양을 바꾸는 기기: 기기 → 켜짐 모델 아이템 (ItemsAdder 모델 전용 아이템, 설치 불가).
      * 가구 표시 아이템의 item_model 만 그 아이템 것으로 바꾼다 (가구 ID 는 그대로라 부수기·회수·우클릭은 그대로).
      */
-    private static final Map<String, String> LIT_MODELS = Map.of("kettle", "rustport:kettle_on");
-    private final Map<String, NamespacedKey> modelKeys = new HashMap<>();
-    private final Map<String, Boolean> shownLit = new HashMap<>();             // 기기 → 지금 가구에 보이는 모양 (켜짐?)
+    private static final Map<String, String> LIT_MODELS = Map.of("kettle", "rustport:kettle_on", "oven", "rustport:oven_on");
+    private final Map<String, ItemMeta> modelSources = new HashMap<>();       // 모델을 빌려 올 아이템 (custom model data · item_model)
+    private final Map<String, Boolean> shownLit = new HashMap<>();
+    private final java.util.Set<String> missingDisplays = new java.util.HashSet<>();             // 기기 → 지금 가구에 보이는 모양 (켜짐?)
     private final Map<String, Component> resultNames = new HashMap<>();
     private BukkitTask tickTask;
     private BukkitTask saveTask;
@@ -257,14 +257,17 @@ public final class CookingMachines {
         if (display == null) {
             return;
         }
-        NamespacedKey want = modelKey(lit ? litModel : machine.station().furnitureId());
+        ItemMeta source = modelSource(lit ? litModel : machine.station().furnitureId());
         ItemStack item = display.getItemStack();
         ItemMeta meta = item.getItemMeta();
-        if (want != null && meta != null && !want.equals(meta.getItemModel())) {
-            meta.setItemModel(want);
-            item.setItemMeta(meta);
-            display.setItemStack(item);
+        if (source == null || meta == null) {
+            return;
         }
+        // ItemsAdder 는 가구 모델을 종이 아이템의 custom model data 번호로 고른다 (item_model 이 있으면 그것도 함께)
+        meta.setCustomModelDataComponent(source.getCustomModelDataComponent());
+        meta.setItemModel(source.hasItemModel() ? source.getItemModel() : null);
+        item.setItemMeta(meta);
+        display.setItemStack(item);
         shownLit.put(machine.key(), lit);
     }
 
@@ -289,15 +292,17 @@ public final class CookingMachines {
                 return display;
             }
         }
+        if (missingDisplays.add(machine.key())) {                     // 청크는 있는데 가구 표시가 없음: 한 번만 알림
+            plugin.getLogger().warning("요리 기기 가구 표시를 찾지 못해 모양을 바꾸지 못했습니다: " + machine.key());
+        }
         return null;
     }
 
-    /** ItemsAdder 아이템의 item_model (모델만 빌린다) */
-    private NamespacedKey modelKey(String itemId) {
-        return modelKeys.computeIfAbsent(itemId, id -> {
+    /** 모델을 빌려 올 ItemsAdder 아이템의 정보 (custom model data · item_model) */
+    private ItemMeta modelSource(String itemId) {
+        return modelSources.computeIfAbsent(itemId, id -> {
             try {
-                ItemMeta meta = itemProvider.create(id).getItemMeta();
-                return meta != null && meta.hasItemModel() ? meta.getItemModel() : null;
+                return itemProvider.create(id).getItemMeta();
             } catch (RuntimeException exception) {
                 plugin.getLogger().warning("가구 모양 아이템을 찾지 못했습니다: " + id);
                 return null;

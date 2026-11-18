@@ -684,13 +684,15 @@ OVEN_NOTE_AT = (14, 3)
 OVEN_BOOK_AT = (34, 110)                       # 탁자 아래 4·5줄 1열
 OVEN_START = (4, 6)                            # 화실 문
 OVEN_START_EXTEND = 0                          # 버튼 판을 아래로 늘리는 만큼 (정사각형)
-OVEN_OUTPUT = (3, 1)                           # 주문서 아래 탁자 위 (재료 칸 바로 아래)
-OVEN_BYPRODUCT = (3, 2)                        # 탁자 위 완성품 오른쪽 빈 병 칸
-TABLE = (16, 88, 70, 94)                       # 주문서와 책 사이 나무 탁자 (x0, y0, x1, y1 — 상판 4px + 양끝 다리)
+OVEN_OUTPUT = (2, 1)                           # 탁자 위 2x2 (2~3줄 1~2열, 왼쪽 위 칸) — 2배 크기 요리가 탁자에 앉는다
+OVEN_COUNT = (2, 69)                           # 완성품 개수 (줄, 오른쪽 끝 x) — 2배 요리 그림 오른쪽 위 바깥 (CookLayout.OVEN)
+OVEN_BYPRODUCT = (3, 3)                        # 탁자 오른쪽 빈 병 칸
+TABLE = (16, 88, 80, 94)                       # 오븐: 주문서와 책 사이 나무 탁자 (x0, y0, x1, y1 — 상판 4px + 양끝 다리), 빈 병 칸까지
+FERM_TABLE = (16, 88, 70, 94)                  # 발효조 탁자 (완성품 · 빈 그릇 두 칸)
                       # 식힘망 (x0, y0, x1, y1)
 OVEN_DECOR = [((359, 157, 421, 220), 0.17, (58, 106)),    # 시안 희미한 톱니 → 책 오른쪽
               ((1009, 157, 1046, 264), 0.17, (75, 100)),  # 회로선 → 톱니 오른쪽
-              ((984, 451, 1027, 489), 0.17, (17, 70))]    # 탁자 위 반짝임
+              ((984, 451, 1027, 489), 0.17, (70, 62))]    # 탁자 위 반짝임 (빈 병 위)
 
 
 def _black_bg(c):
@@ -709,9 +711,9 @@ def oven_box(box):
     return round(x0), round(y0), round(x1), round(y1)
 
 
-def draw_table(win):
+def draw_table(win, box=None):
     """주문서 아래 나무 탁자: 상판(시안 나무 판을 늘림, 위 밝은 줄) + 양 끝 다리, 짙은 외곽선"""
-    x0, y0, x1, y1 = TABLE
+    x0, y0, x1, y1 = box or TABLE
     src = Image.open(os.path.join(ART, JUICER_ART)).convert("RGBA").crop(STAND_PLANK_BOX)
     top = src.resize((x1 - x0 + 1, 4), Image.BOX)
     d = win.d
@@ -847,7 +849,7 @@ def build_fermenter(enh, bake=True):
     win = Window(enh, ROWS, pad_top=0)
     win.corner_gears(bottom_right=False, top_left=False)
     concept_texture(win)
-    draw_table(win)                                # 오븐과 같은 탁자 (완성품 · 빈 그릇은 칸 테 없이)
+    draw_table(win, FERM_TABLE)                    # 오븐과 같은 탁자 (완성품 · 빈 그릇은 칸 테 없이)
     out = win.finish()
     for box, scale, at in FERM_DECOR:
         out.alpha_composite(concept_piece(box, scale, art=FERM_CONCEPT), at)
