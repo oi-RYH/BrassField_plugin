@@ -25,6 +25,7 @@ final class CookGlyphs {
     private static final int TIMES_X = 142;                        // 책 큰 요리 오른쪽 "×"
     private static final int PICK_ADVANCE = 20;
     private static final int PIN_ADVANCE = 4;
+    private static final int CNT_SHIFT = 1;                        // 재료·완성품 개수는 칸 오른쪽 위로 1px 더 (글꼴 그림 높이도 1px 위, make_cook_assets.py)
 
     private final ItemsAdderGuiBackground background;
     private final Map<String, String> glyphs = new ConcurrentHashMap<>();
@@ -91,7 +92,8 @@ final class CookGlyphs {
 
     /** 테 두른 개수를 줄 row 높이에 오른쪽 끝 right 에 맞춰 (칸 밖 자리에도) */
     void count(TitleCanvas canvas, String kind, int row, int right, String text) {
-        int x = right - inkWidth(text) + 1;
+        // 재료·완성품 개수(cnt)는 한 자리 숫자 자리에서 오른쪽으로 늘어난다 (왼쪽으로 늘면 같은 칸 아이템 뒤로 숨는다)
+        int x = "cnt".equals(kind) ? right - inkWidth("0") + 1 + CNT_SHIFT : right - inkWidth(text) + 1;
         for (char ch : text.toCharArray()) {
             canvas.place(x - 1, glyph("rustport:cook_" + kind + "_r" + row + "_" + key(ch)), narrow(ch) ? 3 : 5);
             x += narrow(ch) ? 2 : 4;

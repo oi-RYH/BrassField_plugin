@@ -1093,6 +1093,119 @@ def smoker_gauge(raw, level, steps):
     return img, (x0, y0)
 
 
+# ── 제분기 (art/mill_machine.png 맷돌 제분기를 오른쪽에 줄여 얹음, 배치는 훈연기와 같은 방식 — 시안 GUI 그림 없음) ──
+# 칸 배치는 com.brassfield.cooking.CookLayout.MILL 과 맞춘다.
+MILL_ART = "mill_machine.png"
+MILL_BOX = (108, 108, 1036, 1175)              # 제분기 그림 (받침 다리 제외)
+MILL_SMOKE_CUT = (108, 250, 300, 482)          # 왼쪽 배관 위 연기는 비운다
+MILL_SCALE = 0.103
+MILL_AT = (67, 12)                             # 창 기준 왼쪽 위 (오른쪽 바퀴가 창 테 안쪽에 닿게). 재생 버튼은 작동 버튼 판(5줄 4열) 안
+MILL_CHAMBER = (380, 828, 783, 978)            # 제분기 그림 기준 아래 유리 수납칸 안쪽 (게이지: 가루 더미)
+MILL_BAR = (500, 1100, 797, 1146)              # 받침대 진행 막대 안쪽 (아랫줄 회색 끝자락까지)
+MILL_INGREDIENT = SMK_INGREDIENT
+MILL_OUTPUT = SMK_OUTPUT
+MILL_BOOK_AT = SMK_BOOK_AT
+MILL_START = SMK_START
+MILL_DECOR = [((985, 160, 1050, 225), 0.17, (52, 104)),   # 훈연기 시안 희미한 톱니 → 책 오른쪽
+              ((1010, 325, 1060, 410), 0.17, (60, 12))]   # 회로선 → 주문서 오른쪽 위
+
+
+def mill_point(x, y):
+    return MILL_AT[0] + (x - MILL_BOX[0]) * MILL_SCALE, MILL_AT[1] + (y - MILL_BOX[1]) * MILL_SCALE
+
+
+def mill_box(box):
+    x0, y0 = mill_point(*box[:2])
+    x1, y1 = mill_point(*box[2:])
+    return round(x0), round(y0), round(x1), round(y1)
+
+
+def build_mill(enh, bake=True):
+    """제분기: 왼쪽 작은 주문서(재료 1칸) · 그 아래 2x2 접시(완성품 2배, 개수는 오른쪽 위) · 그 아래 책,
+    오른쪽 맷돌 제분기(호퍼 · 맷돌 · 아래 유리 수납칸 · 받침대 재생 버튼 자리 작동 버튼 · 진행 막대).
+    진행은 수납칸 가루 더미가 쌓임 + 받침대 막대 채움 (글꼴 그림 mill_gauge)"""
+    win = Window(enh, ROWS, pad_top=0)
+    win.corner_gears(bottom_right=False, top_left=False)
+    concept_texture(win)
+    draw_plate(win, MILL_OUTPUT, label=False)
+    out = win.finish()
+    for box, scale, at in MILL_DECOR:
+        out.alpha_composite(concept_piece(box, scale, art=SMK_CONCEPT), at)
+    mill = concept_piece(MILL_BOX, MILL_SCALE, clear=(MILL_SMOKE_CUT,), art=MILL_ART, is_bg=lambda c: c[3] < 128)
+    out.alpha_composite(mill, MILL_AT)
+    from PIL import ImageDraw
+    d = ImageDraw.Draw(out)
+    bx0, by0, bx1, by1 = mill_box(MILL_BAR)
+    d.rectangle([bx0, by0, bx1 - 1, by1 - 1], fill=BAR_EMPTY)
+    d.line([(bx0, by0), (bx1 - 1, by0)], fill=BAR_EMPTY_SHADE)
+    out.alpha_composite(note(SMK_NOTE_CUTS, scale=JUICER_NOTE_SCALE), SMK_NOTE_AT)
+    book = shrink_art(Image.open(os.path.join(ART, "recipe_book_icon.png")).convert("RGBA"), BOOK_ICON_BOX,
+                      COUNTER_BOOK_HEIGHT / (BOOK_ICON_BOX[3] - BOOK_ICON_BOX[1]))
+    book = outlined(book, BOOK_OUTLINE)
+    bx, by = MILL_BOOK_AT
+    out.alpha_composite(book, (bx - book.width // 2, by - book.height // 2))
+    top = Window.__new__(Window)
+    top.img, top.d = out, d
+    draw_fire_button(top, MILL_START)
+    if bake:
+        g, at = mill_gauge(out, 0, 8)
+        out.alpha_composite(g, at)
+    return out
+
+
+def mill_gauge_box():
+    cx0, cy0, cx1, cy1 = mill_box(MILL_CHAMBER)
+    bx0, by0, bx1, by1 = mill_box(MILL_BAR)
+    return min(cx0, bx0), cy0, max(cx1, bx1), by1
+
+
+def _is_flour(c):
+    r, g, b = c[:3]
+    return r > 200 and g > 150 and b > 100
+
+
+def mill_gauge(raw, level, steps):
+    """제분기 게이지 한 단계: 수납칸 가루 더미가 빈 바닥 → 원래 더미 (칸마다 바닥에서 위로 이어진 가루 높이를 f 배로,
+    빈 자리는 같은 줄 수납칸 왼쪽 끝 유리 색), 받침대 막대 빔 → 가득. raw = build_mill(bake=False)"""
+    x0, y0, x1, y1 = mill_gauge_box()
+    img = raw.crop((x0, y0, x1, y1))
+    p = img.load()
+    rp = raw.load()
+    f = level / steps
+    cx0, cy0, cx1, cy1 = mill_box(MILL_CHAMBER)
+    glass, last = {}, rp[cx0 + 1, cy0]
+    for y in range(cy0, cy1):                                  # 줄마다 빈 유리 색 (왼쪽 끝 칸, 가루면 위 줄 색)
+        c = rp[cx0 + 1, y]
+        if not _is_flour(c):
+            last = c
+        glass[y] = last
+    for x in range(cx0 + 1, cx1 - 1):
+        top = cy1
+        while top - 1 >= cy0 and (_is_flour(rp[x, top - 1]) or (top - 2 >= cy0 and _is_flour(rp[x, top - 2]))):
+            top -= 1
+        h0 = cy1 - top
+        if h0 <= 0:
+            continue
+        h = round(h0 * f)
+        new_top = cy1 - h
+        for y in range(top, cy1):
+            if y < new_top:
+                p[x - x0, y - y0] = glass[y]
+            else:                                              # 원래 더미 줄을 새 높이로 줄여 위쪽 모양(봉우리) 유지
+                sy = top + (y - new_top) * h0 // max(1, h)
+                p[x - x0, y - y0] = rp[x, min(cy1 - 1, sy)]
+    bx0, by0, bx1, by1 = mill_box(MILL_BAR)
+    fill = round((bx1 - bx0) * f)
+    if fill:
+        from PIL import ImageDraw
+        d = ImageDraw.Draw(img)
+        X, Y, H = bx0 - x0, by0 - y0, by1 - by0
+        d.rectangle([X, Y, X + fill - 1, Y + H - 1], fill=BAR_FILL[1])
+        d.line([(X, Y), (X + fill - 1, Y)], fill=BAR_FILL[0])
+        d.line([(X, Y + H - 1), (X + fill - 1, Y + H - 1)], fill=BAR_FILL[2])
+    return img, (x0, y0)
+
+
 if __name__ == "__main__":
     enh = Image.open(sys.argv[1]).convert("RGBA")
     out_dir = sys.argv[2]

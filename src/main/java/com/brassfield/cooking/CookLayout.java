@@ -55,6 +55,12 @@ record CookLayout(int[] ingredientSlots, int[] outputSlots, boolean bigOutput, i
     static final CookLayout SMOKER = new CookLayout(new int[]{10}, new int[]{19, 20, 28, 29}, true,
             new int[]{37, 46}, new int[]{}, 49, new int[]{23, 24, 32, 33, 8, 17, 50, 51}, "smoker", 89, 74, "fire", 2, 69);
 
+    /** 제분기: 훈연기와 같은 배치 — 재료는 작은 주문서 위 (1줄 1열), 완성품은 2x2 접시 (2~3줄 1~2열, 개수는 요리 오른쪽 위),
+     *  책은 접시 아래 (4·5줄 1열), 톱니 작동 버튼은 받침대 재생 버튼 자리 (5줄 4열), 빈 그릇 없음.
+     *  게이지는 아래 유리 수납칸 가루 더미 + 받침대 진행 막대 (한 그림) */
+    static final CookLayout MILL = new CookLayout(new int[]{10}, new int[]{19, 20, 28, 29}, true,
+            new int[]{37, 46}, new int[]{}, 49, new int[]{41, 42, 50, 51}, "mill", 95, 43, "gear", 2, 69);
+
     static CookLayout of(String stationKey) {
         return switch (stationKey) {
             case "counter" -> COUNTER;
@@ -62,6 +68,7 @@ record CookLayout(int[] ingredientSlots, int[] outputSlots, boolean bigOutput, i
             case "oven" -> OVEN;
             case "fermenter" -> FERMENTER;
             case "smoker" -> SMOKER;
+            case "mill" -> MILL;
             default -> KETTLE;
         };
     }
