@@ -11,7 +11,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from furniture_kit import Model, CUSTOM, BRASS, BRASS_MID, IRON, IRON_EDGE, IRON_BOLT, rgb, noisy, picture, add_framed_palette  # noqa: E402
+from furniture_kit import Model, CUSTOM, EXTERNAL, BRASS, BRASS_MID, IRON, IRON_EDGE, IRON_BOLT, rgb, noisy, picture, add_framed_palette  # noqa: E402
 
 FOLDER = "machine/cooking"
 
@@ -32,6 +32,13 @@ F_DARK, F_COPPER_D, F_COPPER, F_BRASS = rgb(0x3B, 0x2B, 0x22), rgb(0x6B, 0x45, 0
 F_HI, F_GOLD, F_FIRE, F_FOAM = rgb(0xF2, 0xC5, 0x5C), rgb(0xFF, 0xB2, 0x3D), rgb(0xFF, 0x8A, 0x00), rgb(0xFF, 0xF3, 0xD9)
 add_framed_palette("f_brass", F_COPPER_D, F_COPPER_D, F_COPPER_D, F_HI, F_BRASS, F_BRASS, F_BRASS)
 add_framed_palette("f_base", F_DARK, F_DARK, F_DARK, F_COPPER, F_COPPER_D, F_COPPER_D, F_COPPER_D)
+# 훈연기: 레퍼런스 "훈연기(스모커)" 팔레트 (몸체 #5A3E32 · #3B2B23, 테 #8B5A2B, 황동 #C9913D · #F2C55C,
+# 불 #FF8A00 · #FFB23D, 연기 · 유리 #FFF4E0)
+S_DARK, S_BODY, S_EDGE, S_BRASS = rgb(0x3B, 0x2B, 0x23), rgb(0x5A, 0x3E, 0x32), rgb(0x8B, 0x5A, 0x2B), rgb(0xC9, 0x91, 0x3D)
+S_HI, S_GOLD, S_FIRE, S_SMOKE = rgb(0xF2, 0xC5, 0x5C), rgb(0xFF, 0xB2, 0x3D), rgb(0xFF, 0x8A, 0x00), rgb(0xFF, 0xF4, 0xE0)
+SMOKER_MEATS = ("beef", "porkchop", "salmon")                                          # 훈연기 레시피 재료 (훈제 소고기 · 베이컨 · 훈제 연어)
+EXTERNAL.update({"meat_" + n: "minecraft:item/" + n for n in SMOKER_MEATS})            # 매다는 바닐라 고기 아이템 그림
+add_framed_palette("s_brass", S_EDGE, S_EDGE, S_EDGE, S_HI, S_BRASS, S_BRASS, S_BRASS)
 add_framed_palette("k_brass_framed", K_EDGE, K_EDGE, K_EDGE, K_BRASS_HI, K_BRASS, K_BRASS, K_BRASS)   # 결 없이 깔끔하게
 
 
@@ -69,6 +76,7 @@ ART.update({
     "milk_soup": noisy([rgb(246, 236, 210), rgb(232, 218, 186), rgb(252, 248, 232)], [4, 3, 2], 39),
     "bread": noisy([rgb(222, 150, 70), rgb(196, 120, 50), rgb(240, 186, 110)], [4, 3, 2], 40),
     # 대형 솥: 노이즈 없이. 몸체는 산업용 철 블록(형식·색), 황동·불은 레퍼런스 "스팀 조리기" 팔레트 (테 #8B5A2B, 황동 #C99644 · #F2C55C, 불 #FF9A00 · #FFF4E0)
+    "s_body": clean_block(S_DARK, S_DARK, S_EDGE, S_BODY, S_BODY),                      # 훈연기 몸체 (짙은 갈색 판, 결 없음)
     "c_copper": clean_block(F_COPPER_D, F_COPPER_D, F_BRASS, F_COPPER, F_COPPER),            # 구리 판 (테 · 밝은 줄, 결 없음)
     "c_iron": clean_block(IRON_EDGE, IRON_BOLT, IRON[0], IRON[1], IRON[2]),
     "k_iron": clean_block(IRON_EDGE, IRON_BOLT, IRON[0], IRON[1], IRON[2]),            # 산업용 철 블록 (형식 · 색 그대로, 결 없음)
@@ -95,6 +103,18 @@ ART.update({
                       {"b": O_BRASS, "h": O_HOT, "k": O_DARK, "f": O_FIRE}),
     "f_rivet": noisy([F_COPPER_D], [1], 61),
     "f_band": noisy([F_BRASS], [1], 64),
+    "s_band": noisy([S_BRASS], [1], 71),
+    "s_rivet": noisy([S_EDGE], [1], 72),
+    "s_inner": noisy([S_DARK], [1], 73),
+    "s_pane": [[rgb(255, 255, 255, 110) if (x + y) % 16 in (3, 4, 10) else rgb(0xFF, 0xF4, 0xE0, 40)
+                for x in range(16)] for y in range(16)],
+    "s_vent_off": picture(["bbbbbbbb", "bkbkbkbb", "bbbbbbbb"], {"b": S_BRASS, "k": S_DARK}),
+    "s_vent_on": picture(["bbbbbbbb", "bfbgbfbb", "bbbbbbbb"], {"b": S_BRASS, "f": S_FIRE, "g": S_GOLD}),
+    "s_play_off": picture([".bb.", "bkbb", "bkkb", ".bb."], {"b": S_BRASS, "k": S_DARK}),
+    "s_play_on": picture([".bb.", "bfbb", "bffb", ".bb."], {"b": S_BRASS, "f": S_FIRE}),
+    "s_bar_off": picture(["bbbbbbbb", "bkkkkkkb", "bbbbbbbb"], {"b": S_BRASS, "k": S_DARK}),
+    "s_bar_on": picture(["bbbbbbbb", "bggggkkb", "bbbbbbbb"], {"b": S_BRASS, "k": S_DARK, "g": S_GOLD}),
+    "s_grille": picture(["bbbbb", "bkkkb", "bbbbb", "bkkkb", "bbbbb", "bkkkb", "bbbbb"], {"b": S_BRASS, "k": S_DARK}),
     "f_inner": noisy([F_COPPER_D], [1], 65),                                            # 창 안쪽 벽 (짙은 구리)
     "f_pane": [[rgb(255, 255, 255, 110) if (x + y) % 16 in (3, 4, 10) else rgb(0xFF, 0xF3, 0xD9, 40)
                 for x in range(16)] for y in range(16)],                               # 반투명 유리 (옅은 크림빛 + 대각선 반사)
@@ -168,31 +188,66 @@ def juicer():
     return m
 
 
-# ═════════════ 훈연기: 리벳 쇠 찬장, 황동 테 유리문 너머 매달린 햄 두 개와 빛나는 숯, 뒤 굴뚝과 연기 ═════════════
-def smoker():
-    m = Model("smoker")
-    legs(m, 3)
-    m.box([1, 3, 13], [15, 23, 15], "iron_plate")                               # 뒤
-    m.box([1, 3, 2], [2, 23, 13], "iron_plate")                                 # 옆
-    m.box([14, 3, 2], [15, 23, 13], "iron_plate")
-    m.box([1, 3, 2], [15, 5, 13], "iron_plate")                                 # 아래
-    m.box([1, 21, 2], [15, 23, 13], "iron_plate")                               # 위
-    m.box([2, 5, 12], [14, 21, 13], "polished_blackstone")                      # 안쪽 그을린 벽
-    m.box([2, 5, 3], [14, 6, 12], "ember", light=10)                            # 빛나는 숯
-    m.box([2, 18, 6], [14, 19, 7], "iron")                                      # 걸이 막대
-    for hx in (3, 9):
-        m.box([hx + 2, 16, 6], [hx + 3, 18, 7], "iron")                         # 고리
-        m.box([hx, 9, 5], [hx + 4, 16, 9], "ham")                               # 햄
-        m.box([hx + 1, 16, 6], [hx + 3, 17, 8], "bone")                         # 뼈 끝
-    for frm, to in (([1, 20, 1], [15, 21, 2]), ([1, 5, 1], [15, 6, 2]),        # 문 황동 테
-                    ([1, 6, 1], [2, 20, 2]), ([14, 6, 1], [15, 20, 2])):
-        m.box(frm, to, "brass")
-    m.box([2, 6, 1], [14, 20, 2], None, faces={"front": ("glass", [2, 0, 14, 14]), "back": ("glass", [2, 0, 14, 14])})   # 유리
-    m.box([12, 12, 0], [13, 15, 1], "brass")                                    # 문 손잡이
-    m.box([0, 23, 1], [16, 24, 15], "brass")                                    # 지붕
-    m.box([11, 24, 10], [14, 30, 13], "iron")                                   # 굴뚝
-    m.box([10, 30, 9], [15, 31, 14], "brass")
-    m.box([11, 31, 10], [13, 32, 12], "steam")                                  # 연기
+# ═════════════ 훈연기 (1x1x2): 레퍼런스 "훈연기(스모커)" — 짙은 갈색 캐비닛, 네 모서리 황동 기둥 · 위아래 띠 · 리벳, 계단 뚜껑,
+# 앞 큰 창 (파낸 공간 + 반투명 유리, 걸이 막대 · 갈고리), 창 아래 통풍구, 받침대 앞 재생 버튼 · 진행 막대, 위 굴뚝 · 오른쪽 배관 · 유리관,
+# 왼쪽 통풍 그릴. 재료가 없으면 빈 갈고리(smoker), 고기를 넣으면 그 고기 3개를 매닮(smoker_<고기>), 훈연 중이면 통풍구 · 재생 버튼이
+# 빛나고 진행 막대가 참(smoker_<고기>_on). 연기는 플러그인 입자 (굴뚝 모닥불 연기 · 창 안 바닥 작은 연기) ═════════════
+def smoker(meat=None, lit=False):
+    """meat: 갈고리에 건 고기 (넣은 재료, None 이면 빈 갈고리), lit: 훈연 중 (통풍구 · 재생 버튼 빛, 진행 막대)"""
+    m = Model("smoker" + ("_" + meat if meat else "") + ("_on" if lit else ""))
+
+    def b(u0, y0, w0, u1, y1, w1, tex, light=0, faces=None):
+        m.box([u0, y0, w0], [u1, y1, w1], tex, light=light, faces=faces)
+
+    def plate(name, w, h, u0, y0, w0, light=0):
+        b(u0, y0, w0, u0 + w, y0 + h, w0 + 0.5, "s_brass", light=light, faces={"front": (name, [0, 0, w, h])})
+
+    for u, w in ((0.5, 1.5), (13.5, 1.5), (0.5, 12.5), (13.5, 12.5)):                  # 황동 다리
+        b(u, 0, w, u + 2, 1, w + 2, "s_brass")
+    b(0, 1, 1, 16, 6, 15, "s_body")                                                    # 받침대
+    plate("s_play_on" if lit else "s_play_off", 4, 4, 1.5, 1.5, 0.5, light=10 if lit else 0)   # 재생 버튼
+    plate("s_bar_on" if lit else "s_bar_off", 8, 3, 6.5, 2, 0.5, light=6 if lit else 0)        # 진행 막대
+    # 캐비닛: 앞 창 자리 (u 3~13, y 10~23) 를 w 8 까지 파낸다
+    b(1, 6, 2, 3, 26, 14, "s_body")
+    b(13, 6, 2, 15, 26, 14, "s_body")
+    b(3, 6, 2, 13, 10, 14, "s_body")
+    b(3, 23, 2, 13, 26, 14, "s_body")
+    b(3, 10, 8, 13, 23, 14, "s_body")
+    b(3, 10, 7.5, 13, 23, 8, "s_inner")                                                # 창 안쪽 벽
+    b(3, 10, 2, 3.5, 23, 7.5, {"all": "s_inner", "left": "s_body"})
+    b(12.5, 10, 2, 13, 23, 7.5, {"all": "s_inner", "right": "s_body"})
+    b(3.5, 22.5, 2, 12.5, 23, 7.5, "s_inner")
+    b(3.5, 10, 2, 12.5, 10.5, 7.5, "s_inner")
+    b(3.5, 20.5, 4.5, 12.5, 21, 5.5, "s_band")                                         # 걸이 막대
+    for u, w in ((4.0, 4.6), (7.5, 5.0), (11.0, 4.8)):                                # 갈고리 · 고기
+        b(u + 0.25, 19.5, 4.75, u + 0.75, 20.5, 5.25, "s_band")
+        if meat:                                                                       # 넣은 고기의 바닐라 아이템 그림 판 (대각선 그림을 45도 돌려 세로로 매닮)
+            cu, cy, half = u + 0.5, 16.4, 2.5
+            face = {"uv": [0, 0, 16, 16], "texture": "#meat_" + meat}
+            m.raw([16 - (cu + half), cy - half, w], [16 - (cu - half), cy + half, w], {"north": face, "south": face},
+                  rotation={"origin": [16 - cu, cy, w], "axis": "z", "angle": -45}, light=6 if lit else 0)
+    b(3, 10, 1.9, 13, 23, 2, {"all": None, "front": "s_pane"})                         # 반투명 유리
+    for y0, y1, u0, u1 in ((23, 24, 2, 14), (9, 10, 2, 14), (10, 23, 2, 3), (10, 23, 13, 14)):   # 창 황동 테
+        b(u0, y0, 1.5, u1, y1, 2, "s_brass")
+    plate("s_vent_on" if lit else "s_vent_off", 8, 3, 4, 6.5, 1.5, light=12 if lit else 0)    # 통풍구
+    for u0 in (0.5, 14):                                                               # 네 모서리 황동 기둥
+        for w0 in (1.5, 12.5):
+            b(u0, 6, w0, u0 + 1.5, 26, w0 + 2, "s_brass")
+    for y0 in (6, 25):                                                                 # 위아래 황동 띠
+        b(0.5, y0, 1.5, 15.5, y0 + 1, 14.5, "s_band")
+    for u in (3, 6, 9, 12):                                                            # 위 띠 리벳
+        b(u, 25.25, 1.25, u + 1, 25.75, 1.5, "s_rivet")
+    b(1.5, 26, 2.5, 14.5, 27, 13.5, "s_body")                                          # 계단 뚜껑
+    b(2.5, 27, 3.5, 13.5, 28, 12.5, "s_body")
+    b(5, 28, 6, 9, 30.5, 10, {"all": "s_body", "top": "s_inner"})                      # 굴뚝
+    b(4.5, 30.5, 5.5, 9.5, 31.5, 10.5, {"all": "s_brass", "top": "s_inner"})
+    b(9, 28.5, 7, 14, 30, 9, "s_brass")                                                # 오른쪽으로 가는 배관
+    b(13.5, 22, 7, 15, 30, 9, "s_brass")                                               # 내려오는 배관
+    b(14, 21, 6.5, 16, 22, 9.5, "s_brass")                                             # 유리관 위 테
+    b(14, 13, 6.5, 16, 14, 9.5, "s_brass")                                             # 유리관 아래 테
+    b(14.25, 14, 7, 15.75, 21, 9, "s_pane")                                            # 반투명 유리관
+    b(13.5, 10, 7, 15, 13, 9, "s_brass")                                               # 아래 배관 → 캐비닛
+    b(0.5, 12, 6, 1, 19, 11, "s_brass", faces={"left": ("s_grille", [0, 0, 5, 7])})    # 왼쪽 통풍 그릴
     return m
 
 
@@ -493,7 +548,8 @@ def oven(lit=False):
 
 TOOLS = {"mill": mill, "juicer": juicer, "fermenter": fermenter, "smoker": smoker, "kettle": kettle,
          "kettle_on": lambda: kettle(lit=True), "oven": oven, "oven_on": lambda: oven(lit=True),
-         "fermenter_on": lambda: fermenter(lit=True)}
+         "fermenter_on": lambda: fermenter(lit=True), **{"smoker_%s%s" % (n, "_on" if on else ""): (lambda n=n, on=on: smoker(n, on))
+            for n in SMOKER_MEATS for on in (False, True)}}
 
 if __name__ == "__main__":
     assets = sys.argv[1]

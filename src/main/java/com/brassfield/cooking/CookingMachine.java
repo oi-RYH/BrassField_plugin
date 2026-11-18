@@ -266,6 +266,15 @@ public final class CookingMachine implements InventoryHolder {
     }
 
     /** 레시피 재료(정확한 ID 또는 #묶음)에 맞는 보관 개수 */
+    /** 기계에 걸린 재료 (훈연기 갈고리에 보일 것): 걸린 요리의 첫 재료가 남아 있거나 조리 중이면 그 재료 ID, 아니면 null */
+    String hangingIngredient() {
+        if (pinned == null || pinned.ingredients().isEmpty()) {
+            return null;
+        }
+        String first = pinned.ingredients().keySet().iterator().next();
+        return running() || stored(first) > 0 ? first : null;
+    }
+
     int stored(String ingredient) {
         int total = 0;
         for (Stock stock : stocks) {

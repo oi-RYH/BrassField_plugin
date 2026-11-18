@@ -4,6 +4,7 @@ import com.brassfield.common.ItemsAdderGuiBackground;
 import com.brassfield.common.ItemsAdderItemProvider;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -22,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * 설치된 요리 기기들(조리대·제분기·착즙기·발효조·훈연기·대형 솥·제빵 오븐)의 조리 상태를 위치별로 들고 있고,
@@ -51,12 +51,17 @@ public final class CookingMachines {
      */
     private static final Map<String, String> LIT_MODELS = Map.of("kettle", "rustport:kettle_on", "oven", "rustport:oven_on",
             "fermenter", "rustport:fermenter_on");
+    /** 넣은 고기를 갈고리에 거는 훈연기: rustport:smoker_<고기> (조리 중이면 _on). 이 고기들만 모델이 있다 */
+    private static final java.util.Set<String> SMOKER_MEATS = java.util.Set.of("beef", "porkchop", "salmon");
+    /** 조리 중이면 굴뚝 위로 모닥불 연기를 피우는 기기 → 굴뚝 꼭대기 높이 (블록 바닥 기준, 블록) */
+    private static final Map<String, Double> CHIMNEY_SMOKE = Map.of("smoker", 2.0);
     private final Map<String, ItemMeta> modelSources = new HashMap<>();       // 모델을 빌려 올 아이템 (custom model data · item_model)
-    private final Map<String, Boolean> shownLit = new HashMap<>();
+    private final Map<String, String> shownModel = new HashMap<>();           // 기기 → 지금 가구에 보이는 모양 (아이템 ID)
     private final java.util.Set<String> missingDisplays = new java.util.HashSet<>();             // 기기 → 지금 가구에 보이는 모양 (켜짐?)
     private final Map<String, Component> resultNames = new HashMap<>();
     private BukkitTask tickTask;
     private BukkitTask saveTask;
+    private BukkitTask smokeTask;
     private boolean dirty;
 
     public CookingMachines(JavaPlugin plugin, Map<String, CookingStation> stations, ItemsAdderItemProvider itemProvider,
@@ -87,6 +92,7 @@ public final class CookingMachines {
     public void start() {
         load();
         tickTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::tickViewed, 20L, 20L);
+        smokeTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::smoke, 10L, 10L);
         saveTask = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
             if (dirty) {
                 save();
@@ -100,6 +106,9 @@ public final class CookingMachines {
         }
         if (saveTask != null) {
             saveTask.cancel();
+        }
+        if (smokeTask != null) {
+            smokeTask.cancel();
         }
         for (CookingMachine machine : machines.values()) {
             for (HumanEntity viewer : new ArrayList<>(machine.getInventory().getViewers())) {
@@ -131,7 +140,7 @@ public final class CookingMachines {
     public void destroy(Entity furniture) {
         Location location = furniture.getLocation();
         CookingMachine machine = machines.remove(keyOf(location));
-        shownLit.remove(keyOf(location));
+        shownModel.remove(keyOf(location));
         if (machine == null) {
             return;
         }
@@ -234,7 +243,7 @@ public final class CookingMachines {
         long now = System.currentTimeMillis();
         for (CookingMachine machine : machines.values()) {
             boolean viewed = !machine.getInventory().getViewers().isEmpty();
-            boolean lit = LIT_MODELS.containsKey(machine.station().key());
+            boolean lit = hasStateModel(machine);
             if ((viewed || lit) && machine.update(now)) {                       // 켜짐 모양이 있는 기기는 아무도 안 봐도 진행 (재료가 떨어지면 꺼짐)
                 dirty = true;
             }
@@ -244,21 +253,38 @@ public final class CookingMachines {
         }
     }
 
-    /** 가구 모양을 조리 상태(켜짐 · 꺼짐)에 맞춘다. 청크가 안 불러와졌으면 다음에 다시 */
-    void refreshModel(CookingMachine machine) {
-        String litModel = LIT_MODELS.get(machine.station().key());
-        if (litModel == null) {
-            return;
+    private static boolean hasStateModel(CookingMachine machine) {
+        String station = machine.station().key();
+        return LIT_MODELS.containsKey(station) || "smoker".equals(station);
+    }
+
+    /** 지금 상태에 맞는 가구 모양 아이템 ID (모양이 하나뿐인 기기는 null) */
+    private static String modelId(CookingMachine machine) {
+        String station = machine.station().key();
+        String furniture = machine.station().furnitureId();
+        if ("smoker".equals(station)) {                                // 넣은 고기를 걸고, 조리 중이면 _on
+            String meat = machine.hangingIngredient();
+            if (meat == null) {
+                return furniture;
+            }
+            meat = meat.substring(meat.indexOf(':') + 1);
+            return SMOKER_MEATS.contains(meat) ? "rustport:smoker_" + meat + (machine.running() ? "_on" : "") : furniture;
         }
-        boolean lit = machine.running();
-        if (Objects.equals(shownLit.get(machine.key()), lit)) {
+        String lit = LIT_MODELS.get(station);
+        return lit == null ? null : machine.running() ? lit : furniture;
+    }
+
+    /** 가구 모양을 조리 상태(켜짐 · 꺼짐 · 넣은 재료)에 맞춘다. 청크가 안 불러와졌으면 다음에 다시 */
+    void refreshModel(CookingMachine machine) {
+        String want = modelId(machine);
+        if (want == null || want.equals(shownModel.get(machine.key()))) {
             return;
         }
         ItemDisplay display = displayOf(machine);
         if (display == null) {
             return;
         }
-        ItemMeta source = modelSource(lit ? litModel : machine.station().furnitureId());
+        ItemMeta source = modelSource(want);
         ItemStack item = display.getItemStack();
         ItemMeta meta = item.getItemMeta();
         if (source == null || meta == null) {
@@ -269,7 +295,30 @@ public final class CookingMachines {
         meta.setItemModel(source.hasItemModel() ? source.getItemModel() : null);
         item.setItemMeta(meta);
         display.setItemStack(item);
-        shownLit.put(machine.key(), lit);
+        shownModel.put(machine.key(), want);
+    }
+
+    /** 조리 중인 훈연기 굴뚝 위로 모닥불 연기 (0.5초마다 한 줄기) — 기계 안 연기는 가구 방향을 알 수 없어 두지 않는다 */
+    private void smoke() {
+        for (CookingMachine machine : machines.values()) {
+            Double top = CHIMNEY_SMOKE.get(machine.station().key());
+            if (top == null || !machine.running()) {
+                continue;
+            }
+            String[] parts = machine.key().split(";");
+            World world = plugin.getServer().getWorld(parts[0]);
+            if (world == null) {
+                continue;
+            }
+            int x = Integer.parseInt(parts[1]);
+            int y = Integer.parseInt(parts[2]);
+            int z = Integer.parseInt(parts[3]);
+            if (!world.isChunkLoaded(x >> 4, z >> 4)) {
+                continue;
+            }
+            // count 0: 오프셋이 이동 방향 (위로 천천히)
+            world.spawnParticle(Particle.CAMPFIRE_COSY_SMOKE, x + 0.5, y + top, z + 0.5, 0, 0.0, 0.06, 0.0, 1.0);
+        }
     }
 
     /** 기기 자리(블록)의 가구 표시 엔티티 */

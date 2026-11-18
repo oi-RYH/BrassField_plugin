@@ -141,6 +141,7 @@ def add_framed_palette(name, edge, edge_dark, corner, line, body, low, grain):
     FRAMED.add(name)
     FRAMED_PALETTES[name] = (edge, edge_dark, corner, line, body, low, grain)
 FRAMED_TEX = {}                       # 크기별로 만든 테두리 텍스처 (이름 → 32x32 그림)
+EXTERNAL = {}                         # 다른 텍스처를 그대로 가리키는 이름 (이름 → "minecraft:item/beef" 같은 경로)
 
 
 def _framed_img(name, w, h):
@@ -342,7 +343,9 @@ class Model:
         custom = {**custom, **FRAMED_TEX}
         textures = {}
         for name in sorted(used):
-            if name in custom:
+            if name in EXTERNAL:
+                textures[name] = EXTERNAL[name]
+            elif name in custom:
                 png.write(os.path.join(tex_dir, name + ".png"), custom[name])
                 textures[name] = "rustport:%s/%s/%s" % (folder, self.name, name)
             else:
