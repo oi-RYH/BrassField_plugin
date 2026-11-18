@@ -172,6 +172,17 @@ def metal_rod(pal, vertical):
 
 ANIMATED.update({"m_stone_spin_0": 2, "m_stone_spin_1": 2, "m_stone_spin_2": 2, "m_stone_top_spin": 2})   # 0.1 초마다 한 장면
 
+FILL_LEVELS = (20, 50, 70)                                                             # 넣은 개수 단계 (%): 1~499 · 500~699 · 700 이상
+
+JUICER_FRUITS = {        # 과일 → (아이템 그림, 주스 몸통 · 밝은 줄 · 거품 점)
+    "apple": ("minecraft:item/apple", (M_GOLD, rgb(0xFF, 0xD2, 0x78), M_CREAM)),
+    "grape": ("customcrops:item/crop/grape/grape", (rgb(0x7A, 0x2E, 0x6A), rgb(0xA8, 0x52, 0x94), rgb(0xD8, 0xA8, 0xD0))),
+    "pineapple": ("customcrops:item/crop/pineapple/pineapple", (rgb(0xFF, 0xD8, 0x4A), rgb(0xFF, 0xEA, 0x8E), M_CREAM)),
+    "pitaya": ("customcrops:item/crop/pitaya/pitaya", (rgb(0xD8, 0x32, 0x78), rgb(0xF0, 0x6E, 0xA4), rgb(0xFF, 0xD0, 0xE4))),
+    "tomato": ("customcrops:item/crop/tomato/tomato", (rgb(0xD8, 0x3A, 0x2A), rgb(0xF0, 0x6A, 0x54), rgb(0xFF, 0xC8, 0xB8))),
+}
+EXTERNAL.update({"fruit_" + n: v[0] for n, v in JUICER_FRUITS.items()})               # 유리통에 담는 과일 아이템 그림
+
 # 제분기 금속 명암 (밝음 → 어둠): 레퍼런스 팔레트 사이를 섞은 5 단계
 MILL_BRASS_PAL = [_lerp(M_GOLD, M_CREAM, 0.45), M_GOLD, M_BRASS, _lerp(M_BRASS, M_EDGE, 0.6), M_EDGE]
 MILL_BODY_PAL = [M_EDGE, _lerp(M_EDGE, M_BODY, 0.5), M_BODY, _lerp(M_BODY, M_DARK, 0.5), M_DARK]
@@ -261,6 +272,12 @@ ART.update({
     **{"m_stone_spin_%d" % k: [row for f in range(8) for row in stone_side(k, f)] for k in range(3)},   # 도는 윗돌 옆면 (홈이 흘러감, 8 장면)
     "m_stone_top_spin": [row for f in range(8) for row in stone_top(f * 45 / 8)],      # 도는 윗돌 윗면 (방사형 홈이 돎, 8 장면)
     "m_stone_top": stone_top(),                                                         # 맷돌 윗면 (방사형 홈 · 가운데 구멍)
+    **{"j_juice_" + n: [[c[2] if (x * 7 + y * 5) % 23 == 0 else c[1] if y == 0 else c[0] for x in range(16)]
+                        for y in range(16)] for n, (_, c) in JUICER_FRUITS.items()},   # 주스 (윗줄 밝게 · 거품 점)
+    "j_gear": picture(["..b.bb.b..", ".bbbbbbbb.", "bbbkkkkbbb", ".bbk..kbb.", "bbk.hh.kbb", "bbk.hh.kbb",
+                       ".bbk..kbb.", "bbbkkkkbbb", ".bbbbbbbb.", "..b.bb.b.."], {"b": M_GOLD, "k": M_BRASS, "h": M_EDGE}),
+    "j_screw": [[_lerp(M_GOLD, M_EDGE, 0.7) if (y + x // 4) % 4 == 0 else M_BRASS if (y + x // 4) % 4 == 1 else M_GOLD
+                 for x in range(16)] for y in range(16)],                              # 나사 기둥 (사선 나사산)
     "m_emblem": picture(["bbbbbb", "bkgkkb", "bkggkb", "bggkkb", "bkgkkb", "bbbbbb"], {"b": M_BRASS, "k": M_DARK, "g": M_GOLD}),
     "m_wheel": picture(["...bbbb...", ".bb.bb.bb.", ".b..bb..b.", "b...bb...b", "bbbbkkbbbb", "bbbbkkbbbb",
                         "b...bb...b", ".b..bb..b.", ".bb.bb.bb.", "...bbbb..."], {"b": M_BRASS, "k": M_EDGE}),
@@ -319,8 +336,26 @@ def ring(m, x0, x1, y0, y1, z0, z1, tex):  # noqa: E302
 # ═════════════ 제분기 (1x1x2): 레퍼런스 "제분기(밀가루 분쇄기)" — 갈색 몸체 · 황동 테 프레임, 위 큰 깔때기, 앞 유리창 안 맷돌 두 짝 ·
 # 아래 수납칸, 위 밀 문장, 오른쪽 큰 황동 바퀴, 왼쪽 배관 · 유리관, 받침대 재생 버튼 · 진행 막대.
 # 재료가 없으면 빈 깔때기(mill), 재료를 넣으면 깔때기에 그 재료(mill_<재료>), 제분 중이면 수납칸 결과물 더미 · 버튼 · 막대 빛(mill_<재료>_on) ═════════════
-def mill(ingredient=None, lit=False):
-    m = Model("mill" + ("_" + ingredient if ingredient else "") + ("_on" if lit else ""))
+def metal_box(m, u0, y0, w0, u1, y1, w1, tex, light=0, faces=None):
+    """tex 가 "brass" · "body" 면 자판기 · 공작대 · 거래기와 같은 금속 명암 (얇고 긴 큐브는 원통, 나머지는 판재를 면마다 늘여 붙임)"""
+    if tex in ("brass", "body"):
+        dx, dy, dz = u1 - u0, y1 - y0, w1 - w0
+        dims = sorted((dx, dy, dz))
+        rod = dims[1] <= 2 and dims[2] >= 3 * dims[1]
+        out = {}
+        for view, (fw, fh) in (("front", (dx, dy)), ("back", (dx, dy)), ("left", (dz, dy)), ("right", (dz, dy)),
+                               ("top", (dx, dz)), ("bottom", (dx, dz))):
+            kind = "rod_v" if rod and fh >= 2 * fw else "rod_h" if rod and fw >= 2 * fh else "plate"
+            out[view] = ("mt_%s_%s" % (tex, kind), [0, 0, 16, 16])
+        out.update(faces or {})
+        m.box([u0, y0, w0], [u1, y1, w1], "mt_%s_plate" % tex, light=light, faces=out)
+        return
+    m.box([u0, y0, w0], [u1, y1, w1], tex, light=light, faces=faces)
+
+
+def mill(ingredient=None, lit=False, fill=70):
+    """fill: 넣은 개수 단계 % (FILL_LEVELS) — 깔때기 낟알 더미가 20% 한 층 · 50% 두 층 · 70% 세 층"""
+    m = Model("mill" + ("_%s_%d" % (ingredient, fill) if ingredient else "") + ("_on" if lit else ""))
 
     def b(u0, y0, w0, u1, y1, w1, tex, light=0, faces=None):
         if tex in ("brass", "body"):                                                   # 금속: 자판기 · 공작대 · 거래기와 같은 명암
@@ -411,8 +446,9 @@ def mill(ingredient=None, lit=False):
         tex = {"uv": [0, 0, 16, 16], "texture": "#" + kernel}
         faces = {f: tex for f in ("north", "south", "east", "west", "up")}
         big = ingredient == "beef"
-        for lo, hi, y, n in ((3.2, 12.8, 28.5, 22 if big else 40), (4.2, 11.8, 29.2, 14 if big else 26),
-                             (5.5, 10.5, 29.9, 7 if big else 13), (6.8, 9.2, 30.1, 2 if big else 4)):
+        layers = ((3.2, 12.8, 28.5, 22 if big else 40), (4.2, 11.8, 29.2, 14 if big else 26),
+                  (5.5, 10.5, 29.9, 7 if big else 13), (6.8, 9.2, 30.1, 2 if big else 4))
+        for lo, hi, y, n in layers[:{20: 1, 50: 2, 70: 3}.get(fill, 4)]:
             for _ in range(n):
                 sx = rnd.uniform(1.8, 2.5) if big else rnd.uniform(1.1, 1.6)            # 크기도 조금씩 다르게
                 sz = rnd.uniform(1.6, 2.3) if big else rnd.uniform(0.8, 1.2)
@@ -437,24 +473,87 @@ def mill(ingredient=None, lit=False):
     return m
 
 
-# ═════════════ 착즙기: 황동 받침 위 유리 탱크(주스), 위 뚜껑과 구리 관, 압력 게이지, 꼭지, 사과 ═════════════
-def juicer():
-    m = Model("juicer")
-    for x in (2, 12):
-        for z in (2, 12):
-            m.box([x, 0, z], [x + 2, 6, z + 2], "brass")                        # 다리
-    m.box([1, 6, 1], [15, 7, 15], "iron_plate")                                 # 받침판
-    m.box([4, 7, 4], [12, 18, 12], "juice", light=6)                            # 주스
-    m.box([3, 7, 3], [13, 21, 13], "glass")                                     # 유리 탱크 (속 보임)
-    m.box([2, 21, 2], [14, 23, 14], "brass")                                    # 뚜껑
-    m.box([6, 23, 6], [10, 24, 10], "brass")
-    m.box([8, 24, 7], [10, 28, 9], "cut_copper")                                # 구리 관: 위로
-    m.box([10, 26, 7], [16, 28, 9], "cut_copper")                               # 오른쪽으로
-    m.box([14, 8, 7], [16, 26, 9], "cut_copper")                                # 아래로 (옆면)
-    m.plate("gauge", 6, 6, 10, 9, 1)                                            # 압력 게이지
-    m.box([7, 6, 1], [9, 8, 3], "brass")                                        # 꼭지
-    m.box([2, 7, 1], [4, 9, 3], "apple")                                        # 사과
-    m.box([3, 9, 2], [4, 10, 3], "leaf")
+# ═════════════ 착즙기 (1x1x2): 레퍼런스 "착즙기(과일 프레스)" — 받침대 · 기둥 받침, 황동 테를 두른 반투명 유리통 (네 모서리 황동 기둥),
+# 돔 뚜껑 · 나사 기둥 · T자 손잡이, 앞 꼭지 · 유리병, 오른쪽 압력계 · 옆 톱니, 받침대 재생 버튼 · 진행 막대.
+# 재료가 없으면 빈 통(juicer), 과일을 넣으면 통 바닥에 그 과일 그림을 쌓음(juicer_<과일>), 착즙 중이면 압착판이 내려오고 과일 색 주스가
+# 통 · 병에 차고 꼭지에 방울 (juicer_<과일>_on) ═════════════
+def juicer(fruit=None, lit=False, fill=70):
+    """fill: 넣은 과일 개수 단계 % (FILL_LEVELS). 쉬는 동안은 과일 더미, 착즙 중이면 주스가 통의 fill% 만큼 찬다"""
+    m = Model("juicer" + ("_%s_%d" % (fruit, fill) if fruit else "") + ("_on" if lit else ""))
+    level = fill / 10
+
+    def b(*a, **k):
+        metal_box(m, *a, **k)
+
+    def plate(name, w, h, u0, y0, w0, light=0):
+        b(u0, y0, w0, u0 + w, y0 + h, w0 + 0.5, "brass", light=light, faces={"front": (name, [0, 0, w, h])})
+
+    pane = {"all": None}
+    pane.update({v: "m_pane" for v in ("front", "back", "left", "right")})
+    juice = "j_juice_" + fruit if fruit else None
+    for u, w in ((1, 2), (13, 2), (1, 12), (13, 12)):                                  # 다리
+        b(u, 0, w, u + 2, 1, w + 2, "body")
+    b(0.5, 1, 1, 15.5, 3, 15, "body")                                                  # 받침대
+    plate("m_play_on" if lit else "m_play_off", 3, 2, 9, 1, 0.5, light=10 if lit else 0)       # 재생 버튼
+    plate("m_bar_on" if lit else "m_bar_off", 4, 1.5, 11.5, 1.25, 0.5, light=6 if lit else 0)  # 진행 막대
+    b(4, 3, 4, 12, 7.5, 12, "body")                                                    # 기둥 받침
+    b(3, 7.5, 3, 13, 9, 13, "brass")                                                   # 유리통 아래 테
+    for u in (5, 8, 11):                                                               # 아래 테 리벳
+        b(u - 0.25, 7.75, 2.75, u + 0.25, 8.75, 3, "m_inner")
+    b(3.5, 9, 3.5, 12.5, 9.5, 12.5, "m_inner")                                         # 통 바닥
+    # 통 안: 과일 (아이템 그림 십자 판) · 착즙 중이면 주스 · 내려온 압착판
+    if fruit:
+        import random
+        rnd = random.Random("juicer-" + fruit)
+        tex = {"uv": [0, 0, 16, 16], "texture": "#fruit_" + fruit}
+        f = level / 10
+        juice_top = 9.5 + max(0.5, f * 4.5)                                            # 착즙 중 주스 높이 (압착판 14.5 아래)
+        pile_top = 9.5 + f * 10.5                                                      # 쉬는 동안 과일 더미 높이 (통 안 9.5 ~ 20)
+        top = juice_top - 0.6 if lit else 9.5
+        for _ in range(max(1, round(level * 0.4)) if lit else max(1, round(level * 1.4))):
+            sz = rnd.uniform(4.2, 5.4)                                                 # 과일 그림 크기 (작으면 잘 안 보임)
+            cu, cw = rnd.uniform(5.6, 10.4), rnd.uniform(5.6, 10.4)
+            cy = top + rnd.uniform(0, 0.4) if lit else rnd.uniform(9.5, max(9.5, pile_top - sz))
+            ang = rnd.choice((-45, -22.5, 0, 22.5, 45))
+            x = 16 - cu
+            for rot in (ang, ang + 90 if ang <= 0 else ang - 90):                     # 십자 두 판 (어느 쪽에서 봐도 보이게)
+                m.raw([x - sz / 2, cy, cw], [x + sz / 2, cy + sz, cw], {"north": tex, "south": tex},
+                      rotation={"origin": [x, cy, cw], "axis": "y", "angle": rot}, light=4 if lit else 0)
+        if lit:
+            b(3.6, 9.5, 3.6, 12.4, juice_top, 12.4, juice, light=8)                    # 주스 (개수만큼)
+    press_y = 14.5 if lit else 18.5                                                    # 압착판 (착즙 중이면 내려옴)
+    b(4, press_y, 4, 12, press_y + 1, 12, "brass")
+    b(7.25, press_y + 1, 7.25, 8.75, 21, 8.75, "brass")                                # 압착판 → 뚜껑 축
+    b(3.5, 9.5, 3.5, 12.5, 20, 12.5, pane)                                             # 반투명 유리통 (바깥 네 면)
+    for u0 in (2.75, 12.25):                                                           # 네 모서리 황동 기둥
+        for w0 in (2.75, 12.25):
+            b(u0, 9, w0, u0 + 1, 20, w0 + 1, "brass")
+    b(3, 20, 3, 13, 21.5, 13, "brass")                                                 # 유리통 위 테
+    for u in (5, 8, 11):
+        b(u - 0.25, 20.25, 2.75, u + 0.25, 21.25, 3, "m_inner")
+    b(3.5, 21.5, 3.5, 12.5, 23, 12.5, "body")                                          # 돔 뚜껑
+    b(5, 23, 5, 11, 24, 11, "body")
+    b(6.5, 24, 6.5, 9.5, 24.75, 9.5, "brass")
+    b(7.25, 24.75, 7.25, 8.75, 29.5, 8.75, "brass", faces={v: ("j_screw", [0, 0, 16, 16]) for v in ("front", "back", "left", "right")})  # 나사
+    b(6.75, 29.5, 6.75, 9.25, 31, 9.25, "brass")                                       # T자 손잡이 가운데
+    b(2, 29.75, 7.5, 14, 30.75, 8.5, "brass")                                          # 손잡이 막대
+    for u0 in (1, 13):                                                                 # 손잡이 끝 손잡이 알
+        b(u0, 29.5, 7, u0 + 2, 31, 9, "brass")
+    # 앞 꼭지 · 유리병
+    b(4.5, 11, 1.5, 6.5, 12.5, 3.5, "brass")                                           # 꼭지 (통에서 앞으로)
+    b(4.75, 9, 1.5, 6.25, 11, 2.75, "brass")                                           # 꼭지 아래로 꺾임
+    if lit:
+        b(5.25, 8.25, 1.9, 5.75, 8.75, 2.35, juice, light=8)                           # 떨어지는 방울
+    b(3, 3, 0.25, 8, 7, 3.75, pane)                                                    # 유리병 (반투명)
+    b(3.5, 7, 0.75, 7.5, 7.75, 3.25, "brass")                                          # 병 뚜껑 테
+    if lit:
+        b(3.25, 3, 0.5, 7.75, 5.5, 3.5, juice, light=6)                                # 병 속 주스
+    # 오른쪽: 압력계 · 옆 톱니
+    b(13, 15, 2.5, 14, 16, 3.5, "brass")                                               # 압력계 받침 (유리통 오른쪽 기둥)
+    plate("o_dial", 4.5, 4.5, 11.75, 13.25, 1.75)                                      # 압력계 (오른쪽 앞, 크게)
+    b(16, 18, 5, 16.5, 24, 11, {"all": None}, faces={"right": ("j_gear", [0, 0, 10, 10])})   # 옆 톱니 (바깥 면만, 몸체와 띄움)
+    b(15.5, 20.5, 7.5, 16.5, 21.5, 8.5, "brass")                                       # 톱니 축
+    b(12.5, 20.5, 7.5, 15.5, 21.5, 8.5, "brass")
     return m
 
 
@@ -462,9 +561,11 @@ def juicer():
 # 앞 큰 창 (파낸 공간 + 반투명 유리, 걸이 막대 · 갈고리), 창 아래 통풍구, 받침대 앞 재생 버튼 · 진행 막대, 위 굴뚝 · 오른쪽 배관 · 유리관,
 # 왼쪽 통풍 그릴. 재료가 없으면 빈 갈고리(smoker), 고기를 넣으면 그 고기 3개를 매닮(smoker_<고기>), 훈연 중이면 통풍구 · 재생 버튼이
 # 빛나고 진행 막대가 참(smoker_<고기>_on). 연기는 플러그인 입자 (굴뚝 모닥불 연기 · 창 안 바닥 작은 연기) ═════════════
-def smoker(meat=None, lit=False):
-    """meat: 갈고리에 건 고기 (넣은 재료, None 이면 빈 갈고리), lit: 훈연 중 (통풍구 · 재생 버튼 빛, 진행 막대)"""
-    m = Model("smoker" + ("_" + meat if meat else "") + ("_on" if lit else ""))
+def smoker(meat=None, lit=False, fill=70):
+    """meat: 갈고리에 건 고기 (넣은 재료, None 이면 빈 갈고리), lit: 훈연 중 (통풍구 · 재생 버튼 빛, 진행 막대),
+    fill: 넣은 개수 단계 % (FILL_LEVELS) — 거는 고기 20% 1개(가운데) · 50% 2개 · 70% 3개"""
+    m = Model("smoker" + ("_%s_%d" % (meat, fill) if meat else "") + ("_on" if lit else ""))
+    hung = {20: (1,), 50: (0, 2), 70: (0, 1, 2)}.get(fill, (0, 1, 2))
 
     def b(u0, y0, w0, u1, y1, w1, tex, light=0, faces=None):
         m.box([u0, y0, w0], [u1, y1, w1], tex, light=light, faces=faces)
@@ -489,9 +590,9 @@ def smoker(meat=None, lit=False):
     b(3.5, 22.5, 2, 12.5, 23, 7.5, "s_inner")
     b(3.5, 10, 2, 12.5, 10.5, 7.5, "s_inner")
     b(3.5, 20.5, 4.5, 12.5, 21, 5.5, "s_band")                                         # 걸이 막대
-    for u, w in ((4.0, 4.6), (7.5, 5.0), (11.0, 4.8)):                                # 갈고리 · 고기
+    for i, (u, w) in enumerate(((4.0, 4.6), (7.5, 5.0), (11.0, 4.8))):              # 갈고리 · 고기 (단계만큼)
         b(u + 0.25, 19.5, 4.75, u + 0.75, 20.5, 5.25, "s_band")
-        if meat:                                                                       # 넣은 고기의 바닐라 아이템 그림 판 (대각선 그림을 45도 돌려 세로로 매닮)
+        if meat and i in hung:                                                                       # 넣은 고기의 바닐라 아이템 그림 판 (대각선 그림을 45도 돌려 세로로 매닮)
             cu, cy, half = u + 0.5, 16.4, 2.5
             face = {"uv": [0, 0, 16, 16], "texture": "#meat_" + meat}
             m.raw([16 - (cu + half), cy - half, w], [16 - (cu - half), cy + half, w], {"north": face, "south": face},
@@ -816,11 +917,14 @@ def oven(lit=False):
     return m
 
 
-TOOLS = {"mill": mill, **{"mill_%s%s" % (n, "_on" if on else ""): (lambda n=n, on=on: mill(n, on))
-                         for n in MILL_INGREDIENTS for on in (False, True)}, "juicer": juicer, "fermenter": fermenter, "smoker": smoker, "kettle": kettle,
+TOOLS = {**{"juicer_%s_%d%s" % (n, lv, "_on" if on else ""): (lambda n=n, on=on, lv=lv: juicer(n, on, lv))
+            for n in JUICER_FRUITS for lv in FILL_LEVELS for on in (False, True)},
+         **{"smoker_%s_%d%s" % (n, lv, "_on" if on else ""): (lambda n=n, on=on, lv=lv: smoker(n, on, lv))
+            for n in SMOKER_MEATS for lv in FILL_LEVELS for on in (False, True)},
+         "mill": mill, **{"mill_%s_%d%s" % (n, lv, "_on" if on else ""): (lambda n=n, on=on, lv=lv: mill(n, on, lv))
+                         for n in MILL_INGREDIENTS for lv in FILL_LEVELS for on in (False, True)}, "juicer": juicer, "fermenter": fermenter, "smoker": smoker, "kettle": kettle,
          "kettle_on": lambda: kettle(lit=True), "oven": oven, "oven_on": lambda: oven(lit=True),
-         "fermenter_on": lambda: fermenter(lit=True), **{"smoker_%s%s" % (n, "_on" if on else ""): (lambda n=n, on=on: smoker(n, on))
-            for n in SMOKER_MEATS for on in (False, True)}}
+         "fermenter_on": lambda: fermenter(lit=True)}
 
 if __name__ == "__main__":
     assets = sys.argv[1]

@@ -53,11 +53,14 @@ public final class CookingMachines {
             "fermenter", "rustport:fermenter_on");
     /**
      * 넣은 재료가 보이는 기기: rustport:<기기>_<재료> (조리 중이면 _on), 재료가 없으면 가구 기본 모양. 이 재료들만 모델이 있다.
-     * 훈연기는 갈고리에 고기를 걸고, 제분기는 깔때기에 재료를 채운다
+     * 훈연기는 갈고리에 고기를 걸고, 제분기는 깔때기에 재료를 채우고, 착즙기는 유리통에 과일을 담는다
      */
     private static final Map<String, java.util.Set<String>> INGREDIENT_MODELS = Map.of(
             "smoker", java.util.Set.of("beef", "porkchop", "salmon"),
-            "mill", java.util.Set.of("wheat", "corn", "beef"));
+            "mill", java.util.Set.of("wheat", "corn", "beef"),
+            "juicer", java.util.Set.of("apple", "grape", "pineapple", "pitaya", "tomato"));
+    /** 넣은 개수에 따라 채움이 달라지는 기기: rustport:<기기>_<재료>_<20|50|70>(_on) — 700개 이상 70%, 500개 이상 50%, 그 아래 20% */
+    private static final java.util.Set<String> LEVELED_MODELS = java.util.Set.of("juicer", "mill", "smoker");
     /** 조리 중이면 굴뚝 위로 모닥불 연기를 피우는 기기 → 굴뚝 꼭대기 높이 (블록 바닥 기준, 블록) */
     private static final Map<String, Double> CHIMNEY_SMOKE = Map.of("smoker", 2.0);
     private final Map<String, ItemMeta> modelSources = new HashMap<>();       // 모델을 빌려 올 아이템 (custom model data · item_model)
@@ -273,8 +276,16 @@ public final class CookingMachines {
             if (ingredient == null) {
                 return furniture;
             }
-            ingredient = ingredient.substring(ingredient.indexOf(':') + 1);
-            return shown.contains(ingredient) ? "rustport:" + station + "_" + ingredient + (machine.running() ? "_on" : "") : furniture;
+            String key = ingredient.substring(ingredient.indexOf(':') + 1);
+            if (!shown.contains(key)) {
+                return furniture;
+            }
+            String level = "";
+            if (LEVELED_MODELS.contains(station)) {                    // 넣은 개수 단계: 700개 이상 70%, 500개 이상 50%, 그 아래 20%
+                int stored = machine.stored(ingredient);
+                level = "_" + (stored >= 700 ? 70 : stored >= 500 ? 50 : 20);
+            }
+            return "rustport:" + station + "_" + key + level + (machine.running() ? "_on" : "");
         }
         String lit = LIT_MODELS.get(station);
         return lit == null ? null : machine.running() ? lit : furniture;
