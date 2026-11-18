@@ -415,6 +415,7 @@ public final class CookingMachine implements InventoryHolder {
             player.sendMessage(Component.text("조리를 시작했습니다.", NamedTextColor.GOLD));
         }
         machines.markDirty();
+        machines.refreshModel(this);                                   // 가구 모양 (켜짐 · 꺼짐) 바로 바꾸기
     }
 
     /** 접시 위 요리의 등급 g 아이템 (은별·금별 아이템이 없으면 일반) */

@@ -133,6 +133,13 @@ def auto_uv(face, x0, x1, y0, y1, z0, z1):
 
 
 FRAMED = {"brass", "iron_plate", "juice"}   # 부품 면마다 그 면 크기에 맞춰 그리는 재질 (테두리·수면이 면 가장자리에 오게)
+# 기기별 팔레트 황동 (테두리 그림은 공용 황동과 같고 색만 다름): 이름 → 테 · 테 그늘 · 모서리 · 밝은 줄 · 몸통 · 어두운 줄 · 결
+FRAMED_PALETTES = {}
+
+
+def add_framed_palette(name, edge, edge_dark, corner, line, body, low, grain):
+    FRAMED.add(name)
+    FRAMED_PALETTES[name] = (edge, edge_dark, corner, line, body, low, grain)
 FRAMED_TEX = {}                       # 크기별로 만든 테두리 텍스처 (이름 → 32x32 그림)
 
 
@@ -141,7 +148,7 @@ def _framed_img(name, w, h):
     바깥 1픽셀 짙은 테, 안쪽 위·왼쪽 밝은 줄, 아래·오른쪽 어두운 줄, 모서리 볼트(쇠)·짙은 모서리(황동).
     한 변이 4픽셀보다 작으면 그 방향으로는 테를 그리지 않는다 (얇은 띠·손잡이)."""
     img = [[T] * 32 for _ in range(32)]
-    rnd = random.Random(w * 37 + h * 101 + (1 if name == "brass" else 0))
+    rnd = random.Random(w * 37 + h * 101 + (1 if name != "iron_plate" else 0))
     iron = name == "iron_plate"
     runs = []
     for y in range(h):                                     # 쇠: 아주 옅은 가로 결
@@ -165,6 +172,18 @@ def _framed_img(name, w, h):
                     c = IRON[2]
                 else:
                     c = runs[y][x]
+            elif name in FRAMED_PALETTES:
+                edge, edge_dark, corner, line, body, low, grain = FRAMED_PALETTES[name]
+                if ex and ey:
+                    c = corner
+                elif ex or ey:
+                    c = edge_dark if (x == w - 1 or y == h - 1) else edge
+                elif (fx and x == 1) or (fy and y == 1):
+                    c = line
+                elif (fx and x == w - 2) or (fy and y == h - 2):
+                    c = low
+                else:
+                    c = grain if (x + y) % 7 == 0 else body
             else:
                 if ex and ey:
                     c = BRASS_EDGE[2]

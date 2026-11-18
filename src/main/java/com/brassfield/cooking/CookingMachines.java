@@ -4,12 +4,16 @@ import com.brassfield.common.ItemsAdderGuiBackground;
 import com.brassfield.common.ItemsAdderItemProvider;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.HumanEntity;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -19,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 설치된 요리 기기들(조리대·제분기·착즙기·발효조·훈연기·대형 솥·제빵 오븐)의 조리 상태를 위치별로 들고 있고,
@@ -41,6 +46,13 @@ public final class CookingMachines {
     private final CookGlyphs glyphs;
     private final File file;
     private final Map<String, CookingMachine> machines = new HashMap<>();
+    /**
+     * 조리 중이면 가구 모양을 바꾸는 기기: 기기 → 켜짐 모델 아이템 (ItemsAdder 모델 전용 아이템, 설치 불가).
+     * 가구 표시 아이템의 item_model 만 그 아이템 것으로 바꾼다 (가구 ID 는 그대로라 부수기·회수·우클릭은 그대로).
+     */
+    private static final Map<String, String> LIT_MODELS = Map.of("kettle", "rustport:kettle_on");
+    private final Map<String, NamespacedKey> modelKeys = new HashMap<>();
+    private final Map<String, Boolean> shownLit = new HashMap<>();             // 기기 → 지금 가구에 보이는 모양 (켜짐?)
     private final Map<String, Component> resultNames = new HashMap<>();
     private BukkitTask tickTask;
     private BukkitTask saveTask;
@@ -108,6 +120,7 @@ public final class CookingMachines {
             machines.put(key, machine);
         }
         machine.open(player);
+        refreshModel(machine);
         dirty = true;
     }
 
@@ -117,6 +130,7 @@ public final class CookingMachines {
     public void destroy(Entity furniture) {
         Location location = furniture.getLocation();
         CookingMachine machine = machines.remove(keyOf(location));
+        shownLit.remove(keyOf(location));
         if (machine == null) {
             return;
         }
@@ -218,10 +232,77 @@ public final class CookingMachines {
     private void tickViewed() {
         long now = System.currentTimeMillis();
         for (CookingMachine machine : machines.values()) {
-            if (!machine.getInventory().getViewers().isEmpty() && machine.update(now)) {
+            boolean viewed = !machine.getInventory().getViewers().isEmpty();
+            boolean lit = LIT_MODELS.containsKey(machine.station().key());
+            if ((viewed || lit) && machine.update(now)) {                       // 켜짐 모양이 있는 기기는 아무도 안 봐도 진행 (재료가 떨어지면 꺼짐)
                 dirty = true;
             }
+            if (lit) {
+                refreshModel(machine);
+            }
         }
+    }
+
+    /** 가구 모양을 조리 상태(켜짐 · 꺼짐)에 맞춘다. 청크가 안 불러와졌으면 다음에 다시 */
+    void refreshModel(CookingMachine machine) {
+        String litModel = LIT_MODELS.get(machine.station().key());
+        if (litModel == null) {
+            return;
+        }
+        boolean lit = machine.running();
+        if (Objects.equals(shownLit.get(machine.key()), lit)) {
+            return;
+        }
+        ItemDisplay display = displayOf(machine);
+        if (display == null) {
+            return;
+        }
+        NamespacedKey want = modelKey(lit ? litModel : machine.station().furnitureId());
+        ItemStack item = display.getItemStack();
+        ItemMeta meta = item.getItemMeta();
+        if (want != null && meta != null && !want.equals(meta.getItemModel())) {
+            meta.setItemModel(want);
+            item.setItemMeta(meta);
+            display.setItemStack(item);
+        }
+        shownLit.put(machine.key(), lit);
+    }
+
+    /** 기기 자리(블록)의 가구 표시 엔티티 */
+    private ItemDisplay displayOf(CookingMachine machine) {
+        String[] parts = machine.key().split(";");
+        World world = plugin.getServer().getWorld(parts[0]);
+        if (world == null) {
+            return null;
+        }
+        int x = Integer.parseInt(parts[1]);
+        int y = Integer.parseInt(parts[2]);
+        int z = Integer.parseInt(parts[3]);
+        if (!world.isChunkLoaded(x >> 4, z >> 4)) {
+            return null;
+        }
+        Location center = new Location(world, x + 0.5, y + 0.5, z + 0.5);
+        for (Entity entity : world.getNearbyEntities(center, 0.6, 0.6, 0.6, e -> e instanceof ItemDisplay)) {
+            ItemDisplay display = (ItemDisplay) entity;
+            if (keyOf(display.getLocation()).equals(machine.key())
+                    && machine.station().furnitureId().equals(itemProvider.idOf(display.getItemStack()))) {
+                return display;
+            }
+        }
+        return null;
+    }
+
+    /** ItemsAdder 아이템의 item_model (모델만 빌린다) */
+    private NamespacedKey modelKey(String itemId) {
+        return modelKeys.computeIfAbsent(itemId, id -> {
+            try {
+                ItemMeta meta = itemProvider.create(id).getItemMeta();
+                return meta != null && meta.hasItemModel() ? meta.getItemModel() : null;
+            } catch (RuntimeException exception) {
+                plugin.getLogger().warning("가구 모양 아이템을 찾지 못했습니다: " + id);
+                return null;
+            }
+        });
     }
 
     private static void drop(Location location, ItemStack item) {

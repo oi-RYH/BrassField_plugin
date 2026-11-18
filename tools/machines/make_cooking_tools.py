@@ -11,11 +11,38 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from furniture_kit import Model, CUSTOM, BRASS, rgb, noisy, picture  # noqa: E402
+from furniture_kit import Model, CUSTOM, BRASS, BRASS_MID, IRON, IRON_EDGE, IRON_BOLT, rgb, noisy, picture, add_framed_palette  # noqa: E402
 
 FOLDER = "machine/cooking"
 
 # ═════════════ 기기별 그림 ═════════════
+K_IRON_DARK, K_IRON, K_EDGE = rgb(0x3B, 0x2B, 0x23), rgb(0x5A, 0x3E, 0x32), rgb(0x8B, 0x5A, 0x2B)
+K_BRASS, K_BRASS_HI, K_FIRE, K_HOT = rgb(0xC9, 0x96, 0x44), rgb(0xF2, 0xC5, 0x5C), rgb(0xFF, 0x9A, 0x00), rgb(0xFF, 0xF4, 0xE0)
+
+
+add_framed_palette("k_brass_framed", K_EDGE, K_EDGE, K_EDGE, K_BRASS_HI, K_BRASS, K_BRASS, K_BRASS)   # 결 없이 깔끔하게
+
+
+def clean_block(edge, corner, line, body, low):
+    """노이즈 없는 블록 면 (16x16): 바깥 1픽셀 테 · 네 모서리 · 안쪽 위·왼쪽 밝은 줄 · 아래·오른쪽 어두운 줄 · 나머지 한 색
+    (Create 황동 블록 · 산업용 철 블록 형식, 결 무늬 없음)"""
+    img = []
+    for y in range(16):
+        row = []
+        for x in range(16):
+            if (x, y) in ((0, 0), (15, 0), (0, 15), (15, 15)):
+                c = corner
+            elif x in (0, 15) or y in (0, 15):
+                c = edge
+            elif x == 1 or y == 1:
+                c = line
+            elif x == 14 or y == 14:
+                c = low
+            else:
+                c = body
+            row.append(c)
+        img.append(row)
+    return img
 ART = dict(CUSTOM)
 ART.update({
     "sack": noisy([rgb(222, 200, 156), rgb(204, 180, 136), rgb(236, 218, 178)], [4, 3, 2], 31),
@@ -29,6 +56,22 @@ ART.update({
     "pot": noisy([rgb(89, 88, 88), rgb(79, 79, 79), rgb(103, 97, 97)], [4, 3, 2], 38),   # 산업용 철과 같은 회색
     "milk_soup": noisy([rgb(246, 236, 210), rgb(232, 218, 186), rgb(252, 248, 232)], [4, 3, 2], 39),
     "bread": noisy([rgb(222, 150, 70), rgb(196, 120, 50), rgb(240, 186, 110)], [4, 3, 2], 40),
+    # 대형 솥: 노이즈 없이. 몸체는 산업용 철 블록(형식·색), 황동·불은 레퍼런스 "스팀 조리기" 팔레트 (테 #8B5A2B, 황동 #C99644 · #F2C55C, 불 #FF9A00 · #FFF4E0)
+    "k_iron": clean_block(IRON_EDGE, IRON_BOLT, IRON[0], IRON[1], IRON[2]),            # 산업용 철 블록 (형식 · 색 그대로, 결 없음)
+    "k_iron_dark": clean_block(IRON[3], IRON[2], IRON[2], IRON[3], IRON[3]),           # 솥 안쪽 (산업용 철, 한 단계 어둡게)
+    "k_brass": clean_block(K_EDGE, K_EDGE, K_BRASS_HI, K_BRASS, K_BRASS),              # Create 황동 블록 형식 · 팔레트 색 (결 없음)
+    "k_rivet": noisy([K_EDGE], [1], 47),
+    "k_glow": noisy([K_FIRE], [1], 44),                                                 # 불빛 (한 색)
+    "k_steam": noisy([K_HOT], [1], 48),
+    "k_firebox": picture(["bbbbbbbbbbbb", "bkfkhkfkhkfb", "bkhkhkhkhkhb", "bkhkhkhkhkhb", "bkfkhkfkhkfb",
+                          "bkfkfkfkfkfb", "bkfkfkfkfkfb", "bkfkfkfkfkfb", "bbbbbbbbbbbb"],
+                         {"b": K_BRASS, "k": K_IRON_DARK, "f": K_FIRE, "h": K_HOT}),
+    "k_soup": picture(["ssssssssssssssss", "sssssbbsssssssss", "ssssbssbssssssss", "ssssbssbssssbbss", "sssssbbssssbssbs",
+                       "sssssssssssbssbs", "ssssssssssssbbss", "ssssssssssssssss", "ssbbssssssssssss", "sbssbsssssssssss",
+                       "sbssbssssssbbsss", "ssbbsssssssbbsss", "ssssssssssssssss", "sssssssbbsssssss", "ssssssbssbssssss",
+                       "sssssssbbsssssss"], {"s": K_EDGE, "b": K_BRASS}),                     # 끓는 스튜 (한 색 + 거품 고리)
+    "k_dial": picture(["..bbbb..", ".bwwwwb.", "bwwwkwwb", "bwwkwwwb", "bwkwwwwb", "bwwwwwwb", ".bwwwwb.", "..bbbb.."],
+                      {"b": K_BRASS, "w": K_HOT, "k": K_IRON_DARK}),
 })
 
 
@@ -39,7 +82,7 @@ def legs(m, h, inset=1, size=2):
             m.box([x, 0, z], [x + size, h, z + size], "brass")
 
 
-def ring(m, x0, x1, y0, y1, z0, z1, tex):
+def ring(m, x0, x1, y0, y1, z0, z1, tex):  # noqa: E302
     """속이 빈 네모 테 (두께 1)"""
     m.box([x0, y0, z0], [x1, y1, z0 + 1], tex)
     m.box([x0, y0, z1 - 1], [x1, y1, z1], tex)
@@ -140,29 +183,129 @@ def smoker():
     return m
 
 
-# ═════════════ 대형 솥: 리벳 쇠 화덕(불), 위 큰 무쇠 솥(흰 수프, 황동 띠·손잡이, 게이지), 김 ═════════════
-def kettle():
-    m = Model("kettle")
-    m.box([1, 0, 1], [15, 1, 15], "iron_plate")                                 # 화덕 아래
-    m.box([1, 7, 1], [15, 8, 15], "iron_plate")                                 # 화덕 위
-    m.box([1, 1, 1], [3, 7, 15], "iron_plate")                                  # 화덕 옆
-    m.box([13, 1, 1], [15, 7, 15], "iron_plate")
-    m.box([3, 1, 9], [13, 7, 15], "iron_plate")                                 # 화덕 뒤
-    m.box([3, 1, 8], [13, 7, 9], "polished_blackstone")                         # 그을린 안벽
-    for frm, to in (([2, 0, 0], [14, 1, 1]), ([2, 7, 0], [14, 8, 1]),          # 화덕 구멍 황동 테
-                    ([2, 1, 0], [3, 7, 1]), ([13, 1, 0], [14, 7, 1])):
-        m.box(frm, to, "brass")
-    m.logs(4, 12, 1, (3, 5))
-    m.fire(4, 12, 2, 7, 5)
-    m.box([1, 8, 1], [15, 18, 15], {"all": "iron_plate", "top": "milk_soup"}, light=4)   # 솥 (쇠 판, 수프는 테 아래)
-    ring(m, 1, 15, 18, 20, 1, 15, "iron_plate")                                 # 솥 테 (속이 빔)
-    for y in (10, 16):
-        m.box([0, y, 0], [16, y + 1, 16], "brass")                              # 황동 띠
-    m.box([0, 14, 7], [1, 15, 9], "brass")                                      # 손잡이 (띠 사이)
-    m.box([15, 14, 7], [16, 15, 9], "brass")
-    m.plate("gauge", 6, 6, 9, 11, 0)                                            # 게이지
-    for sx, sy, sz, s in ((6, 20, 6, 3), (7, 23, 7, 3), (5, 25, 7, 2)):
-        m.box([sx, sy, sz], [sx + s, sy + s, sz + s], "steam")                  # 김
+# ═════════════ 대형 솥 (2x2): 레퍼런스 "스팀 조리기(보일러)" — 짙은 무쇠 솥(팔각), 황동 띠·리벳·세로 띠, 위 황동 테 안 스튜와 김,
+# 팔레트는 레퍼런스 그대로. 쉬는 동안(kettle)은 화구 안이 어둡고 솥이 비고, 조리 중(kettle_on)은 화구 안 바닐라 불 · 솥 밑 불빛 · 스튜, 왼쪽 밸브 바퀴·배관, 오른쪽 계기판·빛나는 유리관 배관, 네 모서리 황동 다리 ═════════════
+# 바닥 2x2: 설치한 블록을 가운데에 두고 사방 반 블록씩 (모델 x·z -8~24, 증폭 공작대와 같은 방식). 좌표는 u(왼→오)·y·w(앞→뒤) 0~32.
+FIRE_HOLE, FIRE_TOP = (11, 21, 9), 14                                                 # 화구 자리: u 11~21, 앞에서 w 9 까지 판다 (y 14 아래)
+
+
+def kettle(lit=False):
+    """lit: 조리 중 모델 (kettle_on) — 화구 안 바닐라 불 · 장작, 솥 밑 불빛, 솥 안 스튜. 아니면 화구 안이 어둡고 솥이 빔"""
+    m = Model("kettle_on" if lit else "kettle")
+    m.display = {                                                                      # 2x2 크기라 손 · 인벤토리 아이콘을 줄인다
+        "gui": {"rotation": [25, 205, 0], "translation": [0, -1, 0], "scale": [0.28, 0.28, 0.28]},
+        "ground": {"translation": [0, 2, 0], "scale": [0.14, 0.14, 0.14]},
+        "firstperson_righthand": {"rotation": [0, 45, 0], "scale": [0.16, 0.16, 0.16]},
+        "thirdperson_righthand": {"rotation": [75, 45, 0], "translation": [0, 2.5, 0], "scale": [0.14, 0.14, 0.14]},
+    }
+
+    def plate(name, w, h, u0, y0, w0, light=0):
+        """그림 판 (옆면도 팔레트 황동 — 공용 회색 쇠 대신)"""
+        m.box([u0 - 8, y0, w0 - 8], [u0 + w - 8, y0 + h, w0 - 7], "k_brass_framed", light=light,
+              faces={"front": (name, [0, 0, w, h])})
+
+    def b(u0, y0, w0, u1, y1, w1, tex, light=0, faces=None):
+        m.box([u0 - 8, y0, w0 - 8], [u1 - 8, y1, w1 - 8], tex, light=light, faces=faces)
+
+    def rows(inset, cut):
+        """팔각(모서리 45도 깎음) 칸: 줄(w)마다 (u0, u1)"""
+        out = {}
+        for w in range(inset, 32 - inset):
+            d = max(0, cut - (w - inset), cut - (32 - inset - 1 - w))
+            out[w] = (inset + d, 32 - inset - d)
+        return out
+
+    def slab(y0, y1, cells, tex, light=0, hole=None):
+        """줄마다 (u0, u1) 칸을 같은 범위끼리 묶어 큐브로. hole = (u0, u1, w 끝): 앞쪽에서 판 화구 자리 (그 칸은 비움)"""
+        if hole:
+            hu0, hu1, hw = hole
+            left = {w: (r[0], min(r[1], hu0)) if w < hw else r for w, r in cells.items()}
+            right = {w: (max(r[0], hu1), r[1]) for w, r in cells.items() if w < hw}
+            slab(y0, y1, left, tex, light)
+            if right:
+                slab(y0, y1, right, tex, light)
+            return
+        ws = sorted(cells)
+        start = ws[0]
+        for k, w in enumerate(ws):
+            nxt = ws[k + 1] if k + 1 < len(ws) else None
+            if nxt is None or cells[nxt] != cells[w] or nxt != w + 1:
+                u0, u1 = cells[w]
+                if u1 > u0:
+                    b(u0, y0, start, u1, y1, w + 1, tex, light)
+                start = nxt
+
+    def octa(y0, y1, inset, cut, tex, light=0, hole=None):
+        slab(y0, y1, rows(inset, cut), tex, light, hole)
+
+    def ring(y0, y1, inset, cut, thick, tex):
+        """속이 빈 팔각 테: 바깥 팔각에서 안쪽 팔각을 뺀 칸 (줄마다 왼쪽·오른쪽 조각)"""
+        outer, inner = rows(inset, cut), rows(inset + thick, max(0, cut - 1))
+        left, right = {}, {}
+        for w, (u0, u1) in outer.items():
+            if w in inner:
+                i0, i1 = inner[w]
+                left[w], right[w] = (u0, i0), (i1, u1)
+            else:
+                left[w] = (u0, u1)
+        slab(y0, y1, left, tex)
+        slab(y0, y1, {w: v for w, v in right.items()}, tex)
+
+    for u, w in ((5, 5), (22, 5), (5, 22), (22, 22)):                                  # 황동 다리 (발판 + 기둥)
+        b(u, 0, w, u + 5, 2, w + 5, "k_brass_framed")
+        b(u + 1, 2, w + 1, u + 4, 9, w + 4, "k_brass_framed")
+    octa(5, 7, 8, 4, "k_iron")                                                      # 솥 바닥 (좁게)
+    octa(7, 9, 5, 6, "k_iron")
+    octa(9, FIRE_TOP, 3, 7, "k_iron", hole=FIRE_HOLE)                               # 배 (가장 넓게, 앞에 화구 자리를 판다)
+    octa(FIRE_TOP, 21, 3, 7, "k_iron")
+    octa(21, 23, 4, 7, {"all": "k_iron", "top": "k_soup"} if lit else "k_iron", light=6 if lit else 0)                   # 어깨 (솥 안 바닥 — 내용물 없음)
+    for y0 in (11, 18):                                                                # 황동 띠 (배에서 1픽셀 튀어나옴)
+        octa(y0, y0 + 2, 2, 7, "k_brass", hole=FIRE_HOLE if y0 < FIRE_TOP else None)
+    for y in (11, 18):                                                                 # 띠 리벳 (앞·뒤·옆, 띠 위로 1픽셀)
+        for k in (11, 15, 19):
+            for u0, w0, u1, w1 in ((k, 1, k + 2, 2), (k, 30, k + 2, 31), (1, k, 2, k + 2), (30, k, 31, k + 2)):
+                if w0 == 1 and y < FIRE_TOP and FIRE_HOLE[0] <= k < FIRE_HOLE[1]:
+                    continue                                                           # 화구 자리 리벳은 없음
+                b(u0, y, w0, u1, y + 2, w1, "k_rivet")
+    for u in (9, 22):                                                                  # 세로 황동 띠 (앞 · 뒤)
+        b(u, 9, 2, u + 1, 21, 3, "k_brass_framed")
+        b(u, 9, 29, u + 1, 21, 30, "k_brass_framed")
+    ring(23, 25, 4, 7, 3, "k_iron_dark")                                            # 솥 안쪽 벽 (짙게)
+    ring(25, 28, 3, 7, 3, "k_brass")                                               # 위 황동 테
+    # 정면 화구: 몸통을 파낸 깊은 구멍 (어두운 안벽) + 앞 황동 테 · 창살. 조리 중이면 안에 바닐라 불 · 장작, 솥 밑 불빛
+    b(12, 6, 8, 20, 13, 9, "k_iron_dark")                                              # 안벽 (뒤 · 옆 · 위 · 바닥)
+    b(11, 6, 4, 12, 13, 9, "k_iron_dark")
+    b(20, 6, 4, 21, 13, 9, "k_iron_dark")
+    b(11, 13, 4, 21, 14, 9, "k_iron_dark")
+    b(11, 5, 4, 21, 6, 9, "k_iron_dark")
+    for y0, y1, u0, u1 in ((13, 14, 11, 21), (5, 6, 11, 21), (6, 13, 11, 12), (6, 13, 20, 21)):   # 앞 황동 테 (10x9)
+        b(u0, y0, 2, u1, y1, 4, "k_brass_framed")
+    for u in (13, 15, 17, 19):                                                         # 창살
+        b(u, 6, 2.5, u + 1, 13, 3.5, "k_brass_framed")
+    if lit:
+        m.logs(12 - 8, 20 - 8, 6, (5 - 8,))                                            # 모닥불 장작 (빛남)
+        m.fire(12 - 8, 20 - 8, 7, 13, 7 - 8)                                           # 바닐라 불 (움직임)
+        b(11, 3, 6, 21, 5, 26, "k_glow", light=14)                                     # 솥 밑 불빛 (다리 사이)
+    # 왼쪽 옆: 입체 밸브 바퀴 + 위로 올라가는 배관
+    b(2, 16, 11, 3, 17, 18, "k_brass_framed")                                                   # 바퀴 테
+    b(2, 9, 11, 3, 10, 18, "k_brass_framed")
+    b(2, 10, 10, 3, 16, 11, "k_brass_framed")
+    b(2, 10, 18, 3, 16, 19, "k_brass_framed")
+    b(2, 10, 14, 3, 16, 15, "k_brass_framed")                                                   # 바퀴 살
+    b(2, 12, 11, 3, 13, 18, "k_brass_framed")
+    b(1, 11, 13, 3, 14, 16, "k_brass_framed")                                                   # 축
+    b(3, 12, 13, 4, 13, 16, "k_brass_framed")
+    b(2, 13, 22, 4, 27, 24, "k_brass_framed")                                                   # 세로 배관 → 테
+    b(2, 13, 19, 4, 15, 22, "k_brass_framed")
+    # 오른쪽: 계기판 (정면 오른쪽 위) + 빛나는 유리관 + 배관
+    b(25, 18, 1, 27, 20, 3, "k_brass_framed")                                                   # 계기판 받침
+    plate("k_dial", 8, 8, 22, 17, 0)
+    b(29, 8, 8, 31, 10, 20, "k_brass_framed")                                                   # 아래 가로 배관
+    b(29, 10, 18, 31, 17, 20, "k_brass_framed")
+    b(29, 17, 17, 32, 18, 21, "k_brass_framed")                                                 # 유리관 아래 테
+    b(29.5, 18, 17.5, 31.5, 26, 20.5, "k_glow", light=12)                           # 빛나는 유리관
+    b(29, 26, 17, 32, 27, 21, "k_brass_framed")                                                 # 유리관 위 테
+    b(28, 27, 18, 31, 29, 20, "k_brass_framed")                                                 # 위 꺾인 배관 → 테
     return m
 
 
@@ -192,9 +335,11 @@ def oven():
     return m
 
 
-TOOLS = {"mill": mill, "juicer": juicer, "fermenter": fermenter, "smoker": smoker, "kettle": kettle, "oven": oven}
+TOOLS = {"mill": mill, "juicer": juicer, "fermenter": fermenter, "smoker": smoker, "kettle": kettle,
+         "kettle_on": lambda: kettle(lit=True), "oven": oven}
 
 if __name__ == "__main__":
     assets = sys.argv[1]
     for name in sys.argv[2:] or TOOLS:
-        TOOLS[name]().save(assets, FOLDER, ART)
+        model = TOOLS[name]()
+        model.save(assets, FOLDER, ART, getattr(model, "display", None))
