@@ -154,7 +154,7 @@ public class BrassFieldPlugin extends JavaPlugin {
         EnhancementCommand enhancementCommand = new EnhancementCommand(guiBackground, stoneWallet);
         command("강화").setExecutor(enhancementCommand);
         animation = new EnhancementAnimation(this);
-        machines.onInteract(EnhancementCommand.MACHINE_ID, player -> enhancementCommand.openGui(player, null));
+        machines.onInteract(EnhancementCommand.MACHINE_ID, enhancementCommand::openGui);
         machineMarkers.register(EnhancementCommand.MACHINE_ID, 2.6);
 
         PluginManager pluginManager = getServer().getPluginManager();

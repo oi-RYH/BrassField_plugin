@@ -46,6 +46,20 @@ public final class EnhancementAnimation {
             EnhancementService.EnhancementResult result,
             Consumer<ItemStack> onComplete
     ) {
+        play(player, originalItem, result, true, onComplete);
+    }
+
+    /**
+     * giveOnStop = 연출이 중간에 끊기면(접속 종료 등) 결과 아이템을 플레이어에게 줄지.
+     * 장비를 제자리에서 바로 바꾼 경우(통합 강화 창)는 false — 이미 가방에 있으므로 또 주면 복사된다.
+     */
+    public void play(
+            Player player,
+            ItemStack originalItem,
+            EnhancementService.EnhancementResult result,
+            boolean giveOnStop,
+            Consumer<ItemStack> onComplete
+    ) {
         ItemDisplay display = createDisplay(player, originalItem);
         player.playSound(player.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1.0f, 1.0f);
 
@@ -86,7 +100,7 @@ public final class EnhancementAnimation {
         };
 
         BukkitTask task = animation.runTaskTimer(plugin, 0L, UPDATE_INTERVAL_TICKS);
-        activeAnimations.put(player.getUniqueId(), new ActiveAnimation(display, task, result.item()));
+        activeAnimations.put(player.getUniqueId(), new ActiveAnimation(display, task, result.item(), giveOnStop));
     }
 
     public void hideActiveDisplaysFrom(Player viewer) {
@@ -105,7 +119,7 @@ public final class EnhancementAnimation {
 
         animation.task().cancel();
         animation.display().remove();
-        if (returnItem) {
+        if (returnItem && animation.giveOnStop()) {
             ItemDelivery.giveOrDrop(player, animation.resultItem());
         }
     }
@@ -223,6 +237,6 @@ public final class EnhancementAnimation {
         ));
     }
 
-    private record ActiveAnimation(ItemDisplay display, BukkitTask task, ItemStack resultItem) {
+    private record ActiveAnimation(ItemDisplay display, BukkitTask task, ItemStack resultItem, boolean giveOnStop) {
     }
 }

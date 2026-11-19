@@ -8,7 +8,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
 /**
  * 강화 GUI를 여는 곳. 플레이어는 마을의 증폭 공작대(거래 기계)를 우클릭해 열고,
@@ -60,11 +59,16 @@ public final class EnhancementCommand implements CommandExecutor {
             return true;
         }
 
-        openGui(player, null);
+        openGui(player);
         return true;
     }
 
-    public void openGui(Player player, ItemStack targetItem) {
-        new EnhancementGui(targetItem, guiBackground, wallet, player.getUniqueId()).open(player);
+    public void openGui(Player player) {
+        openGui(player, -1);
+    }
+
+    /** selectedSlot = 처음부터 골라 둘 플레이어 가방 칸 (강화 후 다시 열 때), 없으면 -1 */
+    public void openGui(Player player, int selectedSlot) {
+        new EnhancementGui(selectedSlot, guiBackground, wallet, player.getUniqueId()).open(player);
     }
 }

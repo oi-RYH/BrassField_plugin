@@ -1,0 +1,365 @@
+info:
+  namespace: rustport
+
+# 자동 생성 파일 (BrassField tools/gui/make_enhance_assets.py) — 강화 창 장비 목록 글꼴 그림. 직접 수정하지 말 것.
+font_images:
+  enh_lv_r0_0:
+    path: font/enhance/enh_lv_r0_0
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_pg_r0_0:
+    path: font/enhance/enh_pg_r0_0
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_lv_r0_1:
+    path: font/enhance/enh_lv_r0_1
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_pg_r0_1:
+    path: font/enhance/enh_pg_r0_1
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_lv_r0_2:
+    path: font/enhance/enh_lv_r0_2
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_pg_r0_2:
+    path: font/enhance/enh_pg_r0_2
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_lv_r0_3:
+    path: font/enhance/enh_lv_r0_3
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_pg_r0_3:
+    path: font/enhance/enh_pg_r0_3
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_lv_r0_4:
+    path: font/enhance/enh_lv_r0_4
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_pg_r0_4:
+    path: font/enhance/enh_pg_r0_4
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_lv_r0_5:
+    path: font/enhance/enh_lv_r0_5
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_pg_r0_5:
+    path: font/enhance/enh_pg_r0_5
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_lv_r0_6:
+    path: font/enhance/enh_lv_r0_6
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_pg_r0_6:
+    path: font/enhance/enh_pg_r0_6
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_lv_r0_7:
+    path: font/enhance/enh_lv_r0_7
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_pg_r0_7:
+    path: font/enhance/enh_pg_r0_7
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_lv_r0_8:
+    path: font/enhance/enh_lv_r0_8
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_pg_r0_8:
+    path: font/enhance/enh_pg_r0_8
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_lv_r0_9:
+    path: font/enhance/enh_lv_r0_9
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_pg_r0_9:
+    path: font/enhance/enh_pg_r0_9
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_lv_r0_plus:
+    path: font/enhance/enh_lv_r0_plus
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_lv_r0_slash:
+    path: font/enhance/enh_lv_r0_slash
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_pg_r0_slash:
+    path: font/enhance/enh_pg_r0_slash
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -64
+  enh_worn_r0:
+    path: font/enhance/enh_worn_r0
+    suggest_in_command: false
+    scale_ratio: 16
+    y_position: -59
+  enh_lv_r1_0:
+    path: font/enhance/enh_lv_r1_0
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_pg_r1_0:
+    path: font/enhance/enh_pg_r1_0
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_lv_r1_1:
+    path: font/enhance/enh_lv_r1_1
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_pg_r1_1:
+    path: font/enhance/enh_pg_r1_1
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_lv_r1_2:
+    path: font/enhance/enh_lv_r1_2
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_pg_r1_2:
+    path: font/enhance/enh_pg_r1_2
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_lv_r1_3:
+    path: font/enhance/enh_lv_r1_3
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_pg_r1_3:
+    path: font/enhance/enh_pg_r1_3
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_lv_r1_4:
+    path: font/enhance/enh_lv_r1_4
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_pg_r1_4:
+    path: font/enhance/enh_pg_r1_4
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_lv_r1_5:
+    path: font/enhance/enh_lv_r1_5
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_pg_r1_5:
+    path: font/enhance/enh_pg_r1_5
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_lv_r1_6:
+    path: font/enhance/enh_lv_r1_6
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_pg_r1_6:
+    path: font/enhance/enh_pg_r1_6
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_lv_r1_7:
+    path: font/enhance/enh_lv_r1_7
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_pg_r1_7:
+    path: font/enhance/enh_pg_r1_7
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_lv_r1_8:
+    path: font/enhance/enh_lv_r1_8
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_pg_r1_8:
+    path: font/enhance/enh_pg_r1_8
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_lv_r1_9:
+    path: font/enhance/enh_lv_r1_9
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_pg_r1_9:
+    path: font/enhance/enh_pg_r1_9
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_lv_r1_plus:
+    path: font/enhance/enh_lv_r1_plus
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_lv_r1_slash:
+    path: font/enhance/enh_lv_r1_slash
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_pg_r1_slash:
+    path: font/enhance/enh_pg_r1_slash
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -82
+  enh_worn_r1:
+    path: font/enhance/enh_worn_r1
+    suggest_in_command: false
+    scale_ratio: 16
+    y_position: -77
+  enh_lv_r2_0:
+    path: font/enhance/enh_lv_r2_0
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_pg_r2_0:
+    path: font/enhance/enh_pg_r2_0
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_lv_r2_1:
+    path: font/enhance/enh_lv_r2_1
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_pg_r2_1:
+    path: font/enhance/enh_pg_r2_1
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_lv_r2_2:
+    path: font/enhance/enh_lv_r2_2
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_pg_r2_2:
+    path: font/enhance/enh_pg_r2_2
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_lv_r2_3:
+    path: font/enhance/enh_lv_r2_3
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_pg_r2_3:
+    path: font/enhance/enh_pg_r2_3
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_lv_r2_4:
+    path: font/enhance/enh_lv_r2_4
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_pg_r2_4:
+    path: font/enhance/enh_pg_r2_4
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_lv_r2_5:
+    path: font/enhance/enh_lv_r2_5
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_pg_r2_5:
+    path: font/enhance/enh_pg_r2_5
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_lv_r2_6:
+    path: font/enhance/enh_lv_r2_6
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_pg_r2_6:
+    path: font/enhance/enh_pg_r2_6
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_lv_r2_7:
+    path: font/enhance/enh_lv_r2_7
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_pg_r2_7:
+    path: font/enhance/enh_pg_r2_7
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_lv_r2_8:
+    path: font/enhance/enh_lv_r2_8
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_pg_r2_8:
+    path: font/enhance/enh_pg_r2_8
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_lv_r2_9:
+    path: font/enhance/enh_lv_r2_9
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_pg_r2_9:
+    path: font/enhance/enh_pg_r2_9
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_lv_r2_plus:
+    path: font/enhance/enh_lv_r2_plus
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_lv_r2_slash:
+    path: font/enhance/enh_lv_r2_slash
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_pg_r2_slash:
+    path: font/enhance/enh_pg_r2_slash
+    suggest_in_command: false
+    scale_ratio: 5
+    y_position: -100
+  enh_worn_r2:
+    path: font/enhance/enh_worn_r2
+    suggest_in_command: false
+    scale_ratio: 16
+    y_position: -95

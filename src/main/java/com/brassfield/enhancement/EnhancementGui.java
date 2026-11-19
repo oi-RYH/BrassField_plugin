@@ -1,20 +1,22 @@
 package com.brassfield.enhancement;
 
 import com.brassfield.common.FontSpace;
-import com.brassfield.common.ItemDelivery;
 import com.brassfield.common.ItemsAdderGuiBackground;
 import com.brassfield.stone.StoneGrade;
 import com.brassfield.stone.StoneWallet;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import io.papermc.paper.datacomponent.DataComponentTypes;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,7 +33,7 @@ public final class EnhancementGui implements InventoryHolder {
     public static final int INFO_SLOT = 7;
     public static final int STONE_SLOT = 19;
 
-    private static final int SIZE = 27;
+    private static final int SIZE = 54;
     private static final String TITLE_TEXT = "장비 강화";
     private static final Component TITLE = Component.text(TITLE_TEXT);
     private static final String BACKGROUND_FONT_IMAGE = "rustport:enhance_bg";
@@ -45,6 +47,7 @@ public final class EnhancementGui implements InventoryHolder {
     private static final int BOARD_CENTER_X = 129;
     private static final Map<String, String> BOARD_GLYPH_CACHE = new ConcurrentHashMap<>();
     private static final String BLANK_ICON_ID = "rustport:gui_blank";
+    private static final Map<String, String> LIST_GLYPH_CACHE = new ConcurrentHashMap<>();
 
     private final Inventory inventory;
     private final ItemsAdderGuiBackground guiBackground;
@@ -52,7 +55,20 @@ public final class EnhancementGui implements InventoryHolder {
     private final StoneWallet wallet;
     private final UUID ownerId;
 
-    public EnhancementGui(ItemStack targetItem, ItemsAdderGuiBackground guiBackground, StoneWallet wallet, UUID ownerId) {
+    // 아래 장비 목록
+    private List<EnhanceList.Entry> entries = List.of();
+    private int page;
+    // 목록에서 고른 장비: 플레이어 가방 칸 번호 + 그때의 아이템. 장비는 그 자리(착용 칸 포함)에 그대로 두고
+    // 강화 칸에는 보기용 복사본만 띄운다. 강화 결과도 그 자리에 바로 쓴다. 안 골랐으면 -1
+    private int selectedSlot = -1;
+    private ItemStack selectedItem;
+
+    public EnhancementGui(ItemsAdderGuiBackground guiBackground, StoneWallet wallet, UUID ownerId) {
+        this(-1, guiBackground, wallet, ownerId);
+    }
+
+    /** selectedSlot = 처음부터 골라 둘 가방 칸 (강화 후 다시 열 때), 없으면 -1 */
+    public EnhancementGui(int selectedSlot, ItemsAdderGuiBackground guiBackground, StoneWallet wallet, UUID ownerId) {
         this.guiBackground = guiBackground;
         this.wallet = wallet;
         this.ownerId = ownerId;
@@ -68,9 +84,16 @@ public final class EnhancementGui implements InventoryHolder {
             fillBackground();
         }
 
-        inventory.setItem(TARGET_SLOT, targetItem);
+        Player owner = Bukkit.getPlayer(ownerId);
+        if (owner != null && selectedSlot >= 0) {
+            ItemStack item = owner.getInventory().getItem(selectedSlot);
+            if (EnhanceTracks.isEnhanceable(item)) {
+                this.selectedSlot = selectedSlot;
+                this.selectedItem = item.clone();
+            }
+        }
         inventory.setItem(ENHANCE_BUTTON_SLOT, createEnhanceButton());
-        refreshInfo();
+        refresh();
     }
 
     @Override
@@ -81,36 +104,181 @@ public final class EnhancementGui implements InventoryHolder {
     public void open(Player player) {
         if (texturedGui != null) {
             guiBackground.show(texturedGui, player);
-            refreshInfo();
+            refresh();
         } else {
             player.openInventory(inventory);
         }
     }
 
-    public ItemStack getTargetItem() {
-        return inventory.getItem(TARGET_SLOT);
+    /** 강화 칸 정보 + 장비 목록을 다시 그린다 (가방이 바뀌었을 때) */
+    public void refresh() {
+        followSelection();
+        refreshList();
+        refreshInfo();
     }
 
-    public ItemStack takeTargetItem() {
-        return takeItem(TARGET_SLOT);
+    /** 고른 장비가 있는 가방 칸, 안 골랐으면 -1 */
+    public int selectedSlot() {
+        return selectedSlot;
+    }
+
+    /** 고를 때의 장비 (강화 직전에 그 칸에 아직 같은 장비가 있는지 확인용) */
+    public ItemStack selectedItem() {
+        return selectedItem == null ? null : selectedItem.clone();
+    }
+
+    public void clearSelection() {
+        selectedSlot = -1;
+        selectedItem = null;
+        refresh();
+    }
+
+    /** 강화 칸 보기용 복사본 (설명 · 확률 표시용) */
+    public ItemStack getTargetItem() {
+        return selectedItem;
+    }
+
+    /** 장비는 플레이어 가방에 그대로 있으므로 돌려줄 것이 없다 (다른 창들과 같은 닫기 처리용) */
+    public void returnItemsTo(Player player) {
+    }
+
+    /** 가방 안에서 고른 장비를 옮겼으면 따라가고, 없어졌으면 선택을 푼다 */
+    private void followSelection() {
+        if (selectedSlot < 0) {
+            return;
+        }
+        Player owner = Bukkit.getPlayer(ownerId);
+        if (owner == null) {
+            return;
+        }
+        PlayerInventory playerInventory = owner.getInventory();
+        if (selectedItem.equals(playerInventory.getItem(selectedSlot))) {
+            return;
+        }
+        for (int slot = 0; slot <= 40; slot++) {
+            if (selectedItem.equals(playerInventory.getItem(slot))) {
+                selectedSlot = slot;
+                return;
+            }
+        }
+        selectedSlot = -1;
+        selectedItem = null;
+    }
+
+    /** 아래 가방에서 강화할 수 있는 장비를 눌렀을 때: 집어 들지 않고 바로 고른다. 골랐으면 true */
+    public boolean selectFromInventory(Player player, int inventorySlot) {
+        ItemStack item = player.getInventory().getItem(inventorySlot);
+        if (!EnhanceTracks.isEnhanceable(item)) {
+            return false;
+        }
+        selectedSlot = inventorySlot;
+        selectedItem = item.clone();
+        refresh();
+        return true;
     }
 
     /**
-     * 장비 칸에 올려 둔 아이템을 플레이어에게 돌려준다. (인벤토리가 가득 차면 바닥에 떨어뜨림)
+     * 장비 목록 칸 · 쪽 넘기기 칸을 눌렀을 때. 목록 칸이면 그 장비를 고른다 (장비는 제자리에 둔다). 처리했으면 true
      */
-    public void returnItemsTo(Player player) {
-        ItemStack item = takeTargetItem();
-        if (item != null && !item.getType().isAir()) {
-            ItemDelivery.giveOrDrop(player, item);
+    public boolean handleListClick(Player player, int rawSlot) {
+        if (rawSlot == EnhanceList.PREV_SLOT || rawSlot == EnhanceList.NEXT_SLOT) {
+            int pages = EnhanceList.pageCount(entries.size());
+            int next = page + (rawSlot == EnhanceList.NEXT_SLOT ? 1 : -1);
+            if (next >= 0 && next < pages) {
+                page = next;
+                refresh();
+            }
+            return true;
         }
+        int card = EnhanceList.cardOf(rawSlot);
+        if (card < 0) {
+            return rawSlot == EnhanceList.PAGE_SLOT;
+        }
+        int index = page * EnhanceList.PAGE_SIZE + card;
+        if (index >= entries.size()) {
+            return true;
+        }
+        EnhanceList.Entry entry = entries.get(index);
+        ItemStack current = player.getInventory().getItem(entry.slot());
+        if (current != null && current.equals(entry.snapshot())) {
+            selectedSlot = entry.slot();
+            selectedItem = current.clone();
+        }
+        refresh();
+        return true;
+    }
+
+    private void refreshList() {
+        Player owner = Bukkit.getPlayer(ownerId);
+        entries = owner == null ? List.of() : EnhanceList.scan(owner);
+        int pages = EnhanceList.pageCount(entries.size());
+        page = Math.min(page, pages - 1);
+        for (int card = 0; card < EnhanceList.PAGE_SIZE; card++) {
+            int index = page * EnhanceList.PAGE_SIZE + card;
+            int slot = EnhanceList.iconSlot(card);
+            if (index >= entries.size()) {
+                inventory.setItem(slot, null);
+                inventory.setItem(slot + 1, null);
+                continue;
+            }
+            EnhanceList.Entry entry = entries.get(index);
+            ItemStack shown = cardItem(entry);
+            inventory.setItem(slot, shown);
+            inventory.setItem(slot + 1, cardFiller(shown));
+        }
+        inventory.setItem(EnhanceList.PREV_SLOT, page > 0 ? navButton("이전 쪽", Material.ARROW) : null);
+        inventory.setItem(EnhanceList.NEXT_SLOT, page < pages - 1 ? navButton("다음 쪽", Material.ARROW) : null);
+        inventory.setItem(EnhanceList.PAGE_SLOT, pages > 1 ? navButton((page + 1) + " / " + pages + " 쪽", Material.PAPER) : null);
+    }
+
+    /** 카드에 띄울 장비 복사본: 카드용 작은 모델(rustport:card/아이템이름) + "착용 중" · 안내 줄 */
+    private ItemStack cardItem(EnhanceList.Entry entry) {
+        ItemStack shown = entry.snapshot().clone();
+        shown.setAmount(1);
+        String id = EnhanceTracks.itemProvider().idOf(shown);
+        if (texturedGui != null && id != null && id.startsWith("customitem:")) {
+            shown.setData(DataComponentTypes.ITEM_MODEL, new NamespacedKey("rustport", "card/" + id.substring("customitem:".length())));
+        }
+        ItemMeta meta = shown.getItemMeta();
+        List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
+        lore.add(Component.empty());
+        if (entry.worn()) {
+            lore.add(Component.text("착용 중", NamedTextColor.RED));
+        }
+        lore.add(entry.slot() == selectedSlot
+                ? Component.text("강화 칸에 올라가 있습니다.", NamedTextColor.GREEN)
+                : Component.text("클릭하면 강화 칸에 올립니다.", NamedTextColor.YELLOW));
+        meta.lore(lore);
+        shown.setItemMeta(meta);
+        return shown;
+    }
+
+    /** 카드 오른쪽 칸: 투명 아이콘에 같은 설명 */
+    private ItemStack cardFiller(ItemStack shown) {
+        ItemStack filler = createIcon(Material.LIGHT_GRAY_STAINED_GLASS_PANE);
+        ItemMeta source = shown.getItemMeta();
+        ItemMeta meta = filler.getItemMeta();
+        meta.displayName(source.displayName());
+        meta.lore(source.lore());
+        filler.setItemMeta(meta);
+        return filler;
+    }
+
+    private ItemStack navButton(String name, Material fallback) {
+        ItemStack button = createIcon(fallback);
+        ItemMeta meta = button.getItemMeta();
+        meta.displayName(Component.text(name, NamedTextColor.YELLOW));
+        button.setItemMeta(meta);
+        return button;
     }
 
     public void refreshInfo() {
         ItemStack targetItem = getTargetItem();
+        inventory.setItem(TARGET_SLOT, targetItem == null ? null : selectedDisplay(targetItem));
         if (targetItem == null || targetItem.getType().isAir()) {
             inventory.setItem(INFO_SLOT, createEmptyInfoItem());
-            inventory.setItem(STONE_SLOT, createStoneHint("장비를 넣으면 필요한 강화석이 표시됩니다."));
-            updateBoard(List.of("§7장비를", "§7넣어주세요"));
+            inventory.setItem(STONE_SLOT, createStoneHint("아래 목록에서 장비를 고르면 필요한 강화석이 표시됩니다."));
+            updateBoard(List.of("§7장비를", "§7넣어주세요"));          // 정보판 글꼴에 있는 글자만 쓸 수 있다
             return;
         }
         EnhanceTrack track = EnhanceTracks.trackOf(targetItem).orElse(null);
@@ -143,7 +311,7 @@ public final class EnhancementGui implements InventoryHolder {
         if (texturedGui == null) {
             return;
         }
-        String title = buildTexturedTitle(buildBoardText(lines));
+        String title = buildTexturedTitle(buildListText() + buildBoardText(lines));
         for (HumanEntity viewer : new ArrayList<>(inventory.getViewers())) {
             InventoryView view = viewer.getOpenInventory();
             if (view.getTopInventory() != inventory) {
@@ -159,6 +327,67 @@ public final class EnhancementGui implements InventoryHolder {
                 + guiBackground.glyph(BACKGROUND_FONT_IMAGE)
                 + FontSpace.of(-BACKGROUND_GLYPH_ADVANCE - BACKGROUND_TEXTURE_OFFSET)
                 + boardText;
+    }
+
+    /**
+     * 장비 목록 위 글자: 카드마다 오른쪽 끝 맞춤 강화 단계(+N), 착용 중이면 검붉은 테두리, 쪽 번호.
+     * 끝나면 커서를 제목 시작점으로 되돌린다.
+     */
+    private String buildListText() {
+        StringBuilder builder = new StringBuilder("§f");
+        int[] cursor = {0};
+        for (int card = 0; card < EnhanceList.PAGE_SIZE; card++) {
+            int index = page * EnhanceList.PAGE_SIZE + card;
+            if (index >= entries.size()) {
+                break;
+            }
+            EnhanceList.Entry entry = entries.get(index);
+            int x = EnhanceList.cardX(card);
+            int row = EnhanceList.cardRow(card);
+            if (entry.worn()) {
+                placeGlyph(builder, cursor, x + 1, "rustport:enh_worn_r" + row, EnhanceList.WORN_FRAME_ADVANCE);
+            }
+            String text = "+" + entry.level();
+            int width = text.length() * EnhanceList.DIGIT_ADVANCE - 1;
+            int start = x + EnhanceList.CARD_W - 3 - width;
+            for (int i = 0; i < text.length(); i++) {
+                placeGlyph(builder, cursor, start + i * EnhanceList.DIGIT_ADVANCE,
+                        "rustport:enh_lv_r" + row + "_" + glyphKey(text.charAt(i)), EnhanceList.DIGIT_ADVANCE);
+            }
+        }
+        int pages = EnhanceList.pageCount(entries.size());
+        if (pages > 1) {
+            String text = (page + 1) + "/" + pages;
+            int width = text.length() * EnhanceList.DIGIT_ADVANCE - 1;
+            int start = EnhanceList.NAV_X + 9 - width / 2;
+            for (int i = 0; i < text.length(); i++) {
+                placeGlyph(builder, cursor, start + i * EnhanceList.DIGIT_ADVANCE,
+                        "rustport:enh_pg_r1_" + glyphKey(text.charAt(i)), EnhanceList.DIGIT_ADVANCE);
+            }
+        }
+        return builder.append(FontSpace.of(-cursor[0])).toString();
+    }
+
+    private static String glyphKey(char ch) {
+        return switch (ch) {
+            case '+' -> "plus";
+            case '/' -> "slash";
+            default -> String.valueOf(ch);
+        };
+    }
+
+    /** 창 기준 x 에 글꼴 그림 하나 (cursor = 제목 시작점 기준 현재 위치) */
+    private void placeGlyph(StringBuilder builder, int[] cursor, int windowX, String fontImageId, int advance) {
+        String glyph = LIST_GLYPH_CACHE.computeIfAbsent(fontImageId, id -> {
+            String raw = guiBackground.glyph(id);
+            return raw.endsWith("\uF801") ? raw.substring(0, raw.length() - 1) : raw;
+        });
+        if (glyph.isEmpty()) {
+            return;
+        }
+        int target = windowX - TITLE_ORIGIN_X;
+        builder.append(FontSpace.of(target - cursor[0])).append(glyph);
+        cursor[0] = target + advance;
     }
 
     /**
@@ -212,10 +441,18 @@ public final class EnhancementGui implements InventoryHolder {
         });
     }
 
-    private ItemStack takeItem(int slot) {
-        ItemStack item = inventory.getItem(slot);
-        inventory.setItem(slot, null);
-        return item;
+    /** 강화 칸에 띄우는 고른 장비의 보기용 복사본 */
+    private ItemStack selectedDisplay(ItemStack item) {
+        ItemStack shown = item.clone();
+        shown.setAmount(1);
+        ItemMeta meta = shown.getItemMeta();
+        List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
+        lore.add(Component.empty());
+        lore.add(Component.text("장비는 제자리(착용 칸 포함)에 둔 채 강화합니다.", NamedTextColor.GRAY));
+        lore.add(Component.text("클릭하면 선택을 풉니다.", NamedTextColor.YELLOW));
+        meta.lore(lore);
+        shown.setItemMeta(meta);
+        return shown;
     }
 
     private void fillBackground() {
@@ -242,7 +479,7 @@ public final class EnhancementGui implements InventoryHolder {
         ItemMeta meta = button.getItemMeta();
         meta.displayName(Component.text("강화 시도", NamedTextColor.GREEN));
         meta.lore(List.of(
-                Component.text("강화할 아이템을 왼쪽 슬롯에 넣고", NamedTextColor.GRAY),
+                Component.text("아래 목록에서 장비를 고르고", NamedTextColor.GRAY),
                 Component.text("클릭하세요.", NamedTextColor.GRAY)
         ));
         button.setItemMeta(meta);
@@ -253,7 +490,7 @@ public final class EnhancementGui implements InventoryHolder {
         ItemStack info = createIcon(Material.BARRIER);
         ItemMeta meta = info.getItemMeta();
         meta.displayName(Component.text("강화 정보", NamedTextColor.YELLOW));
-        meta.lore(List.of(Component.text("강화할 아이템을 넣어주세요.", NamedTextColor.GRAY)));
+        meta.lore(List.of(Component.text("아래 목록에서 장비를 골라주세요.", NamedTextColor.GRAY)));
         info.setItemMeta(meta);
         return info;
     }

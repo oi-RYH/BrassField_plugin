@@ -7,6 +7,8 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
@@ -14,6 +16,8 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
+import com.brassfield.common.ItemDelivery;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class EnhancementGuiListener implements Listener {
@@ -47,15 +51,30 @@ public final class EnhancementGuiListener implements Listener {
         event.setCancelled(true);
         int rawSlot = event.getRawSlot();
 
-        if (rawSlot == EnhancementGui.TARGET_SLOT) {
-            event.setCancelled(false);
-            scheduleInfoRefresh(gui);
+        if (rawSlot == EnhancementGui.TARGET_SLOT) {                    // 강화 칸 = 고른 장비 보기용 → 누르면 선택 해제
+            if (gui.selectedSlot() >= 0) {
+                gui.clearSelection();
+            }
             return;
         }
 
         if (event.getClickedInventory() != null
                 && event.getClickedInventory().getType() == InventoryType.PLAYER) {
-            event.setCancelled(event.isShiftClick());
+            // 강화할 수 있는 장비를 그냥 누르면(손에 든 것 없이) 집어 들지 않고 바로 강화 칸에 올린다
+            boolean plainClick = (event.getClick() == ClickType.LEFT || event.getClick() == ClickType.RIGHT)
+                    && (event.getCursor() == null || event.getCursor().getType().isAir());
+            if (plainClick && event.getWhoClicked() instanceof Player clicker && !animation.isPlaying(clicker)
+                    && gui.selectFromInventory(clicker, event.getSlot())) {
+                return;                                                // 클릭은 취소된 채로
+            }
+            // 쉬프트 이동 · 더블클릭 모으기는 막는다 (목록 카드 복사본이 가방으로 들어오지 않게)
+            event.setCancelled(event.isShiftClick() || event.getAction() == InventoryAction.COLLECT_TO_CURSOR);
+            scheduleInfoRefresh(gui);                                  // 가방이 바뀌면 장비 목록도 다시
+            return;
+        }
+
+        if (event.getWhoClicked() instanceof Player clicker && !animation.isPlaying(clicker)
+                && gui.handleListClick(clicker, rawSlot)) {
             return;
         }
 
@@ -65,9 +84,16 @@ public final class EnhancementGuiListener implements Listener {
             return;
         }
 
-        ItemStack targetItem = gui.getTargetItem();
-        if (targetItem == null || targetItem.getType().isAir()) {
-            player.sendMessage(Component.text("강화할 아이템을 넣어주세요.", NamedTextColor.RED));
+        int slot = gui.selectedSlot();
+        if (slot < 0) {
+            player.sendMessage(Component.text("아래 목록에서 강화할 장비를 골라주세요.", NamedTextColor.RED));
+            return;
+        }
+        PlayerInventory playerInventory = player.getInventory();
+        ItemStack targetItem = playerInventory.getItem(slot);
+        if (targetItem == null || !targetItem.equals(gui.selectedItem())) {   // 고른 뒤 가방이 바뀜
+            gui.refresh();
+            player.sendMessage(Component.text("장비 위치가 바뀌었습니다. 다시 골라주세요.", NamedTextColor.RED));
             return;
         }
         EnhanceTrack track = EnhanceTracks.trackOf(targetItem).orElse(null);
@@ -84,20 +110,33 @@ public final class EnhancementGuiListener implements Listener {
 
         EnhanceStep tier = track.step(currentLevel);
         StoneGrade grade = tier.stoneGrade();
-        if (!wallet.withdraw(player.getUniqueId(), grade, tier.stoneCost())) {
+        if (wallet.get(player.getUniqueId(), grade) < tier.stoneCost()) {
             player.sendMessage(Component.text(grade.displayName() + " 강화석이 부족합니다. (필요: " + tier.stoneCost()
                     + "개, 보유: " + wallet.get(player.getUniqueId(), grade) + "개)", NamedTextColor.RED));
             return;
         }
-
+        // 결과 아이템을 먼저 만들고(실패하면 강화석을 쓰지 않음) 그다음 강화석을 뺀다
         EnhancementService.EnhancementResult result = enhancementService.enhance(targetItem);
-        ItemStack originalItem = gui.takeTargetItem();
+        if (!wallet.withdraw(player.getUniqueId(), grade, tier.stoneCost())) {
+            return;
+        }
+
+        // 장비는 제자리(착용 칸 포함)에서 바로 바뀐다. 겹쳐 있던 나머지는 가방으로
+        ItemStack original = targetItem.clone();
+        playerInventory.setItem(slot, result.item());
+        if (original.getAmount() > 1) {
+            ItemStack rest = original.clone();
+            rest.setAmount(original.getAmount() - 1);
+            ItemDelivery.giveOrDrop(player, rest);
+        }
+        original.setAmount(1);
         player.closeInventory();
         animation.play(
                 player,
-                originalItem,
+                original,
                 result,
-                resultItem -> enhancementCommand.openGui(player, resultItem)
+                false,
+                resultItem -> enhancementCommand.openGui(player, slot)
         );
     }
 
@@ -107,17 +146,13 @@ public final class EnhancementGuiListener implements Listener {
             return;
         }
 
-        boolean touchesProtectedSlot = event.getRawSlots().stream()
-                .filter(slot -> slot < event.getView().getTopInventory().getSize())
-                .anyMatch(slot -> slot != EnhancementGui.TARGET_SLOT);
-        if (touchesProtectedSlot) {
+        boolean touchesGui = event.getRawSlots().stream()
+                .anyMatch(slot -> slot < event.getView().getTopInventory().getSize());
+        if (touchesGui) {
             event.setCancelled(true);
             return;
         }
-
-        if (event.getRawSlots().contains(EnhancementGui.TARGET_SLOT)) {
-            scheduleInfoRefresh(gui);
-        }
+        scheduleInfoRefresh(gui);
     }
 
     @EventHandler
@@ -141,6 +176,6 @@ public final class EnhancementGuiListener implements Listener {
     }
 
     private void scheduleInfoRefresh(EnhancementGui gui) {
-        plugin.getServer().getScheduler().runTask(plugin, gui::refreshInfo);
+        plugin.getServer().getScheduler().runTask(plugin, gui::refresh);
     }
 }
