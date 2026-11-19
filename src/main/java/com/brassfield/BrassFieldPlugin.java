@@ -154,8 +154,8 @@ public class BrassFieldPlugin extends JavaPlugin {
         EnhancementCommand enhancementCommand = new EnhancementCommand(guiBackground, stoneWallet);
         command("강화").setExecutor(enhancementCommand);
         animation = new EnhancementAnimation(this);
-        machines.onInteract(EnhancementCommand.MACHINE_ID, enhancementCommand::openGui);
-        machineMarkers.register(EnhancementCommand.MACHINE_ID, 2.6);
+        machines.onInteractAt(EnhancementCommand.MACHINE_ID, enhancementCommand::openAtAnvil);
+        machineMarkers.register(EnhancementCommand.MACHINE_ID, 1.9);   // 강화 모루 (2x1, 블록 한 칸 조금 넘는 높이)
 
         PluginManager pluginManager = getServer().getPluginManager();
         pluginManager.registerEvents(new EnhancementGuiListener(

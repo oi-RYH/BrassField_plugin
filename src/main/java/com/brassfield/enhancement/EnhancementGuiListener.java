@@ -4,6 +4,7 @@ import com.brassfield.stone.StoneGrade;
 import com.brassfield.stone.StoneWallet;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -131,13 +132,12 @@ public final class EnhancementGuiListener implements Listener {
         }
         original.setAmount(1);
         player.closeInventory();
-        animation.play(
-                player,
-                original,
-                result,
-                false,
-                resultItem -> enhancementCommand.openGui(player, slot)
-        );
+        Location anvil = enhancementCommand.anvilOf(player);
+        if (anvil != null) {                                           // 모루 위에 올려 망치질
+            animation.playOnAnvil(player, anvil, original, result, resultItem -> enhancementCommand.openGui(player, slot));
+        } else {                                                       // /강화 로 연 경우: 눈앞에 띄우는 연출
+            animation.play(player, original, result, false, resultItem -> enhancementCommand.openGui(player, slot));
+        }
     }
 
     @EventHandler
@@ -168,6 +168,7 @@ public final class EnhancementGuiListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         animation.stop(event.getPlayer(), true);
+        enhancementCommand.forget(event.getPlayer());
     }
 
     @EventHandler

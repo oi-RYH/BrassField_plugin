@@ -45,7 +45,7 @@ items:
     resource:
       material: PAPER
       generate: false
-      model_path: machine/enhancement_machine
+      model_path: machine/enhance_anvil
     behaviours:
       furniture:
         entity: item_display
@@ -55,15 +55,23 @@ items:
             y: 0.5
         solid: true
         cancel_drop: false
-        # 2블록 폭 작업대 (모델 x -8~24)
+        # 강화 모루 2x1 (모델 u -8~24, 뿔 · 뒤꿈치는 조금 더 나감. BrassField tools/machines/make_enhance_anvil.py). 주변은 블록으로 꾸민다
         hitbox:
           length: 1
           width: 2
-          height: 2
+          height: 1
         placeable_on:
           floor: true
           walls: false
           ceiling: false
+
+  # 강화 연출용 망치 (모루 위에서 휘두르는 표시 전용, 설치·사용 안 함)
+  enhance_hammer:
+    display_name: "강화 망치"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/enhance_hammer
 
   crop_buyer:
     display_name: "종자·작물 거래기"
@@ -134,3 +142,103 @@ items:
           floor: true
           walls: false
           ceiling: false
+
+  # 요리 납품 로봇 DL-7 (마을 공용). 몸은 가구, 머리는 BrassField 가 몸 위에 띄우는 표시(아래 dl7_head_*).
+  # 모델은 BrassField tools/npc/make_dl7.py 로 생성
+  dl7:
+    display_name: "DL-7 (요리 납품 로봇)"
+    lore:
+      - "&7관리자용 설치 아이템"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/dl7/body
+    behaviours:
+      furniture:
+        entity: item_display
+        opposite_direction: true
+        display_transformation:
+          translation:
+            y: 0.5
+        solid: true
+        cancel_drop: false
+        hitbox:
+          length: 1
+          width: 1
+          height: 2
+        placeable_on:
+          floor: true
+          walls: false
+          ceiling: false
+
+  dl7_head_normal:
+    display_name: "DL-7 머리 (normal)"
+    lore:
+      - "&8BrassField 가 로봇 머리 표시에 쓰는 아이템"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/dl7/head_normal
+
+  dl7_head_happy:
+    display_name: "DL-7 머리 (happy)"
+    lore:
+      - "&8BrassField 가 로봇 머리 표시에 쓰는 아이템"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/dl7/head_happy
+
+  dl7_head_focus:
+    display_name: "DL-7 머리 (focus)"
+    lore:
+      - "&8BrassField 가 로봇 머리 표시에 쓰는 아이템"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/dl7/head_focus
+
+  dl7_head_sparkle:
+    display_name: "DL-7 머리 (sparkle)"
+    lore:
+      - "&8BrassField 가 로봇 머리 표시에 쓰는 아이템"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/dl7/head_sparkle
+
+  dl7_head_surprised:
+    display_name: "DL-7 머리 (surprised)"
+    lore:
+      - "&8BrassField 가 로봇 머리 표시에 쓰는 아이템"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/dl7/head_surprised
+
+  dl7_head_thinking:
+    display_name: "DL-7 머리 (thinking)"
+    lore:
+      - "&8BrassField 가 로봇 머리 표시에 쓰는 아이템"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/dl7/head_thinking
+
+  dl7_head_heart:
+    display_name: "DL-7 머리 (heart)"
+    lore:
+      - "&8BrassField 가 로봇 머리 표시에 쓰는 아이템"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/dl7/head_heart
+
+  dl7_head_sleepy:
+    display_name: "DL-7 머리 (sleepy)"
+    lore:
+      - "&8BrassField 가 로봇 머리 표시에 쓰는 아이템"
+    resource:
+      material: PAPER
+      generate: false
+      model_path: machine/dl7/head_sleepy

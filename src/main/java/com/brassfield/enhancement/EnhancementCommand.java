@@ -7,10 +7,16 @@ import com.brassfield.stone.StoneWallet;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 /**
- * 강화 GUI를 여는 곳. 플레이어는 마을의 증폭 공작대(거래 기계)를 우클릭해 열고,
+ * 강화 GUI를 여는 곳. 플레이어는 마을의 강화 모루(가구)를 우클릭해 열고,
  * /강화 명령어는 관리자 테스트용이다 (/강화 무기|방어구 [단계] = 해당 단계 장비 지급).
  */
 public final class EnhancementCommand implements CommandExecutor {
@@ -23,6 +29,8 @@ public final class EnhancementCommand implements CommandExecutor {
 
     private final ItemsAdderGuiBackground guiBackground;
     private final StoneWallet wallet;
+    private static final double ANVIL_RANGE = 8;
+    private final Map<UUID, Location> anvils = new HashMap<>();
 
     public EnhancementCommand(ItemsAdderGuiBackground guiBackground, StoneWallet wallet) {
         this.guiBackground = guiBackground;
@@ -59,12 +67,33 @@ public final class EnhancementCommand implements CommandExecutor {
             return true;
         }
 
+        anvils.remove(player.getUniqueId());                           // 명령어로 열면 모루 없이 (앞에 띄우는 연출)
         openGui(player);
         return true;
     }
 
     public void openGui(Player player) {
         openGui(player, -1);
+    }
+
+    /** 모루 가구를 눌러 열 때: 그 모루 위치를 기억해 강화 연출을 모루 위에서 한다 */
+    public void openAtAnvil(Player player, Entity anvil) {
+        anvils.put(player.getUniqueId(), anvil.getLocation());
+        openGui(player, -1);
+    }
+
+    /** 이 플레이어가 마지막으로 연 모루 위치 (같은 월드 · 가까이 있을 때만), 없으면 null — /강화 로 연 경우 등 */
+    public Location anvilOf(Player player) {
+        Location anvil = anvils.get(player.getUniqueId());
+        if (anvil == null || anvil.getWorld() != player.getWorld()
+                || anvil.distanceSquared(player.getLocation()) > ANVIL_RANGE * ANVIL_RANGE) {
+            return null;
+        }
+        return anvil.clone();
+    }
+
+    public void forget(Player player) {
+        anvils.remove(player.getUniqueId());
     }
 
     /** selectedSlot = 처음부터 골라 둘 플레이어 가방 칸 (강화 후 다시 열 때), 없으면 -1 */
