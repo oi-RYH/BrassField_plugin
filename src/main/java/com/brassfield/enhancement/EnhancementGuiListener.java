@@ -70,18 +70,19 @@ public final class EnhancementGuiListener implements Listener {
             player.sendMessage(Component.text("강화할 아이템을 넣어주세요.", NamedTextColor.RED));
             return;
         }
-        if (!EnhancementItem.isEnhanceable(targetItem)) {
+        EnhanceTrack track = EnhanceTracks.trackOf(targetItem).orElse(null);
+        if (track == null) {
             player.sendMessage(Component.text("강화할 수 없는 아이템입니다.", NamedTextColor.RED));
             return;
         }
 
-        int currentLevel = EnhancementItem.getLevel(targetItem);
-        if (currentLevel >= EnhancementItem.getMaxLevel()) {
+        int currentLevel = EnhanceTracks.levelOf(targetItem);
+        if (currentLevel >= track.maxLevel()) {
             player.sendMessage(Component.text("이미 최고 강화 단계입니다!", NamedTextColor.YELLOW));
             return;
         }
 
-        EnhancementItem.EnhancementTier tier = EnhancementItem.getTier(currentLevel);
+        EnhanceStep tier = track.step(currentLevel);
         StoneGrade grade = tier.stoneGrade();
         if (!wallet.withdraw(player.getUniqueId(), grade, tier.stoneCost())) {
             player.sendMessage(Component.text(grade.displayName() + " 강화석이 부족합니다. (필요: " + tier.stoneCost()

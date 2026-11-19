@@ -1,0 +1,279 @@
+info:
+  namespace: customitem
+
+equipments:
+  torn_clothes:
+    type: armor
+    layer_1: armor/torn_clothes_layer_1
+    layer_2: armor/torn_clothes_layer_2
+  cloth_armor:
+    type: armor
+    layer_1: armor/cloth_armor_layer_1
+    layer_2: armor/cloth_armor_layer_2
+  leather_armor:
+    type: armor
+    layer_1: armor/leather_armor_layer_1
+    layer_2: armor/leather_armor_layer_2
+  knight_armor:
+    type: armor
+    layer_1: armor/knight_armor_layer_1
+    layer_2: armor/knight_armor_layer_2
+  hero_armor:
+    type: armor
+    layer_1: armor/hero_armor_layer_1
+    layer_2: armor/hero_armor_layer_2
+  master_armor:
+    type: armor
+    layer_1: armor/master_armor_layer_1
+    layer_2: armor/master_armor_layer_2
+
+# 투구는 3D 모델이라 재질이 종이 (철 투구면 머리에 바닐라 철 투구가 그려짐).
+# 머리 칸 장착(EQUIPPABLE)과 방어 수치는 BrassField 플러그인(ArmorTrack)이 붙인다.
+# 상의·하의·신발(철 방어구 재질)은 model_path 에 'customitem:' 을 붙이지 않는다 — 이 IA 베타가 한 번 더 붙여
+# customitem:customitem:armor/... 가 되어 깨진다 (투구 · 무기는 붙여도 정상).
+items:
+  # 찢어진 옷
+  torn_clothes_helmet:
+    display_name: 찢어진 옷 투구
+    resource:
+      generate: false
+      material: PAPER
+      model_path: customitem:armor/torn_clothes_helmet
+
+  torn_clothes_chestplate:
+    display_name: 찢어진 옷 상의
+    resource:
+      generate: false
+      material: IRON_CHESTPLATE
+      model_path: armor/torn_clothes_chestplate
+    equipment:
+      id: customitem:torn_clothes
+      slot_attribute_modifiers:
+        armor: 1
+
+  torn_clothes_leggings:
+    display_name: 찢어진 옷 하의
+    resource:
+      generate: false
+      material: IRON_LEGGINGS
+      model_path: armor/torn_clothes_leggings
+    equipment:
+      id: customitem:torn_clothes
+      slot_attribute_modifiers:
+        armor: 1
+
+  torn_clothes_boots:
+    display_name: 찢어진 옷 신발
+    resource:
+      generate: false
+      material: IRON_BOOTS
+      model_path: armor/torn_clothes_boots
+    equipment:
+      id: customitem:torn_clothes
+      slot_attribute_modifiers:
+        armor: 1
+
+  # 천 갑옷
+  cloth_armor_helmet:
+    display_name: 천 갑옷 투구
+    resource:
+      generate: false
+      material: PAPER
+      model_path: customitem:armor/cloth_armor_helmet
+
+  cloth_armor_chestplate:
+    display_name: 천 갑옷 상의
+    resource:
+      generate: false
+      material: IRON_CHESTPLATE
+      model_path: armor/cloth_armor_chestplate
+    equipment:
+      id: customitem:cloth_armor
+      slot_attribute_modifiers:
+        armor: 2
+
+  cloth_armor_leggings:
+    display_name: 천 갑옷 하의
+    resource:
+      generate: false
+      material: IRON_LEGGINGS
+      model_path: armor/cloth_armor_leggings
+    equipment:
+      id: customitem:cloth_armor
+      slot_attribute_modifiers:
+        armor: 2
+
+  cloth_armor_boots:
+    display_name: 천 갑옷 신발
+    resource:
+      generate: false
+      material: IRON_BOOTS
+      model_path: armor/cloth_armor_boots
+    equipment:
+      id: customitem:cloth_armor
+      slot_attribute_modifiers:
+        armor: 1
+
+  # 가죽 갑옷
+  leather_armor_helmet:
+    display_name: 가죽 갑옷 투구
+    resource:
+      generate: false
+      material: PAPER
+      model_path: customitem:armor/leather_armor_helmet
+
+  leather_armor_chestplate:
+    display_name: 가죽 갑옷 상의
+    resource:
+      generate: false
+      material: IRON_CHESTPLATE
+      model_path: armor/leather_armor_chestplate
+    equipment:
+      id: customitem:leather_armor
+      slot_attribute_modifiers:
+        armor: 3
+
+  leather_armor_leggings:
+    display_name: 가죽 갑옷 하의
+    resource:
+      generate: false
+      material: IRON_LEGGINGS
+      model_path: armor/leather_armor_leggings
+    equipment:
+      id: customitem:leather_armor
+      slot_attribute_modifiers:
+        armor: 2
+
+  leather_armor_boots:
+    display_name: 가죽 갑옷 신발
+    resource:
+      generate: false
+      material: IRON_BOOTS
+      model_path: armor/leather_armor_boots
+    equipment:
+      id: customitem:leather_armor
+      slot_attribute_modifiers:
+        armor: 1
+
+  # 기사 갑옷
+  knight_armor_helmet:
+    display_name: 기사 갑옷 투구
+    resource:
+      generate: false
+      material: PAPER
+      model_path: customitem:armor/knight_armor_helmet
+
+  knight_armor_chestplate:
+    display_name: 기사 갑옷 상의
+    resource:
+      generate: false
+      material: IRON_CHESTPLATE
+      model_path: armor/knight_armor_chestplate
+    equipment:
+      id: customitem:knight_armor
+      slot_attribute_modifiers:
+        armor: 6
+
+  knight_armor_leggings:
+    display_name: 기사 갑옷 하의
+    resource:
+      generate: false
+      material: IRON_LEGGINGS
+      model_path: armor/knight_armor_leggings
+    equipment:
+      id: customitem:knight_armor
+      slot_attribute_modifiers:
+        armor: 5
+
+  knight_armor_boots:
+    display_name: 기사 갑옷 신발
+    resource:
+      generate: false
+      material: IRON_BOOTS
+      model_path: armor/knight_armor_boots
+    equipment:
+      id: customitem:knight_armor
+      slot_attribute_modifiers:
+        armor: 2
+
+  # 영웅 갑옷
+  hero_armor_helmet:
+    display_name: 영웅 갑옷 투구
+    resource:
+      generate: false
+      material: PAPER
+      model_path: customitem:armor/hero_armor_helmet
+
+  hero_armor_chestplate:
+    display_name: 영웅 갑옷 상의
+    resource:
+      generate: false
+      material: IRON_CHESTPLATE
+      model_path: armor/hero_armor_chestplate
+    equipment:
+      id: customitem:hero_armor
+      slot_attribute_modifiers:
+        armor: 8
+
+  hero_armor_leggings:
+    display_name: 영웅 갑옷 하의
+    resource:
+      generate: false
+      material: IRON_LEGGINGS
+      model_path: armor/hero_armor_leggings
+    equipment:
+      id: customitem:hero_armor
+      slot_attribute_modifiers:
+        armor: 6
+
+  hero_armor_boots:
+    display_name: 영웅 갑옷 신발
+    resource:
+      generate: false
+      material: IRON_BOOTS
+      model_path: armor/hero_armor_boots
+    equipment:
+      id: customitem:hero_armor
+      slot_attribute_modifiers:
+        armor: 3
+
+  # 마스터 아머
+  master_armor_helmet:
+    display_name: 마스터 아머 투구
+    resource:
+      generate: false
+      material: PAPER
+      model_path: customitem:armor/master_armor_helmet
+
+  master_armor_chestplate:
+    display_name: 마스터 아머 상의
+    resource:
+      generate: false
+      material: IRON_CHESTPLATE
+      model_path: armor/master_armor_chestplate
+    equipment:
+      id: customitem:master_armor
+      slot_attribute_modifiers:
+        armor: 9
+
+  master_armor_leggings:
+    display_name: 마스터 아머 하의
+    resource:
+      generate: false
+      material: IRON_LEGGINGS
+      model_path: armor/master_armor_leggings
+    equipment:
+      id: customitem:master_armor
+      slot_attribute_modifiers:
+        armor: 7
+
+  master_armor_boots:
+    display_name: 마스터 아머 신발
+    resource:
+      generate: false
+      material: IRON_BOOTS
+      model_path: armor/master_armor_boots
+    equipment:
+      id: customitem:master_armor
+      slot_attribute_modifiers:
+        armor: 4

@@ -49,7 +49,15 @@ public enum StoneGrade {
         if (!isCurrency()) {
             return 0;
         }
-        return baseCost + extraStart + extraStep * (level - firstLevel);
+        return costAtStep(level - firstLevel);
+    }
+
+    /** 등급 안에서 stepInGrade 번째(0부터) 강화의 필요 개수 — 무기와 단계 구간이 다른 강화 종류(방어구)용 */
+    public int costAtStep(int stepInGrade) {
+        if (!isCurrency()) {
+            return 0;
+        }
+        return baseCost + extraStart + extraStep * stepInGrade;
     }
 
     /**

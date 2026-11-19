@@ -113,24 +113,25 @@ public final class EnhancementGui implements InventoryHolder {
             updateBoard(List.of("§7장비를", "§7넣어주세요"));
             return;
         }
-        if (!EnhancementItem.isEnhanceable(targetItem)) {
+        EnhanceTrack track = EnhanceTracks.trackOf(targetItem).orElse(null);
+        if (track == null) {
             inventory.setItem(INFO_SLOT, createInvalidInfoItem());
             inventory.setItem(STONE_SLOT, createStoneHint("강화할 수 없는 아이템입니다."));
             updateBoard(List.of("", "", "§c강화 불가"));
             return;
         }
-        inventory.setItem(INFO_SLOT, createProbabilityInfo(targetItem));
-        int level = EnhancementItem.getLevel(targetItem);
-        if (level >= EnhancementItem.getMaxLevel()) {
+        int level = EnhanceTracks.levelOf(targetItem);
+        EnhanceStep step = track.step(level);
+        inventory.setItem(INFO_SLOT, createProbabilityInfo(step));
+        if (level >= track.maxLevel()) {
             inventory.setItem(STONE_SLOT, createStoneHint("최고 단계라 더 이상 강화석이 필요하지 않습니다."));
             updateBoard(List.of("", "", "§6최고 단계"));
             return;
         }
-        EnhancementItem.EnhancementTier tier = EnhancementItem.getTier(level);
-        inventory.setItem(STONE_SLOT, createStoneInfo(tier));
+        inventory.setItem(STONE_SLOT, createStoneInfo(step));
         updateBoard(List.of(
                 "§a+" + level + " → +" + (level + 1),
-                "§f성공 " + formatChance(tier.successChance()) + "%"
+                "§f성공 " + formatChance(step.successChance()) + "%"
         ));
     }
 
@@ -233,7 +234,7 @@ public final class EnhancementGui implements InventoryHolder {
         if (texturedGui == null) {
             return new ItemStack(fallback);
         }
-        return EnhancementItem.createCustomOrFallback(BLANK_ICON_ID, fallback);
+        return EnhanceTracks.createCustomOrFallback(BLANK_ICON_ID, fallback);
     }
 
     private ItemStack createEnhanceButton() {
@@ -266,8 +267,7 @@ public final class EnhancementGui implements InventoryHolder {
         return info;
     }
 
-    private ItemStack createProbabilityInfo(ItemStack targetItem) {
-        EnhancementItem.EnhancementTier tier = EnhancementItem.getTier(EnhancementItem.getLevel(targetItem));
+    private ItemStack createProbabilityInfo(EnhanceStep tier) {
         ItemStack info = createIcon(Material.PAPER);
         ItemMeta meta = info.getItemMeta();
         meta.displayName(Component.text("강화 확률 정보", NamedTextColor.AQUA));
@@ -286,14 +286,14 @@ public final class EnhancementGui implements InventoryHolder {
     /**
      * 강화석 칸: 이번 강화에 필요한 등급의 강화석 아이콘과 필요/보유 수량. (강화석은 재화라 칸에 넣지 않는다)
      */
-    private ItemStack createStoneInfo(EnhancementItem.EnhancementTier tier) {
+    private ItemStack createStoneInfo(EnhanceStep tier) {
         StoneGrade grade = tier.stoneGrade();
         long balance = wallet.get(ownerId, grade);
         boolean enough = balance >= tier.stoneCost();
 
         ItemStack icon = texturedGui == null
                 ? new ItemStack(Material.AMETHYST_SHARD)
-                : EnhancementItem.createCustomOrFallback(grade.iconItemId(), Material.AMETHYST_SHARD);
+                : EnhanceTracks.createCustomOrFallback(grade.iconItemId(), Material.AMETHYST_SHARD);
         ItemMeta meta = icon.getItemMeta();
         meta.displayName(Component.text(grade.displayName() + " 강화석", grade.color()));
         meta.lore(List.of(

@@ -1,6 +1,7 @@
 package com.brassfield.enhancement;
 
 import com.brassfield.common.CommandSupport;
+import com.brassfield.common.ItemDelivery;
 import com.brassfield.common.ItemsAdderGuiBackground;
 import com.brassfield.stone.StoneWallet;
 import org.bukkit.command.Command;
@@ -11,7 +12,7 @@ import org.bukkit.inventory.ItemStack;
 
 /**
  * 강화 GUI를 여는 곳. 플레이어는 마을의 증폭 공작대(거래 기계)를 우클릭해 열고,
- * /강화 명령어는 관리자 테스트용이다.
+ * /강화 명령어는 관리자 테스트용이다 (/강화 무기|방어구 [단계] = 해당 단계 장비 지급).
  */
 public final class EnhancementCommand implements CommandExecutor {
 
@@ -37,6 +38,25 @@ public final class EnhancementCommand implements CommandExecutor {
         }
         if (!player.hasPermission(ADMIN_PERMISSION)) {
             CommandSupport.error(player, "마을의 증폭 공작대를 찾아가세요.");
+            return true;
+        }
+
+        if (args.length >= 1 && (args[0].equals("무기") || args[0].equals("방어구"))) {
+            int level;
+            try {
+                level = args.length >= 2 ? Integer.parseInt(args[1]) : 0;
+            } catch (NumberFormatException exception) {
+                CommandSupport.error(player, "사용법: /강화 <무기|방어구> [단계]");
+                return true;
+            }
+            if (args[0].equals("무기")) {
+                ItemDelivery.giveOrDrop(player, EnhanceTracks.weapon().buildItem(level));
+            } else {
+                for (ArmorTrack.Part part : ArmorTrack.Part.values()) {
+                    ItemDelivery.giveOrDrop(player, EnhanceTracks.armor(part).buildItem(level));
+                }
+            }
+            player.sendMessage("§a+" + level + " " + args[0] + "를 지급했습니다.");
             return true;
         }
 

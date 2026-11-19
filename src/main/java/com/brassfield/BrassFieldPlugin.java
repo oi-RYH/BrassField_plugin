@@ -22,7 +22,7 @@ import com.brassfield.enhancement.EnhancementAnimation;
 import com.brassfield.enhancement.EnhancementCommand;
 import com.brassfield.enhancement.EnhancementGui;
 import com.brassfield.enhancement.EnhancementGuiListener;
-import com.brassfield.enhancement.EnhancementItem;
+import com.brassfield.enhancement.EnhanceTracks;
 import com.brassfield.enhancement.EnhancementService;
 import com.brassfield.enhancement.StarterKitListener;
 import com.brassfield.hud.CurrencySidebar;
@@ -150,7 +150,7 @@ public class BrassFieldPlugin extends JavaPlugin {
         }
 
         // 강화
-        EnhancementItem.init(this);
+        EnhanceTracks.init(this);
         EnhancementCommand enhancementCommand = new EnhancementCommand(guiBackground, stoneWallet);
         command("강화").setExecutor(enhancementCommand);
         animation = new EnhancementAnimation(this);
@@ -163,6 +163,7 @@ public class BrassFieldPlugin extends JavaPlugin {
         ), this);
         pluginManager.registerEvents(new StoneChestListener(itemProvider, stoneWallet), this);
         pluginManager.registerEvents(new StarterKitListener(), this);
+        pluginManager.registerEvents(new com.brassfield.enhancement.ArmorDamageListener(), this);
         pluginManager.registerEvents(new StoneShopListener(stoneShop), this);
         pluginManager.registerEvents(new CropSellListener(this), this);
         pluginManager.registerEvents(new FoodSellListener(this), this);

@@ -1,0 +1,6 @@
+{
+  "credit": "BRASS FIELD — 0강 투구: 인벤토리에선 찢어진 두건 아이콘, 머리에 쓰면 보이지 않음",
+  "parent": "minecraft:item/generated",
+  "textures": {"layer0": "customitem:armor/icon/torn_clothes_helmet"},
+  "display": {"head": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [0, 0, 0]}}
+}

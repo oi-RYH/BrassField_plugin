@@ -1,6 +1,5 @@
 package com.brassfield.enhancement;
 
-import com.brassfield.common.ItemsAdderItemProvider;
 import com.brassfield.stone.StoneGrade;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemAttributeModifiers;
@@ -16,15 +15,17 @@ import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
 
-public final class EnhancementItem {
+/**
+ * 무기 강화 (0~25강, 단일 무기 · 외형 진화). 노션 "전투·성장 시스템 · 축 1 · 무기 강화" 표와 같다.
+ * 결과 아이템은 단계만으로 새로 만든다 (무기에는 단계 외의 데이터가 없다).
+ */
+public final class WeaponTrack implements EnhanceTrack {
 
-    private static final EnhancementTier[] TIERS = {
+    private static final WeaponTier[] TIERS = {
             tier(0, Material.STICK, "막대기", "customitem:stick", 98, 0, 2, StoneGrade.LOW, 1.0, NamedTextColor.WHITE),
             tier(1, Material.WOODEN_SWORD, "부서진 목검", "customitem:broken_wooden_sword", 90, 0, 10, StoneGrade.LOW, 2.0, NamedTextColor.GRAY),
             tier(2, Material.WOODEN_SWORD, "부서진 목검", "customitem:broken_wooden_sword", 87, 0, 13, StoneGrade.LOW, 2.5, NamedTextColor.GRAY),
@@ -53,71 +54,57 @@ public final class EnhancementItem {
             tier(25, Material.NETHERITE_SWORD, "마스터소드", "customitem:master_sword", 0, 0, 0, StoneGrade.END, 65.0, NamedTextColor.LIGHT_PURPLE)
     };
 
-    // 플러그인 이름이 RustportEnhancement였을 때 만들어진 아이템의 강화 단계 키. 읽기만 하고, 다시 만들 때 새 키로 바뀐다.
-    private static final NamespacedKey LEGACY_ENHANCE_LEVEL_KEY = new NamespacedKey("rustportenhancement", "enhance_level");
+    private final NamespacedKey attackDamageKey;
+    private final NamespacedKey attackSpeedKey;
 
-    private static NamespacedKey enhanceLevelKey;
-    private static NamespacedKey attackDamageKey;
-    private static NamespacedKey attackSpeedKey;
-    private static ItemsAdderItemProvider itemsAdderItemProvider;
-
-    private EnhancementItem() {
-    }
-
-    public static void init(JavaPlugin plugin) {
-        enhanceLevelKey = new NamespacedKey(plugin, "enhance_level");
+    WeaponTrack(JavaPlugin plugin) {
         attackDamageKey = new NamespacedKey(plugin, "enhance_attack_damage");
         attackSpeedKey = new NamespacedKey(plugin, "enhance_attack_speed");
-        itemsAdderItemProvider = new ItemsAdderItemProvider(plugin);
         validateTierTable();
     }
 
-    public static int getLevel(ItemStack item) {
-        if (item == null) {
-            return 0;
-        }
-
-        PersistentDataContainer data = item.getItemMeta().getPersistentDataContainer();
-        Integer storedLevel = data.get(enhanceLevelKey, PersistentDataType.INTEGER);
-        if (storedLevel == null) {
-            storedLevel = data.get(LEGACY_ENHANCE_LEVEL_KEY, PersistentDataType.INTEGER);
-        }
-        return storedLevel == null ? 0 : clampLevel(storedLevel);
+    @Override
+    public String key() {
+        return "weapon";
     }
 
-    public static EnhancementTier getTier(int level) {
-        return TIERS[clampLevel(level)];
+    @Override
+    public String displayName() {
+        return "무기";
     }
 
-    public static int getMaxLevel() {
+    @Override
+    public int maxLevel() {
         return TIERS.length - 1;
     }
 
-    public static boolean isEnhanceable(ItemStack item) {
-        if (item == null || item.getType().isAir()) {
-            return false;
-        }
-        if (itemsAdderItemProvider.matches(item, TIERS[0].customItemId())) {
-            return true;
-        }
-        PersistentDataContainer data = item.getItemMeta().getPersistentDataContainer();
-        return data.has(enhanceLevelKey, PersistentDataType.INTEGER)
-                || data.has(LEGACY_ENHANCE_LEVEL_KEY, PersistentDataType.INTEGER);
+    public WeaponTier tier(int level) {
+        return TIERS[Math.max(0, Math.min(level, maxLevel()))];
     }
 
-    public static ItemStack createCustomOrFallback(String namespacedId, Material fallback) {
-        try {
-            return itemsAdderItemProvider.create(namespacedId);
-        } catch (IllegalStateException exception) {
-            return ItemStack.of(fallback);
-        }
+    @Override
+    public EnhanceStep step(int level) {
+        WeaponTier tier = tier(level);
+        return new EnhanceStep(tier.level(), tier.successChance(), tier.downgradeChance(), tier.maintainChance(),
+                tier.stoneGrade(), tier.stoneGrade().costAt(tier.level()));
     }
 
-    public static ItemStack buildItem(int level) {
-        EnhancementTier tier = getTier(level);
+    @Override
+    public boolean isFreshItem(ItemStack item) {
+        return EnhanceTracks.itemProvider().matches(item, TIERS[0].customItemId());
+    }
+
+    @Override
+    public ItemStack applyLevel(ItemStack original, int newLevel) {
+        return buildItem(newLevel);
+    }
+
+    /** level 단계 무기를 새로 만든다 (처음 지급 · 관리자 지급) */
+    public ItemStack buildItem(int level) {
+        WeaponTier tier = tier(level);
         ItemStack item = tier.customItemId() == null
                 ? ItemStack.of(tier.material())
-                : itemsAdderItemProvider.create(tier.customItemId());
+                : EnhanceTracks.itemProvider().create(tier.customItemId());
         item.setAmount(1);
 
         ItemMeta meta = item.getItemMeta();
@@ -126,32 +113,32 @@ public final class EnhancementItem {
                         .append(Component.text(tier.displayName(), tier.nameColor()))
         );
         meta.lore(createLore(tier));
-        meta.getPersistentDataContainer().set(enhanceLevelKey, PersistentDataType.INTEGER, tier.level());
+        EnhanceTracks.writeIdentity(meta, this, tier.level());
         meta.setUnbreakable(true);
         meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
-        meta.setEnchantmentGlintOverride(tier.level() == getMaxLevel());
+        meta.setEnchantmentGlintOverride(tier.level() == maxLevel());
         item.setItemMeta(meta);
         applyCombatAttributes(item, tier.damage());
         return item;
     }
 
-    private static List<Component> createLore(EnhancementTier tier) {
-        if (tier.level() == getMaxLevel()) {
+    private List<Component> createLore(WeaponTier tier) {
+        if (tier.level() == maxLevel()) {
             return List.of(
                     loreLine("강화 단계: ", "+" + tier.level(), NamedTextColor.LIGHT_PURPLE),
                     loreLine("공격 데미지: ", format(tier.damage()), NamedTextColor.RED),
                     Component.text("최고 강화 단계", NamedTextColor.GOLD)
             );
         }
-
+        EnhanceStep step = step(tier.level());
         return List.of(
                 loreLine("강화 단계: ", "+" + tier.level(), NamedTextColor.GREEN),
                 loreLine("공격 데미지: ", format(tier.damage()), NamedTextColor.RED),
-                loreLine("필요 강화석: ", tier.stoneGrade().displayName() + " " + tier.stoneCost() + "개", tier.stoneGrade().color()),
+                loreLine("필요 강화석: ", step.stoneGrade().displayName() + " " + step.stoneCost() + "개", step.stoneGrade().color()),
                 Component.empty(),
-                loreLine("성공: ", format(tier.successChance()) + "%", NamedTextColor.GREEN),
-                loreLine("하락: ", format(tier.downgradeChance()) + "%", NamedTextColor.RED),
-                loreLine("유지: ", format(tier.maintainChance()) + "%", NamedTextColor.YELLOW)
+                loreLine("성공: ", format(step.successChance()) + "%", NamedTextColor.GREEN),
+                loreLine("하락: ", format(step.downgradeChance()) + "%", NamedTextColor.RED),
+                loreLine("유지: ", format(step.maintainChance()) + "%", NamedTextColor.YELLOW)
         );
     }
 
@@ -159,7 +146,7 @@ public final class EnhancementItem {
         return Component.text(label, NamedTextColor.GRAY).append(Component.text(value, valueColor));
     }
 
-    private static void applyCombatAttributes(ItemStack item, double damage) {
+    private void applyCombatAttributes(ItemStack item, double damage) {
         AttributeModifier damageModifier = new AttributeModifier(
                 attackDamageKey,
                 damage - 1.0,
@@ -193,15 +180,11 @@ public final class EnhancementItem {
         );
     }
 
-    private static int clampLevel(int level) {
-        return Math.max(0, Math.min(level, getMaxLevel()));
-    }
-
-    private static String format(double value) {
+    static String format(double value) {
         return value == Math.rint(value) ? String.format("%.0f", value) : String.valueOf(value);
     }
 
-    private static EnhancementTier tier(
+    private static WeaponTier tier(
             int level,
             Material material,
             String displayName,
@@ -213,23 +196,13 @@ public final class EnhancementItem {
             double damage,
             NamedTextColor nameColor
     ) {
-        return new EnhancementTier(
-                level,
-                material,
-                displayName,
-                customItemId,
-                successChance,
-                downgradeChance,
-                maintainChance,
-                stoneGrade,
-                damage,
-                nameColor
-        );
+        return new WeaponTier(level, material, displayName, customItemId, successChance, downgradeChance,
+                maintainChance, stoneGrade, damage, nameColor);
     }
 
-    private static void validateTierTable() {
+    private void validateTierTable() {
         for (int index = 0; index < TIERS.length; index++) {
-            EnhancementTier tier = TIERS[index];
+            WeaponTier tier = TIERS[index];
             if (tier.level() != index) {
                 throw new IllegalStateException("강화 단계 인덱스가 일치하지 않습니다: " + index);
             }
@@ -237,7 +210,7 @@ public final class EnhancementItem {
             if (gradeStarts && tier.stoneGrade().firstLevel() != index) {
                 throw new IllegalStateException("강화석 등급 시작 단계가 일치하지 않습니다: +" + index);
             }
-            if (index < getMaxLevel()) {
+            if (index < maxLevel()) {
                 double totalChance = tier.successChance() + tier.downgradeChance() + tier.maintainChance();
                 if (Math.abs(totalChance - 100.0) > 0.0001) {
                     throw new IllegalStateException("강화 확률의 합이 100이 아닙니다: +" + index + " = " + totalChance);
@@ -246,7 +219,8 @@ public final class EnhancementItem {
         }
     }
 
-    public record EnhancementTier(
+    /** 무기 한 단계: 확률 · 강화석 등급 + 외형 (재질 · 이름 · 커스텀 모델) · 데미지 */
+    public record WeaponTier(
             int level,
             Material material,
             String displayName,
@@ -258,8 +232,5 @@ public final class EnhancementItem {
             double damage,
             NamedTextColor nameColor
     ) {
-        public int stoneCost() {
-            return stoneGrade.costAt(level);
-        }
     }
 }

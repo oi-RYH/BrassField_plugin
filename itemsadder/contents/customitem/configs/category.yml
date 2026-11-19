@@ -17,3 +17,33 @@ categories:
       - "customitem:knight_sword"
       - "customitem:hero_sword"
       - "customitem:master_sword"
+
+  customarmors:
+    enabled: true
+    icon: "customitem:knight_armor_helmet"
+    name: "커스텀 방어구"
+
+    items:
+      - "customitem:torn_clothes_chestplate"
+      - "customitem:torn_clothes_leggings"
+      - "customitem:torn_clothes_boots"
+      - "customitem:cloth_armor_helmet"
+      - "customitem:cloth_armor_chestplate"
+      - "customitem:cloth_armor_leggings"
+      - "customitem:cloth_armor_boots"
+      - "customitem:leather_armor_helmet"
+      - "customitem:leather_armor_chestplate"
+      - "customitem:leather_armor_leggings"
+      - "customitem:leather_armor_boots"
+      - "customitem:knight_armor_helmet"
+      - "customitem:knight_armor_chestplate"
+      - "customitem:knight_armor_leggings"
+      - "customitem:knight_armor_boots"
+      - "customitem:hero_armor_helmet"
+      - "customitem:hero_armor_chestplate"
+      - "customitem:hero_armor_leggings"
+      - "customitem:hero_armor_boots"
+      - "customitem:master_armor_helmet"
+      - "customitem:master_armor_chestplate"
+      - "customitem:master_armor_leggings"
+      - "customitem:master_armor_boots"
