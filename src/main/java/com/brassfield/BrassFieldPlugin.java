@@ -166,6 +166,18 @@ public class BrassFieldPlugin extends JavaPlugin {
         accessoryManager.setEffects(setEffects);
         pluginManager.registerEvents(setEffects, this);
         setEffects.start();
+        com.brassfield.accessory.AccessoryTrack.registerAll();                 // 장신구 강화 · 승급 (강화 모루)
+        com.brassfield.enhancement.EnhanceSlots.extra(new com.brassfield.enhancement.EnhanceSlots.Extra() {
+            @Override
+            public org.bukkit.inventory.ItemStack[] items(Player player) {
+                return accessoryManager.slots(player);
+            }
+
+            @Override
+            public void set(Player player, int index, org.bukkit.inventory.ItemStack item) {
+                accessoryManager.setSlot(player, index, item);
+            }
+        });
         com.brassfield.accessory.AccessoryCommand accessoryCommand = new com.brassfield.accessory.AccessoryCommand(accessoryManager, guiBackground);
         PluginCommand accessoryEntry = command("장신구");
         accessoryEntry.setExecutor(accessoryCommand);

@@ -30,4 +30,14 @@ public interface EnhanceTrack {
     default boolean isFreshItem(ItemStack item) {
         return false;
     }
+
+    /** level 에서 다음으로 가는 시도가 강화가 아니라 승급(다음 등급으로 바뀜)인지 — 장신구 3강 → 다음 등급 */
+    default boolean isPromotion(int level) {
+        return false;
+    }
+
+    /** 강화 기록(enhance_level)이 없는 아이템의 단계 (기본 0, 장신구는 자체 기록을 읽는다) */
+    default int freshLevel(ItemStack item) {
+        return 0;
+    }
 }

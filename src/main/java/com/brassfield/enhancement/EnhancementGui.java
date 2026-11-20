@@ -86,7 +86,7 @@ public final class EnhancementGui implements InventoryHolder {
 
         Player owner = Bukkit.getPlayer(ownerId);
         if (owner != null && selectedSlot >= 0) {
-            ItemStack item = owner.getInventory().getItem(selectedSlot);
+            ItemStack item = EnhanceSlots.get(owner, selectedSlot);
             if (EnhanceTracks.isEnhanceable(item)) {
                 this.selectedSlot = selectedSlot;
                 this.selectedItem = item.clone();
@@ -151,13 +151,18 @@ public final class EnhancementGui implements InventoryHolder {
         if (owner == null) {
             return;
         }
-        PlayerInventory playerInventory = owner.getInventory();
-        if (selectedItem.equals(playerInventory.getItem(selectedSlot))) {
+        if (selectedItem.equals(EnhanceSlots.get(owner, selectedSlot))) {
             return;
         }
-        for (int slot = 0; slot <= 40; slot++) {
-            if (selectedItem.equals(playerInventory.getItem(slot))) {
+        for (int slot = 0; slot <= EnhanceSlots.LAST_INVENTORY_SLOT; slot++) {
+            if (selectedItem.equals(owner.getInventory().getItem(slot))) {
                 selectedSlot = slot;
+                return;
+            }
+        }
+        for (int i = 0; i < EnhanceSlots.extraCount(owner); i++) {
+            if (selectedItem.equals(EnhanceSlots.get(owner, EnhanceSlots.EXTRA_FIRST + i))) {
+                selectedSlot = EnhanceSlots.EXTRA_FIRST + i;
                 return;
             }
         }
@@ -199,7 +204,7 @@ public final class EnhancementGui implements InventoryHolder {
             return true;
         }
         EnhanceList.Entry entry = entries.get(index);
-        ItemStack current = player.getInventory().getItem(entry.slot());
+        ItemStack current = EnhanceSlots.get(player, entry.slot());
         if (current != null && current.equals(entry.snapshot())) {
             selectedSlot = entry.slot();
             selectedItem = current.clone();
@@ -297,6 +302,10 @@ public final class EnhancementGui implements InventoryHolder {
             return;
         }
         inventory.setItem(STONE_SLOT, createStoneInfo(step));
+        if (track.isPromotion(level)) {                                  // 장신구 3강 → 다음 등급
+            updateBoard(List.of("§d+" + level + " → 승급", "§f성공 " + formatChance(step.successChance()) + "%"));
+            return;
+        }
         updateBoard(List.of(
                 "§a+" + level + " → +" + (level + 1),
                 "§f성공 " + formatChance(step.successChance()) + "%"

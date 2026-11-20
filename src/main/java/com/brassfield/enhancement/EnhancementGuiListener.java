@@ -90,8 +90,7 @@ public final class EnhancementGuiListener implements Listener {
             player.sendMessage(Component.text("아래 목록에서 강화할 장비를 골라주세요.", NamedTextColor.RED));
             return;
         }
-        PlayerInventory playerInventory = player.getInventory();
-        ItemStack targetItem = playerInventory.getItem(slot);
+        ItemStack targetItem = EnhanceSlots.get(player, slot);
         if (targetItem == null || !targetItem.equals(gui.selectedItem())) {   // 고른 뒤 가방이 바뀜
             gui.refresh();
             player.sendMessage(Component.text("장비 위치가 바뀌었습니다. 다시 골라주세요.", NamedTextColor.RED));
@@ -124,7 +123,7 @@ public final class EnhancementGuiListener implements Listener {
 
         // 장비는 제자리(착용 칸 포함)에서 바로 바뀐다. 겹쳐 있던 나머지는 가방으로
         ItemStack original = targetItem.clone();
-        playerInventory.setItem(slot, result.item());
+        EnhanceSlots.set(player, slot, result.item());
         if (original.getAmount() > 1) {
             ItemStack rest = original.clone();
             rest.setAmount(original.getAmount() - 1);

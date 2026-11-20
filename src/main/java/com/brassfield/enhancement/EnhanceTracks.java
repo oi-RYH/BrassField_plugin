@@ -96,8 +96,12 @@ public final class EnhanceTracks {
         if (stored == null) {
             stored = data.get(LEGACY_LEVEL_KEY, PersistentDataType.INTEGER);
         }
-        int max = trackOf(item).map(EnhanceTrack::maxLevel).orElse(0);
-        return stored == null ? 0 : Math.max(0, Math.min(stored, max));
+        EnhanceTrack track = trackOf(item).orElse(null);
+        int max = track == null ? 0 : track.maxLevel();
+        if (stored == null) {
+            stored = track == null ? 0 : track.freshLevel(item);
+        }
+        return Math.max(0, Math.min(stored, max));
     }
 
     /** 아이템 데이터에 강화 종류 · 단계를 적는다 (각 종류의 applyLevel 에서 부른다) */

@@ -309,7 +309,11 @@ public final class EnhancementAnimation {
                         0.25
                 );
                 player.playSound(at, Sound.ITEM_TOTEM_USE, 1.0f, 1.1f);
-                player.sendMessage(Component.text("강화 성공! 현재 단계: +" + result.level(), NamedTextColor.GREEN));
+                boolean promoted = EnhanceTracks.levelOf(result.item()) != result.level();   // 장신구 승급: 다음 등급 0강
+                player.sendMessage(promoted
+                        ? Component.text("승급 성공! ", NamedTextColor.LIGHT_PURPLE)
+                                .append(result.item().effectiveName())
+                        : Component.text("강화 성공! 현재 단계: +" + result.level(), NamedTextColor.GREEN));
             }
             case DOWNGRADE -> {
                 playFailureParticles(at);

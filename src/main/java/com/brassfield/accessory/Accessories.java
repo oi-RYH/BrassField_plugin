@@ -59,6 +59,10 @@ public final class Accessories {
         pdc.set(VARIANT, PersistentDataType.STRING, info.variant().id());
         pdc.set(GRADE, PersistentDataType.STRING, info.grade().id());
         pdc.set(LEVEL, PersistentDataType.INTEGER, info.level());
+        AccessoryTrack track = AccessoryTrack.of(info.grade());
+        if (track != null) {
+            com.brassfield.enhancement.EnhanceTracks.writeIdentity(meta, track, info.level());   // 강화 창에서 고를 수 있게
+        }
         String name = info.set().itemName(info.variant()) + (info.level() > 0 ? " +" + info.level() : "");
         meta.displayName(plain(name, info.grade().color()));
         List<Component> lore = new ArrayList<>();

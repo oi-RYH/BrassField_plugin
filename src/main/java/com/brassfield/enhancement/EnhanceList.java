@@ -55,6 +55,14 @@ final class EnhanceList {
             }
             entries.add(new Entry(slot, item.clone(), slot >= FIRST_WORN_SLOT, EnhanceTracks.levelOf(item), kindOrder(track)));
         }
+        for (int i = 0; i < EnhanceSlots.extraCount(player); i++) {          // 가방 밖 착용 칸 (장신구)
+            int slot = EnhanceSlots.EXTRA_FIRST + i;
+            ItemStack item = EnhanceSlots.get(player, slot);
+            EnhanceTrack track = EnhanceTracks.trackOf(item).orElse(null);
+            if (track != null) {
+                entries.add(new Entry(slot, item.clone(), true, EnhanceTracks.levelOf(item), kindOrder(track)));
+            }
+        }
         entries.sort(Comparator.comparing((Entry e) -> !e.worn())
                 .thenComparingInt(Entry::level)
                 .thenComparingInt(Entry::kindOrder)
