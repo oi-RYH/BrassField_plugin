@@ -16,6 +16,9 @@ commands:
     description: (관리자) 강화석 상점을 엽니다.
   요리가격:
     description: DL-7 요리 납품 단가와 오늘의 주문을 봅니다.
+  장신구:
+    description: 장신구 장착 창을 엽니다 (G 키 메뉴와 같음). 관리자는 지급도 합니다.
+    aliases: [악세사리]
 
 permissions:
   brassfield.stone.admin:
@@ -32,6 +35,9 @@ permissions:
     default: op
   brassfield.shop.admin:
     description: NPC 없이 /상점 으로 강화석 상점 열기
+    default: op
+  brassfield.accessory.admin:
+    description: 장신구 지급 (/장신구 지급 · 전체)
     default: op
   brassfield.food.admin:
     description: 다른 사람이 놓은 요리도 먹거나 집기

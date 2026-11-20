@@ -158,6 +158,17 @@ public class BrassFieldPlugin extends JavaPlugin {
         machineMarkers.register(EnhancementCommand.MACHINE_ID, 1.9);   // 강화 모루 (2x1, 블록 한 칸 조금 넘는 높이)
 
         PluginManager pluginManager = getServer().getPluginManager();
+
+        // 장신구: 장착 창(/장신구 · G 키 메뉴), 능력치, 관리자 지급
+        com.brassfield.accessory.AccessoryManager accessoryManager = new com.brassfield.accessory.AccessoryManager(this);
+        com.brassfield.accessory.AccessoryCommand accessoryCommand = new com.brassfield.accessory.AccessoryCommand(accessoryManager, guiBackground);
+        PluginCommand accessoryEntry = command("장신구");
+        accessoryEntry.setExecutor(accessoryCommand);
+        accessoryEntry.setTabCompleter(accessoryCommand);
+        pluginManager.registerEvents(new com.brassfield.accessory.AccessoryListener(this, accessoryManager, accessoryCommand), this);
+        com.brassfield.accessory.MenuDialogPack.install(this);
+        getServer().getOnlinePlayers().forEach(accessoryManager::apply);
+
         pluginManager.registerEvents(new EnhancementGuiListener(
                 this, enhancementCommand, new EnhancementService(), animation, stoneWallet
         ), this);
