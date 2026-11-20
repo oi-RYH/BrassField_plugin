@@ -70,6 +70,7 @@ public class BrassFieldPlugin extends JavaPlugin {
     private BalanceBook foodSalesBook;
     private FoodMarket foodMarket;
     private DeliveryRobots deliveryRobots;
+    private com.brassfield.accessory.SetEffects setEffects;
 
     @Override
     public void onEnable() {
@@ -161,6 +162,10 @@ public class BrassFieldPlugin extends JavaPlugin {
 
         // 장신구: 장착 창(/장신구 · G 키 메뉴), 능력치, 관리자 지급
         com.brassfield.accessory.AccessoryManager accessoryManager = new com.brassfield.accessory.AccessoryManager(this);
+        setEffects = new com.brassfield.accessory.SetEffects(this);
+        accessoryManager.setEffects(setEffects);
+        pluginManager.registerEvents(setEffects, this);
+        setEffects.start();
         com.brassfield.accessory.AccessoryCommand accessoryCommand = new com.brassfield.accessory.AccessoryCommand(accessoryManager, guiBackground);
         PluginCommand accessoryEntry = command("장신구");
         accessoryEntry.setExecutor(accessoryCommand);
@@ -233,6 +238,9 @@ public class BrassFieldPlugin extends JavaPlugin {
         }
         if (animation != null) {
             animation.shutdown();
+        }
+        if (setEffects != null) {
+            setEffects.stop();
         }
         if (currencySidebar != null) {
             currencySidebar.stop();

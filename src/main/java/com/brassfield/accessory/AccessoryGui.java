@@ -95,7 +95,7 @@ public final class AccessoryGui implements InventoryHolder {
         return item;
     }
 
-    /** 세트 효과(왕관): 세트별 장착 개수. 2세트 · 5세트 효과 내용은 아직 정하지 않았다 (노션 Q12) */
+    /** 세트 효과(왕관): 세트별 장착 개수와 2세트 · 5세트 효과 (켜진 효과는 초록 · 금색) */
     private ItemStack setItem() {
         ItemStack item = button("accessory_set");
         ItemMeta meta = item.getItemMeta();
@@ -107,11 +107,14 @@ public final class AccessoryGui implements InventoryHolder {
         List<Component> lore = new ArrayList<>();
         for (AccessoryKind.Set set : AccessoryKind.Set.values()) {
             int n = counts.getOrDefault(set, 0);
-            lore.add(Accessories.plain(set.displayName() + " 세트 ", NamedTextColor.GRAY)
+            List<String> effects = SetEffects.describe(set);
+            lore.add(Accessories.plain(set.displayName() + " 세트 ", NamedTextColor.WHITE)
                     .append(Accessories.plain(n + " / 5", n >= 5 ? NamedTextColor.GOLD : n >= 2 ? NamedTextColor.GREEN : NamedTextColor.DARK_GRAY)));
+            lore.add(Accessories.plain(" 2세트: " + effects.get(0), n >= 2 ? NamedTextColor.GREEN : NamedTextColor.DARK_GRAY));
+            lore.add(Accessories.plain(" 5세트: " + effects.get(1), n >= 5 ? NamedTextColor.GOLD : NamedTextColor.DARK_GRAY));
         }
         lore.add(Component.empty());
-        lore.add(Accessories.plain("같은 세트 2개 · 5개를 끼면 세트 효과 (준비 중)", NamedTextColor.DARK_GRAY));
+        lore.add(Accessories.plain("5세트는 2세트 효과도 함께 받습니다", NamedTextColor.GRAY));
         meta.lore(lore);
         item.setItemMeta(meta);
         return item;

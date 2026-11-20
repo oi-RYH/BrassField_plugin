@@ -205,6 +205,7 @@ public final class PlacedFood implements Listener {
         int level = Math.min(20, player.getFoodLevel() + nutrition);
         player.setFoodLevel(level);
         player.setSaturation(Math.min(level, player.getSaturation() + saturation));
+        com.brassfield.accessory.SetEffects.ate(player);              // 요리/농사 2세트: 포만감 +10
         player.getWorld().playSound(hitbox.getLocation(), Sound.ENTITY_GENERIC_EAT, 1.0f, 1.0f);
         player.getWorld().playSound(hitbox.getLocation(), Sound.ENTITY_PLAYER_BURP, 0.5f, 1.0f);
         if (buffs != null) {

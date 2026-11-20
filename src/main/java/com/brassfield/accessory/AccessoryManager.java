@@ -32,11 +32,20 @@ public final class AccessoryManager {
     private final NamespacedKey healthKey;
     private final Map<UUID, ItemStack[]> equipped = new HashMap<>();
     private final Map<UUID, Map<Part, Double>> totals = new HashMap<>();
+    private SetEffects setEffects;
 
     public AccessoryManager(JavaPlugin plugin) {
         this.plugin = plugin;
         this.folder = new File(plugin.getDataFolder(), "accessories");
         this.healthKey = new NamespacedKey(plugin, "accessory_health");
+    }
+
+    public void setEffects(SetEffects setEffects) {
+        this.setEffects = setEffects;
+    }
+
+    public SetEffects setEffects() {
+        return setEffects;
     }
 
     public ItemStack[] slots(Player player) {
@@ -72,6 +81,9 @@ public final class AccessoryManager {
             Accessories.read(item).ifPresent(info -> sum.merge(info.part(), info.value(), Double::sum));
         }
         totals.put(player.getUniqueId(), sum);
+        if (setEffects != null) {
+            setEffects.update(player, slots(player));
+        }
         AttributeInstance health = player.getAttribute(Attribute.MAX_HEALTH);
         if (health != null) {
             health.removeModifier(healthKey);
