@@ -19,8 +19,9 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 플레이어별 장착 장신구 5칸 (목걸이 1 · 귀걸이 2 · 반지 2): 파일 저장 · 불러오기와 능력치 합계 적용.
- * 저장: plugins/BrassField/accessories/{uuid}.yml. 최대 체력은 속성 보정치로, 공격력 · 받는 피해는 AccessoryListener 가 피해 계산 때 쓴다.
+ * 플레이어별 장착 장신구 5칸 (목걸이 1 · 귀걸이 2 · 반지 2): 파일 저장 · 불러오기와 보조옵션 합계 적용.
+ * 저장: plugins/BrassField/accessories/{uuid}.yml. 최대 체력 · 이동 속도 · 공격 속도는 속성 보정치로,
+ * 나머지(공격력 · 치명타 · 출혈 · 회복 · 피해 감소 · 낙하 · 경험치 · 요리 · 수확)는 AccessoryListener · SetEffects 가 이벤트에서 쓴다.
  */
 public final class AccessoryManager {
 
@@ -31,13 +32,17 @@ public final class AccessoryManager {
     private final File folder;
     private final NamespacedKey healthKey;
     private final Map<UUID, ItemStack[]> equipped = new HashMap<>();
-    private final Map<UUID, Map<Part, Double>> totals = new HashMap<>();
+    private final Map<UUID, Map<AccessoryOption, Double>> totals = new HashMap<>();
+    private final NamespacedKey speedKey;
+    private final NamespacedKey attackSpeedKey;
     private SetEffects setEffects;
 
     public AccessoryManager(JavaPlugin plugin) {
         this.plugin = plugin;
         this.folder = new File(plugin.getDataFolder(), "accessories");
         this.healthKey = new NamespacedKey(plugin, "accessory_health");
+        this.speedKey = new NamespacedKey(plugin, "accessory_speed");
+        this.attackSpeedKey = new NamespacedKey(plugin, "accessory_attack_speed");
     }
 
     public void setEffects(SetEffects setEffects) {
@@ -58,9 +63,13 @@ public final class AccessoryManager {
         apply(player);
     }
 
-    /** 부위별 합계 (목걸이 = 최대 체력, 귀걸이 = 공격력 %, 반지 = 받는 피해 감소 %) */
-    public double total(Player player, Part part) {
-        return totals.getOrDefault(player.getUniqueId(), Map.of()).getOrDefault(part, 0.0);
+    /** 장착한 장신구 보조옵션 합계 (강화 배율 적용, 옵션마다 상한까지) */
+    public double total(Player player, AccessoryOption option) {
+        return totals.getOrDefault(player.getUniqueId(), Map.of()).getOrDefault(option, 0.0);
+    }
+
+    public Map<AccessoryOption, Double> totals(Player player) {
+        return totals.getOrDefault(player.getUniqueId(), Map.of());
     }
 
     /** 장착한 장신구 중 가장 높은 등급 (없으면 일반) — 장착 창 배경을 고른다 */
@@ -76,24 +85,37 @@ public final class AccessoryManager {
     }
 
     public void apply(Player player) {
-        Map<Part, Double> sum = new EnumMap<>(Part.class);
+        Map<AccessoryOption, Double> sum = new EnumMap<>(AccessoryOption.class);
         for (ItemStack item : slots(player)) {
-            Accessories.read(item).ifPresent(info -> sum.merge(info.part(), info.value(), Double::sum));
+            Accessories.read(item).ifPresent(info -> {
+                for (AccessoryOption.Roll roll : info.options()) {
+                    sum.merge(roll.option(), roll.value(info.level()), Double::sum);
+                }
+            });
         }
+        sum.replaceAll((option, value) -> Math.min(option.cap(), Math.round(value * 10) / 10.0));
         totals.put(player.getUniqueId(), sum);
+        modifier(player, Attribute.MAX_HEALTH, healthKey, sum.getOrDefault(AccessoryOption.MAX_HEALTH, 0.0), false);
+        modifier(player, Attribute.MOVEMENT_SPEED, speedKey, sum.getOrDefault(AccessoryOption.SPEED, 0.0) / 100, true);
+        modifier(player, Attribute.ATTACK_SPEED, attackSpeedKey, sum.getOrDefault(AccessoryOption.ATTACK_SPEED, 0.0) / 100, true);
+        AttributeInstance health = player.getAttribute(Attribute.MAX_HEALTH);
+        if (health != null && player.getHealth() > health.getValue()) {
+            player.setHealth(health.getValue());
+        }
         if (setEffects != null) {
             setEffects.update(player, slots(player));
         }
-        AttributeInstance health = player.getAttribute(Attribute.MAX_HEALTH);
-        if (health != null) {
-            health.removeModifier(healthKey);
-            double bonus = sum.getOrDefault(Part.NECKLACE, 0.0);
-            if (bonus > 0) {
-                health.addModifier(new AttributeModifier(healthKey, bonus, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY));
-            }
-            if (player.getHealth() > health.getValue()) {
-                player.setHealth(health.getValue());
-            }
+    }
+
+    private static void modifier(Player player, Attribute attribute, NamespacedKey key, double amount, boolean scalar) {
+        AttributeInstance instance = player.getAttribute(attribute);
+        if (instance == null) {
+            return;
+        }
+        instance.removeModifier(key);
+        if (amount > 0) {
+            instance.addModifier(new AttributeModifier(key, amount,
+                    scalar ? AttributeModifier.Operation.ADD_SCALAR : AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY));
         }
     }
 

@@ -30,15 +30,21 @@ public final class Accessories {
     static final NamespacedKey VARIANT = new NamespacedKey(NS, "acc_variant");
     static final NamespacedKey GRADE = new NamespacedKey(NS, "acc_grade");
     static final NamespacedKey LEVEL = new NamespacedKey(NS, "acc_level");
+    static final NamespacedKey OPTIONS = new NamespacedKey(NS, "acc_options");   // "id=값;id=값" (강화 전 값)
 
-    /** 아이템 하나의 장신구 정보 */
-    public record Info(Set set, Variant variant, Grade grade, int level) {
+    /** 아이템 하나의 장신구 정보. options = 보조옵션 (등급 칸 수만큼) */
+    public record Info(Set set, Variant variant, Grade grade, int level, List<AccessoryOption.Roll> options) {
+        /** 보조옵션 없이 (create 가 칸을 새로 굴린다) */
+        public Info(Set set, Variant variant, Grade grade, int level) {
+            this(set, variant, grade, level, List.of());
+        }
+
         public Part part() {
             return variant.part();
         }
 
-        public double value() {
-            return part().value(grade, level);
+        public Info withLevel(int newLevel) {
+            return new Info(set, variant, grade, newLevel, options);
         }
 
         public String iconName() {
@@ -49,7 +55,12 @@ public final class Accessories {
     private Accessories() {
     }
 
+    /** 장신구 아이템. 보조옵션 칸이 비어 있으면 세트 · 등급에 맞게 새로 굴려 채운다 */
     public static ItemStack create(Info info) {
+        if (info.options().size() < AccessoryOption.slots(info.grade())) {
+            info = new Info(info.set(), info.variant(), info.grade(), info.level(),
+                    AccessoryOption.fill(info.set(), info.grade(), info.options()));
+        }
         ItemStack item = new ItemStack(Material.PAPER);
         item.setData(DataComponentTypes.ITEM_MODEL, new NamespacedKey("rustport", "accessory/" + info.iconName()));
         item.setData(DataComponentTypes.MAX_STACK_SIZE, 1);
@@ -59,6 +70,11 @@ public final class Accessories {
         pdc.set(VARIANT, PersistentDataType.STRING, info.variant().id());
         pdc.set(GRADE, PersistentDataType.STRING, info.grade().id());
         pdc.set(LEVEL, PersistentDataType.INTEGER, info.level());
+        StringBuilder encoded = new StringBuilder();
+        for (AccessoryOption.Roll roll : info.options()) {
+            encoded.append(encoded.isEmpty() ? "" : ";").append(roll.option().id()).append('=').append(roll.base());
+        }
+        pdc.set(OPTIONS, PersistentDataType.STRING, encoded.toString());
         AccessoryTrack track = AccessoryTrack.of(info.grade());
         if (track != null) {
             com.brassfield.enhancement.EnhanceTracks.writeIdentity(meta, track, info.level());   // 강화 창에서 고를 수 있게
@@ -70,7 +86,11 @@ public final class Accessories {
                 NamedTextColor.GRAY));
         lore.add(plain("강화 " + info.level() + " / " + AccessoryKind.MAX_LEVEL, NamedTextColor.DARK_GRAY));
         lore.add(Component.empty());
-        lore.add(optionLine(info.part(), info.value()));
+        lore.add(plain("보조옵션 " + info.options().size() + " / " + AccessoryOption.slots(info.grade())
+                + (info.level() > 0 ? "  (강화 +" + Math.round(AccessoryOption.PER_LEVEL * info.level() * 100) + "%)" : ""), NamedTextColor.GRAY));
+        for (AccessoryOption.Roll roll : info.options()) {
+            lore.add(optionLine(roll.option(), roll.value(info.level())));
+        }
         meta.lore(lore);
         item.setItemMeta(meta);
         return item;
@@ -94,16 +114,31 @@ public final class Accessories {
         if (s == null || v == null || g == null) {
             return Optional.empty();
         }
-        return Optional.of(new Info(s, v, g, Math.max(0, Math.min(AccessoryKind.MAX_LEVEL, level == null ? 0 : level))));
+        List<AccessoryOption.Roll> options = new ArrayList<>();
+        String encoded = pdc.get(OPTIONS, PersistentDataType.STRING);
+        if (encoded != null && !encoded.isEmpty()) {
+            for (String part : encoded.split(";")) {
+                String[] kv = part.split("=");
+                AccessoryOption option = kv.length == 2 ? AccessoryOption.byId(kv[0]) : null;
+                if (option != null) {
+                    try {
+                        options.add(new AccessoryOption.Roll(option, Double.parseDouble(kv[1])));
+                    } catch (NumberFormatException ignored) {
+                        // 깨진 값은 건너뛴다
+                    }
+                }
+            }
+        }
+        return Optional.of(new Info(s, v, g, Math.max(0, Math.min(AccessoryKind.MAX_LEVEL, level == null ? 0 : level)), options));
     }
 
     public static boolean isAccessory(ItemStack item) {
         return read(item).isPresent();
     }
 
-    static Component optionLine(Part part, double value) {
-        return plain(part.optionName() + " ", NamedTextColor.GRAY)
-                .append(plain("+" + format(value) + part.unit(), NamedTextColor.GREEN));
+    static Component optionLine(AccessoryOption option, double value) {
+        return plain(" " + option.displayName() + " ", NamedTextColor.GRAY)
+                .append(plain("+" + format(value) + option.unit(), NamedTextColor.GREEN));
     }
 
     static String format(double value) {

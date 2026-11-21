@@ -96,6 +96,7 @@ public final class FoodBuffs implements Listener {
         }
         Buff buff = dish.buffs().get(ThreadLocalRandom.current().nextInt(dish.buffs().size()));
         int seconds = buff.maxSeconds() > 0 ? Math.min(dish.seconds(), buff.maxSeconds()) : dish.seconds();
+        seconds = (int) Math.round(seconds * com.brassfield.accessory.AccessoryListener.foodBuffMultiplier(player));   // 장신구 "요리 효과 지속"
         player.addPotionEffect(new PotionEffect(buff.type(), seconds * 20, 0, false, true, true));
         String time = seconds % 60 == 0 ? (seconds / 60) + "분" : seconds + "초";
         player.sendActionBar(Component.text("요리 효과: " + buff.name() + " (" + time + ")", NamedTextColor.GOLD));

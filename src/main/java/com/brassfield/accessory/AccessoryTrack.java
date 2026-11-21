@@ -92,10 +92,10 @@ public final class AccessoryTrack implements EnhanceTrack {
         Accessories.Info info = Accessories.read(original).orElseThrow(() -> new IllegalArgumentException("장신구가 아닙니다"));
         if (newLevel > AccessoryKind.MAX_LEVEL && canPromote()) {      // 승급: 같은 세트 · 종류의 다음 등급 0강
             Grade next = Grade.values()[grade.ordinal() + 1];
-            return Accessories.create(new Accessories.Info(info.set(), info.variant(), next, 0));
+            return Accessories.create(new Accessories.Info(info.set(), info.variant(), next, 0, info.options()));   // 옵션 유지 + 늘어난 1칸만 새로
         }
         int level = Math.max(0, Math.min(AccessoryKind.MAX_LEVEL, newLevel));
-        return Accessories.create(new Accessories.Info(info.set(), info.variant(), grade, level));
+        return Accessories.create(info.withLevel(level));
     }
 
     @Override

@@ -164,6 +164,7 @@ public class BrassFieldPlugin extends JavaPlugin {
         com.brassfield.accessory.AccessoryManager accessoryManager = new com.brassfield.accessory.AccessoryManager(this);
         setEffects = new com.brassfield.accessory.SetEffects(this);
         accessoryManager.setEffects(setEffects);
+        setEffects.manager(accessoryManager);
         pluginManager.registerEvents(setEffects, this);
         setEffects.start();
         com.brassfield.accessory.AccessoryTrack.registerAll();                 // 장신구 강화 · 승급 (강화 모루)
@@ -183,6 +184,7 @@ public class BrassFieldPlugin extends JavaPlugin {
         accessoryEntry.setExecutor(accessoryCommand);
         accessoryEntry.setTabCompleter(accessoryCommand);
         pluginManager.registerEvents(new com.brassfield.accessory.AccessoryListener(this, accessoryManager, accessoryCommand), this);
+        pluginManager.registerEvents(new com.brassfield.accessory.RerollTicket(), this);      // 보조옵션권 (임시 종이)
         com.brassfield.accessory.MenuDialogPack.install(this);
         getServer().getOnlinePlayers().forEach(accessoryManager::apply);
 

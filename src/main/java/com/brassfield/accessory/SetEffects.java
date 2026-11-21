@@ -44,7 +44,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * <ul>
  *   <li>전투 2: 공격 속도 +10% / 5: 몹 처치 시 5초 동안 공격력 +10%, 체력 1칸(2) 회복</li>
  *   <li>요리/농사 2: 음식을 먹을 때 숨은 포만감(포화도) +10 / 5: 1분마다 포화 효과 10초, 작물 수확 시 50% 확률로 1개 더</li>
- *   <li>생활/모험 2: 이동 속도 +10%, 2단 점프 / 5: 낙하 피해 면역, 이동 속도 +20% (합계 +30%)</li>
+ *   <li>생활/모험 2: 이동 속도 +5%, 2단 점프 / 5: 낙하 피해 면역, 이동 속도 합계 +10% (2026-11-21 조정)</li>
  * </ul>
  * 작물 수확은 CustomCrops 의 DropItemActionEvent 를 이름으로 찾아 받는다 (CustomCrops 가 없어도 플러그인은 켜진다).
  */
@@ -62,6 +62,7 @@ public final class SetEffects implements Listener {
     private final Map<UUID, Long> rageUntil = new HashMap<>();
     private final java.util.Set<UUID> jumpGranted = new HashSet<>();
     private BukkitTask saturationTask;
+    private AccessoryManager manager;
 
     public SetEffects(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -98,7 +99,7 @@ public final class SetEffects implements Listener {
         }
         counts.put(player.getUniqueId(), map);
         modifier(player, Attribute.ATTACK_SPEED, attackSpeedKey, has(player, Set.COMBAT, TWO) ? 0.10 : 0);
-        double speed = (has(player, Set.ADVENTURE, TWO) ? 0.10 : 0) + (has(player, Set.ADVENTURE, FIVE) ? 0.20 : 0);
+        double speed = (has(player, Set.ADVENTURE, TWO) ? 0.05 : 0) + (has(player, Set.ADVENTURE, FIVE) ? 0.05 : 0);   // 2세트 5%, 5세트 합계 10%
         modifier(player, Attribute.MOVEMENT_SPEED, speedKey, speed);
         if (!has(player, Set.ADVENTURE, TWO)) {
             revokeJump(player);
@@ -180,7 +181,7 @@ public final class SetEffects implements Listener {
                 }
                 try {
                     Object who = holder.invoke(context.invoke(event));
-                    if (who instanceof Player player && has(player, Set.FARM, FIVE) && ThreadLocalRandom.current().nextBoolean()) {
+                    if (who instanceof Player player && ThreadLocalRandom.current().nextDouble(100) < harvestChance(player)) {
                         ItemStack item = (ItemStack) getItem.invoke(event);
                         if (item != null && !item.getType().isAir()) {
                             ItemStack more = item.clone();
@@ -196,6 +197,19 @@ public final class SetEffects implements Listener {
         } catch (ClassNotFoundException | NoSuchMethodException exception) {
             plugin.getLogger().warning("CustomCrops 수확 이벤트를 찾지 못해 농사 5세트 수확 보너스를 끕니다: " + exception.getMessage());
         }
+    }
+
+    /** 수확 1개 더 확률 %: 요리/농사 5세트 50% + 보조옵션 "수확 1개 더 확률" (최대 100) */
+    private double harvestChance(Player player) {
+        double chance = has(player, Set.FARM, FIVE) ? 50 : 0;
+        if (manager != null) {
+            chance += manager.total(player, AccessoryOption.HARVEST);
+        }
+        return Math.min(100, chance);
+    }
+
+    public void manager(AccessoryManager manager) {
+        this.manager = manager;
     }
 
     // ── 생활/모험 2: 2단 점프 (땅에 닿으면 비행 허용 → 비행 시도를 막고 위로 튕김) ──
@@ -262,7 +276,7 @@ public final class SetEffects implements Listener {
         return switch (set) {
             case COMBAT -> List.of("공격 속도 +10%", "처치 시 5초간 공격력 +10%, 체력 1칸 회복");
             case FARM -> List.of("음식을 먹을 때 포만감 +10", "1분마다 포화 10초, 작물 수확 시 50% 확률로 1개 더");
-            case ADVENTURE -> List.of("이동 속도 +10%, 2단 점프", "낙하 피해 면역, 이동 속도 +20%");
+            case ADVENTURE -> List.of("이동 속도 +5%, 2단 점프", "낙하 피해 면역, 이동 속도 합계 +10%");
         };
     }
 }

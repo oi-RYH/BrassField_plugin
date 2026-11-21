@@ -1,6 +1,5 @@
 package com.brassfield.accessory;
 
-import com.brassfield.accessory.AccessoryKind.Part;
 import com.brassfield.common.GuiItems;
 import com.brassfield.common.ItemsAdderGuiBackground;
 import net.kyori.adventure.text.Component;
@@ -126,10 +125,16 @@ public final class AccessoryGui implements InventoryHolder {
         ItemMeta meta = book.getItemMeta();
         meta.displayName(Accessories.plain("종합 효과", NamedTextColor.GOLD));
         List<Component> lore = new ArrayList<>();
-        for (Part part : Part.values()) {
-            double value = manager.total(player, part);
-            lore.add(value > 0 ? Accessories.optionLine(part, value)
-                    : Accessories.plain(part.optionName() + " 없음", NamedTextColor.DARK_GRAY));
+        java.util.Map<AccessoryOption, Double> totals = manager.totals(player);
+        if (totals.isEmpty()) {
+            lore.add(Accessories.plain("보조옵션 없음", NamedTextColor.DARK_GRAY));
+        }
+        for (AccessoryOption option : AccessoryOption.values()) {          // 세트 순서대로
+            Double value = totals.get(option);
+            if (value != null && value > 0) {
+                Component line = Accessories.optionLine(option, value);
+                lore.add(value >= option.cap() ? line.append(Accessories.plain(" (상한)", NamedTextColor.RED)) : line);
+            }
         }
         lore.add(Component.empty());
         lore.add(Accessories.plain("가방의 장신구를 클릭하면 장착", NamedTextColor.GRAY));

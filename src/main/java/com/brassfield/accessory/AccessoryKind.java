@@ -12,41 +12,20 @@ public final class AccessoryKind {
     private AccessoryKind() {
     }
 
-    /** 부위: 장착 칸 · 기본옵션을 정한다 */
+    /** 부위: 장착 칸을 정한다 (기본옵션은 2026-11-21 없앰 — 능력치는 보조옵션 AccessoryOption) */
     public enum Part {
-        NECKLACE("목걸이", "최대 체력", new double[]{2, 4, 6, 9}, 1, ""),
-        EARRING("귀걸이", "공격력", new double[]{2, 4, 6, 9}, 1, "%"),
-        RING("반지", "받는 피해 감소", new double[]{1, 3, 5, 7}, 0.5, "%");
+        NECKLACE("목걸이"),
+        EARRING("귀걸이"),
+        RING("반지");
 
         private final String displayName;
-        private final String optionName;
-        private final double[] baseByGrade;
-        private final double perLevel;
-        private final String unit;
 
-        Part(String displayName, String optionName, double[] baseByGrade, double perLevel, String unit) {
+        Part(String displayName) {
             this.displayName = displayName;
-            this.optionName = optionName;
-            this.baseByGrade = baseByGrade;
-            this.perLevel = perLevel;
-            this.unit = unit;
         }
 
         public String displayName() {
             return displayName;
-        }
-
-        public String optionName() {
-            return optionName;
-        }
-
-        public String unit() {
-            return unit;
-        }
-
-        /** 기본옵션 수치 (잠정: 노션 "악세사리 시스템" 2장 등급 구간의 아래 값 + 강화 단계마다 perLevel) */
-        public double value(Grade grade, int level) {
-            return baseByGrade[grade.ordinal()] + perLevel * level;
         }
     }
 
